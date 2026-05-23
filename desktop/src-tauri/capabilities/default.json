@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nickknapton88/tauri-docs/v2.11.2/src/content/docs/reference/config/capability-schema.json",
+  "identifier": "default",
+  "description": "Default capability set for DataBox",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

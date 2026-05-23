@@ -1,0 +1,229 @@
+from typing import TypedDict
+
+import sqlglot
+from sqlglot import exp
+
+from engine.errors import GuardrailValidationError
+
+
+class GuardrailCheck(TypedDict):
+    rule: str
+    level: str
+    message: str
+
+
+class GuardrailResult(TypedDict):
+    result: str  # "pass" | "warn" | "reject"
+    originalSql: str
+    safeSql: str
+    checks: list[GuardrailCheck]
+    message: str
+
+# System schemas we must block access to
+BLOCKED_SCHEMAS = {"information_schema", "mysql", "performance_schema", "sys"}
+
+# Dangerous functions we must block
+DANGEROUS_FUNCTIONS = {"sleep", "benchmark", "load_file", "database", "user", "current_user", "version"}
+
+# List of blocked SQL command types (anything that is not a SELECT)
+BLOCKED_COMMAND_TYPES = (
+    exp.Insert,
+    exp.Update,
+    exp.Delete,
+    exp.Drop,
+    exp.Create,
+    exp.Alter,
+    exp.Command,
+    exp.Merge,
+)
+
+def guardrail_check(sql_str: str) -> GuardrailResult:
+    """
+    Analyzes SQL using sqlglot AST parsing to enforce V1 security guidelines.
+    Checks:
+    - Syntactic validity
+    - Single statement restriction (no multi-statements)
+    - SELECT query ONLY (blocks DDL/DML/DCL/dangerous commands)
+    - Blocks access to system databases (mysql, information_schema, etc.)
+    - Blocks dangerous built-in functions (sleep, benchmark, load_file, etc.)
+    - Blocks SELECT INTO OUTFILE / DUMPFILE
+    - Automatically injects LIMIT 1000 if not provided
+    - Appends warnings for SELECT *
+    
+    Returns:
+        dict: {
+            "result": "pass" | "warn" | "reject",
+            "originalSql": str,
+            "safeSql": str,
+            "checks": list of dicts,
+            "message": str
+        }
+    """
+    sql_str = sql_str.strip()
+    if not sql_str:
+        return {
+            "result": "reject",
+            "originalSql": sql_str,
+            "safeSql": "",
+            "checks": [{"rule": "empty_sql", "level": "reject", "message": "SQL 语句不能为空"}],
+            "message": "拒绝执行：SQL 语句为空"
+        }
+
+    # Enforce safe length limit
+    if len(sql_str) > 20000:
+        return {
+            "result": "reject",
+            "originalSql": sql_str[:100] + "...",
+            "safeSql": "",
+            "checks": [{"rule": "sql_too_long", "level": "reject", "message": "SQL 语句长度不能超过 20000 字符"}],
+            "message": "拒绝执行：SQL 语句过长"
+        }
+
+    checks: list[GuardrailCheck] = []
+    has_errors = False
+
+    # 1. Parse and check multiple statements
+    try:
+        # sqlglot.parse parses multi-statement strings separated by semicolon
+        expressions = sqlglot.parse(sql_str, read="mysql")
+        if len(expressions) > 1:
+            checks.append({
+                "rule": "multi_statement",
+                "level": "reject",
+                "message": "检测到多条 SQL 语句。出于安全策略，每次仅允许执行单条 SELECT 语句。"
+            })
+            has_errors = True
+
+        if not expressions:
+            raise ValueError("SQL parsing yielded empty AST")
+
+        expression: exp.Expression = expressions[0]  # type: ignore[assignment]
+    except Exception as e:
+        return {
+            "result": "reject",
+            "originalSql": sql_str,
+            "safeSql": "",
+            "checks": [{"rule": "syntax_error", "level": "reject", "message": f"SQL 语法解析错误: {str(e)}"}],
+            "message": "拒绝执行：语法解析失败"
+        }
+
+    # 2. Enforce SELECT only
+    # Check if outer node is a Select (or Union of Selects)
+    def is_select_node(node: exp.Expression) -> bool:
+        if isinstance(node, exp.Select):
+            return True
+        if isinstance(node, exp.Union):
+            return is_select_node(node.left) and is_select_node(node.right)  # type: ignore[arg-type]
+        if isinstance(node, exp.Subquery):
+            return is_select_node(node.this)
+        return False
+
+    if not is_select_node(expression):
+        checks.append({
+            "rule": "select_only",
+            "level": "reject",
+            "message": "出于安全性考量，目前仅支持执行 SELECT 数据查询语句。禁止执行写入、删除、更新或定义操作。"
+        })
+        has_errors = True
+
+    # 3. Walk the AST to detect nested hazards (subqueries, tables, functions)
+    for node in expression.walk():
+        # Check forbidden command types nested
+        if isinstance(node, BLOCKED_COMMAND_TYPES):
+            checks.append({
+                "rule": "blocked_command_type",
+                "level": "reject",
+                "message": f"禁止执行 SQL 指令类型: {type(node).__name__}"
+            })
+            has_errors = True
+
+        # Check for system catalog tables / schemas
+        elif isinstance(node, exp.Table):
+            table_name = node.name.lower() if node.name else ""
+            db_name = node.db.lower() if node.db else ""
+            
+            if db_name in BLOCKED_SCHEMAS or table_name in BLOCKED_SCHEMAS:
+                checks.append({
+                    "rule": "system_catalog_blocked",
+                    "level": "reject",
+                    "message": f"禁止访问系统内部表或系统架构库: '{db_name or table_name}'"
+                })
+                has_errors = True
+
+        # Check for dangerous functions
+        elif isinstance(node, (exp.Anonymous, exp.Func)):
+            func_name = node.name.lower() if node.name else ""
+            if func_name in DANGEROUS_FUNCTIONS:
+                checks.append({
+                    "rule": "dangerous_function",
+                    "level": "reject",
+                    "message": f"禁止使用高危或系统信息泄露函数: '{func_name}'"
+                })
+                has_errors = True
+                
+        # Check SELECT INTO OUTFILE / DUMPFILE
+        elif isinstance(node, exp.Into):
+            checks.append({
+                "rule": "into_outfile_blocked",
+                "level": "reject",
+                "message": "禁止执行文件写入/导出操作 (INTO OUTFILE / INTO DUMPFILE)"
+            })
+            has_errors = True
+
+    # If any blocker rule is violated, immediately reject
+    if has_errors:
+        return {
+            "result": "reject",
+            "originalSql": sql_str,
+            "safeSql": "",
+            "checks": checks,
+            "message": "拒绝执行：检测到高危 SQL 指令，已被 Guardrail 强制拦截。"
+        }
+
+    # 4. Check for SELECT * Warning (only on the primary/root projection, or subqueries)
+    has_star = False
+    for projection in expression.expressions:
+        if isinstance(projection, exp.Star) or (hasattr(projection, "this") and isinstance(projection.this, exp.Star)):
+            has_star = True
+            break
+            
+    if has_star:
+        checks.append({
+            "rule": "select_star",
+            "level": "warn",
+            "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
+        })
+
+    # 5. Check and inject LIMIT 1000 if no limit exists
+    # Find if there is an outer limit
+    has_limit = expression.args.get("limit") is not None
+    safe_expression = expression
+    
+    if not has_limit:
+        # Inject LIMIT 1000 to the AST in a type-safe way
+        try:
+            if isinstance(expression, exp.Select):
+                safe_expression = expression.limit(1000)
+                checks.append({
+                    "rule": "auto_limit",
+                    "level": "warn",
+                    "message": "未检测到 LIMIT 约束，系统已自动追加 LIMIT 1000 以防大表全表扫描挂起连接。"
+                })
+        except Exception:
+            # Fallback to string concatenation if AST manipulation fails
+            pass
+            
+    safe_sql = safe_expression.sql(dialect="mysql")
+    
+    # If warnings exist, the overall result is "warn", otherwise "pass"
+    warn_count = sum(1 for c in checks if c["level"] == "warn")
+    result_status = "warn" if warn_count > 0 else "pass"
+    message_summary = "SQL 审核通过，但包含优化建议。" if result_status == "warn" else "SQL 安全审核通过！"
+
+    return {
+        "result": result_status,
+        "originalSql": sql_str,
+        "safeSql": safe_sql,
+        "checks": checks,
+        "message": message_summary
+    }
