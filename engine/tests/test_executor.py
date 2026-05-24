@@ -80,6 +80,42 @@ class TestProcessRows:
         assert response_bytes <= 35
 
 
+class TestMySQLPool:
+    def test_queue_pool_checkout_does_not_require_sqlalchemy_dialect(self, monkeypatch) -> None:
+        from engine import executor
+        from engine.executor import _ping_mysql_connection, get_mysql_pool
+
+        class FakeConnection:
+            pinged = False
+
+            def ping(self, reconnect: bool = True) -> None:
+                self.pinged = reconnect
+
+            def rollback(self) -> None:
+                pass
+
+            def close(self) -> None:
+                pass
+
+        executor._MYSQL_POOLS.clear()
+        monkeypatch.setattr(executor.pymysql, "connect", lambda **_params: FakeConnection())
+
+        pool = get_mysql_pool("ds-mysql", {
+            "host": "127.0.0.1",
+            "port": 3306,
+            "user": "root",
+            "password": "secret",
+            "database": "app",
+        })
+        conn_proxy = pool.connect()
+        try:
+            raw_conn = _ping_mysql_connection(conn_proxy)
+            assert raw_conn.pinged is True
+        finally:
+            conn_proxy.close()
+            executor._MYSQL_POOLS.clear()
+
+
 class TestExecutorSQLite:
     """Integration test: execute real queries against the demo SQLite database."""
 

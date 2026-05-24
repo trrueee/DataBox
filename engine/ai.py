@@ -723,3 +723,102 @@ def generate_table_design_ai(
     except Exception as e:
         print(f"Online table design failed, falling back: {e}")
         return generate_offline_table_design(question)
+
+
+AI_SCHEMA_ALTERATION_SYSTEM_PROMPT = (
+    "You are a database architecture expert.\n"
+    "You will receive the current MySQL database schema and an instruction describing how to alter or modify the schema.\n"
+    "Your task is to generate valid MySQL DDL statements (such as ALTER TABLE, CREATE TABLE, etc.) to apply the specified changes.\n\n"
+    "Guidelines:\n"
+    "1. Respond ONLY with the raw SQL code block. Do NOT write any introduction or explanation.\n"
+    "2. Make sure the generated SQL statements are completely syntactically correct in standard MySQL dialect.\n"
+    "3. Do not drop existing tables or columns unless explicitly asked by the instruction.\n"
+    "4. Ensure that the table and column names referenced match the current database schema accurately."
+)
+
+def generate_offline_schema_alteration(instruction: str) -> str:
+    cleaned = instruction.strip().lower()
+    if "deleted_at" in cleaned or "软删除" in cleaned:
+        return (
+            "ALTER TABLE users ADD COLUMN deleted_at DATETIME NULL COMMENT '删除时间';\n"
+            "ALTER TABLE products ADD COLUMN deleted_at DATETIME NULL COMMENT '删除时间';\n"
+            "ALTER TABLE orders ADD COLUMN deleted_at DATETIME NULL COMMENT '删除时间';"
+        )
+    if "status" in cleaned or "状态" in cleaned:
+        return (
+            "ALTER TABLE orders ADD COLUMN status VARCHAR(50) DEFAULT 'pending' COMMENT '订单状态';\n"
+            "CREATE INDEX idx_orders_status ON orders(status);"
+        )
+    if "uuid" in cleaned or "唯一" in cleaned:
+        return "ALTER TABLE users ADD COLUMN uuid VARCHAR(64) UNIQUE COMMENT '唯一标识';"
+        
+    return "ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间';"
+
+
+def generate_schema_alteration_ai(
+    db: Session,
+    datasource_id: str,
+    instruction: str,
+    llm_config: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """
+    Generates MySQL DDL statements to alter schema based on natural language annotations.
+    """
+    llm_config = llm_config or {}
+    api_key = llm_config.get("api_key", "").strip()
+    api_base = llm_config.get("api_base", "https://api.openai.com/v1").strip()
+    model_name = llm_config.get("model", "gpt-4o-mini").strip()
+
+    if not api_key:
+        ddl = generate_offline_schema_alteration(instruction)
+        return {"ddl": ddl, "model": "databox-local-heuristic", "mode": "offline"}
+
+    schema_context = generate_schema_context(db, datasource_id, instruction, optimize_rag=False)
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    user_prompt = (
+        f"Current Database Schema:\n```sql\n{schema_context}\n```\n\n"
+        f"Instruction: \"{instruction}\"\n\n"
+        f"Generate DDL Diffs:"
+    )
+
+    payload = {
+        "model": model_name,
+        "messages": [
+            {"role": "system", "content": AI_SCHEMA_ALTERATION_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
+        ],
+        "temperature": 0.1,
+        "max_tokens": 1000
+    }
+
+    try:
+        response = httpx.post(
+            f"{api_base}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=20.0
+        )
+        if response.status_code != 200:
+            raise AIServiceError(f"LLM API returned an error (HTTP {response.status_code}): {response.text}")
+            
+        data = response.json()
+        response_text = data["choices"][0]["message"]["content"].strip()
+
+        # Extract SQL from markdown code fences
+        sql_match = re.search(r"```sql\s*(.*?)\s*```", response_text, re.DOTALL | re.IGNORECASE)
+        if sql_match:
+            generated_ddl = sql_match.group(1).strip()
+        else:
+            generated_ddl = re.sub(r"^```\w*\s*|\s*```$", "", response_text).strip()
+
+        return {"ddl": generated_ddl, "model": model_name, "mode": "online"}
+    except Exception as e:
+        print(f"Online schema alteration failed, falling back: {e}")
+        ddl = generate_offline_schema_alteration(instruction)
+        return {"ddl": ddl, "model": "databox-local-heuristic", "mode": "offline"}
+

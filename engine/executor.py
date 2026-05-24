@@ -12,7 +12,7 @@ import pymysql
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import QueuePool
 
-from engine.datasource import get_mysql_connection_params, is_demo_db
+from engine.datasource import get_mysql_connection_params, get_postgres_connection_params, is_demo_db
 from engine.demo_db_init import DEMO_DB_PATH, init_demo_database
 from engine.errors import (
     GuardrailValidationError,
@@ -34,6 +34,38 @@ ProcessedRows = tuple[list[dict[str, Any]], list[str], bool, int]
 
 # Dynamic registry of pools mapped by database cache keys to support auto-updating of ports/credentials
 _MYSQL_POOLS: dict[tuple[Any, ...], QueuePool] = {}
+_POSTGRES_POOLS: dict[tuple[Any, ...], QueuePool] = {}
+
+
+def get_postgres_pool(datasource_id: str, params: dict[str, Any]) -> QueuePool:
+    """Creates or retrieves a connection pool for the datasource with requested timeout properties."""
+    pool_params = params.copy()
+    pool_key = (
+        datasource_id,
+        pool_params.get("host"),
+        pool_params.get("port"),
+        pool_params.get("user"),
+        pool_params.get("database"),
+    )
+    if pool_key not in _POSTGRES_POOLS:
+        def creator() -> Any:
+            import psycopg2
+            return psycopg2.connect(
+                host=pool_params.get("host"),
+                port=pool_params.get("port"),
+                user=pool_params.get("user"),
+                password=pool_params.get("password"),
+                database=pool_params.get("database"),
+                connect_timeout=5,
+            )
+        from typing import cast
+        _POSTGRES_POOLS[pool_key] = QueuePool(
+            cast(Any, creator),
+            pool_size=5,
+            max_overflow=10,
+            recycle=1800,
+        )
+    return _POSTGRES_POOLS[pool_key]
 
 
 def get_mysql_pool(datasource_id: str, params: dict[str, Any]) -> QueuePool:
@@ -63,9 +95,18 @@ def get_mysql_pool(datasource_id: str, params: dict[str, Any]) -> QueuePool:
             pool_size=5,
             max_overflow=10,
             recycle=1800,
-            pre_ping=True
         )
     return _MYSQL_POOLS[pool_key]
+
+
+def _ping_mysql_connection(conn_proxy: Any) -> Any:
+    """Validate a raw PyMySQL connection checked out from QueuePool."""
+    raw_conn: Any = getattr(conn_proxy, "dbapi_connection", None) or getattr(conn_proxy, "connection", None) or conn_proxy
+    try:
+        raw_conn.ping(reconnect=True)
+    except TypeError:
+        raw_conn.ping(True)
+    return raw_conn
 
 
 def _serialize_value(val: Any) -> str | None:
@@ -119,12 +160,13 @@ def _execute_on_sqlite_profiled(
     timeout_ms: int = QUERY_TIMEOUT_MS,
     execution_id: str | None = None,
     datasource_id: str = "",
+    sqlite_path: str | None = None,
 ) -> tuple[list[dict[str, Any]], list[str], bool, int, int, int, int, int]:
-    """Execute a safe SQL query on the local SQLite demo database, returning timing breakdown."""
-    demo_path = init_demo_database()
+    """Execute a safe SQL query on the SQLite database, returning timing breakdown."""
+    db_path = sqlite_path if sqlite_path else init_demo_database()
     
     t_conn_start = time.perf_counter()
-    conn = sqlite3.connect(demo_path)
+    conn = sqlite3.connect(db_path)
     connect_ms = int((time.perf_counter() - t_conn_start) * 1000)
     
     conn.row_factory = sqlite3.Row
@@ -187,11 +229,85 @@ def _execute_on_sqlite(
     timeout_ms: int = QUERY_TIMEOUT_MS,
     execution_id: str | None = None,
     datasource_id: str = "",
+    sqlite_path: str | None = None,
 ) -> tuple[list[dict[str, Any]], list[str], bool, int]:
     rows, columns, truncated, response_bytes, _, _, _, _ = _execute_on_sqlite_profiled(
-        safe_sql, timeout_ms, execution_id, datasource_id
+        safe_sql, timeout_ms, execution_id, datasource_id, sqlite_path
     )
     return rows, columns, truncated, response_bytes
+
+
+def _execute_on_postgres_profiled(
+    datasource_id: str,
+    params: dict[str, Any],
+    safe_sql: str,
+    timeout_ms: int = QUERY_TIMEOUT_MS,
+    execution_id: str | None = None,
+) -> tuple[list[dict[str, Any]], list[str], bool, int, int, int, int, int]:
+    """Execute a safe SQL query on a real PostgreSQL database, returning timing breakdown."""
+    t_conn_start = time.perf_counter()
+    pool = get_postgres_pool(datasource_id, params)
+    conn_proxy: Any = pool.connect()
+    connect_ms = int((time.perf_counter() - t_conn_start) * 1000)
+    
+    try:
+        raw_conn = conn_proxy.connection if hasattr(conn_proxy, "connection") else conn_proxy
+        if execution_id:
+            QUERY_REGISTRY.register_postgres(
+                execution_id,
+                datasource_id,
+                raw_conn,
+            )
+
+        with conn_proxy.cursor() as cursor:
+            # Set postgres statement timeout
+            try:
+                cursor.execute(f"SET statement_timeout = {timeout_ms}")
+            except Exception:
+                pass
+
+            t_exec_start = time.perf_counter()
+            try:
+                cursor.execute(safe_sql)
+            except Exception as exc:
+                if execution_id and QUERY_REGISTRY.is_cancelled(execution_id):
+                    raise SQLQueryCancelledError("SQL query cancelled by user") from exc
+                
+                # Check for Postgres cancel/timeout error code (57014)
+                pgcode = getattr(exc, "pgcode", None)
+                if pgcode == "57014":
+                    raise TimeoutError(f"Query timed out after {timeout_ms} ms") from exc
+                raise
+            execute_ms = int((time.perf_counter() - t_exec_start) * 1000)
+
+            columns: list[str] = []
+            rows: list[dict[str, Any]] = []
+            truncated = False
+            response_bytes = 2
+            fetch_ms = 0
+            serialize_ms = 0
+
+            if cursor.description:
+                columns = [col[0] for col in cursor.description]
+                
+                t_fetch_start = time.perf_counter()
+                raw_rows = cursor.fetchmany(MAX_ROWS)
+                fetch_ms = int((time.perf_counter() - t_fetch_start) * 1000)
+                
+                # Convert tuples to dicts
+                mapped_rows = []
+                for row in raw_rows:
+                    mapped_rows.append(dict(zip(columns, row)))
+                    
+                t_ser_start = time.perf_counter()
+                rows, columns, truncated, response_bytes = _process_rows(mapped_rows, columns)
+                serialize_ms = int((time.perf_counter() - t_ser_start) * 1000)
+                
+            return rows, columns, truncated, response_bytes, connect_ms, execute_ms, fetch_ms, serialize_ms
+    finally:
+        if execution_id:
+            QUERY_REGISTRY.unregister(execution_id)
+        conn_proxy.close()
 
 
 def _execute_on_mysql_profiled(
@@ -208,7 +324,7 @@ def _execute_on_mysql_profiled(
     connect_ms = int((time.perf_counter() - t_conn_start) * 1000)
     
     try:
-        raw_conn: Any = getattr(conn_proxy, "dbapi_connection", None) or getattr(conn_proxy, "connection", None) or conn_proxy
+        raw_conn = _ping_mysql_connection(conn_proxy)
         if execution_id:
             QUERY_REGISTRY.register_mysql(
                 execution_id,
@@ -347,14 +463,16 @@ def execute_query(
     serialize_ms = 0
 
     try:
-        if is_demo_db(str(ds.host), str(ds.database_name)):
+        db_type = ds.db_type or "mysql"
+        if db_type == "sqlite":
             rows, columns, truncated, response_bytes, connect_ms, execute_ms, fetch_ms, serialize_ms = _execute_on_sqlite_profiled(
                 safe_sql,
                 execution_id=execution_id,
                 datasource_id=datasource_id,
+                sqlite_path=ds.database_name,
             )
-        else:
-            conn_params = get_mysql_connection_params({
+        elif db_type == "postgresql":
+            conn_params = get_postgres_connection_params({
                 "host": ds.host,
                 "port": ds.port,
                 "username": ds.username,
@@ -370,18 +488,49 @@ def execute_query(
                 "ssh_pkey_path": ds.ssh_pkey_path,
                 "ssh_pkey_passphrase_ciphertext": ds.ssh_pkey_passphrase_ciphertext,
                 "ssh_pkey_passphrase_nonce": ds.ssh_pkey_passphrase_nonce,
-                "ssl_enabled": ds.ssl_enabled,
-                "ssl_ca_path": ds.ssl_ca_path,
-                "ssl_cert_path": ds.ssl_cert_path,
-                "ssl_key_path": ds.ssl_key_path,
-                "ssl_verify_identity": ds.ssl_verify_identity,
             })
-            rows, columns, truncated, response_bytes, connect_ms, execute_ms, fetch_ms, serialize_ms = _execute_on_mysql_profiled(
+            rows, columns, truncated, response_bytes, connect_ms, execute_ms, fetch_ms, serialize_ms = _execute_on_postgres_profiled(
                 datasource_id,
                 conn_params,
                 safe_sql,
                 execution_id=execution_id,
             )
+        else:
+            if is_demo_db(str(ds.host), str(ds.database_name)):
+                rows, columns, truncated, response_bytes, connect_ms, execute_ms, fetch_ms, serialize_ms = _execute_on_sqlite_profiled(
+                    safe_sql,
+                    execution_id=execution_id,
+                    datasource_id=datasource_id,
+                )
+            else:
+                conn_params = get_mysql_connection_params({
+                    "host": ds.host,
+                    "port": ds.port,
+                    "username": ds.username,
+                    "database_name": ds.database_name,
+                    "password_ciphertext": ds.password_ciphertext,
+                    "password_nonce": ds.password_nonce,
+                    "ssh_enabled": ds.ssh_enabled,
+                    "ssh_host": ds.ssh_host,
+                    "ssh_port": ds.ssh_port,
+                    "ssh_username": ds.ssh_username,
+                    "ssh_password_ciphertext": ds.ssh_password_ciphertext,
+                    "ssh_password_nonce": ds.ssh_password_nonce,
+                    "ssh_pkey_path": ds.ssh_pkey_path,
+                    "ssh_pkey_passphrase_ciphertext": ds.ssh_pkey_passphrase_ciphertext,
+                    "ssh_pkey_passphrase_nonce": ds.ssh_pkey_passphrase_nonce,
+                    "ssl_enabled": ds.ssl_enabled,
+                    "ssl_ca_path": ds.ssl_ca_path,
+                    "ssl_cert_path": ds.ssl_cert_path,
+                    "ssl_key_path": ds.ssl_key_path,
+                    "ssl_verify_identity": ds.ssl_verify_identity,
+                })
+                rows, columns, truncated, response_bytes, connect_ms, execute_ms, fetch_ms, serialize_ms = _execute_on_mysql_profiled(
+                    datasource_id,
+                    conn_params,
+                    safe_sql,
+                    execution_id=execution_id,
+                )
     except SQLQueryCancelledError as e:
         execution_status = "cancelled"
         error_message = e.message
@@ -557,6 +706,7 @@ def explain_sql(
         pool = get_mysql_pool(datasource_id, conn_params)
         conn_proxy: Any = pool.connect()
         try:
+            _ping_mysql_connection(conn_proxy)
             with conn_proxy.cursor() as cursor:
                 cursor.execute(f"EXPLAIN {safe_sql}")
                 raw_rows = cursor.fetchall()

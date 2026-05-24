@@ -37,7 +37,7 @@ from engine.models import (
     TableDesignDraft,
 )
 from engine.query_registry import QUERY_REGISTRY
-from engine.schema_sync import build_er_diagram_data, sync_schema
+from engine.schema_sync import _guess_module_tag, build_er_diagram_data, sync_schema
 from engine.table_design import generate_create_table_ddl
 
 logger = logging.getLogger("databox.api")
@@ -116,11 +116,12 @@ class TestDataGenerateRequest(BaseModel):
 
 
 class DataSourceTestRequest(BaseModel):
-    host: str
-    port: int = 3306
+    db_type: str = "mysql"
+    host: str | None = None
+    port: int | None = None
     database_name: str
-    username: str
-    password: str
+    username: str | None = None
+    password: str | None = None
 
     ssh_enabled: bool = False
     ssh_host: str | None = None
@@ -140,11 +141,12 @@ class DataSourceTestRequest(BaseModel):
 class DataSourceCreateRequest(BaseModel):
     project_id: str | None = None
     name: str
-    host: str
-    port: int = 3306
+    db_type: str = "mysql"
+    host: str | None = None
+    port: int | None = None
     database_name: str
-    username: str
-    password: str
+    username: str | None = None
+    password: str | None = None
     connection_mode: str = "direct"
     is_read_only: bool = False
     env: str = "dev"
@@ -186,6 +188,14 @@ class SQLGenerateRequest(BaseModel):
     api_base: str | None = None
     model_name: str | None = None
     optimize_rag: bool = False
+
+
+class SchemaAlterationRequest(BaseModel):
+    datasource_id: str
+    instruction: str
+    api_key: str | None = None
+    api_base: str | None = None
+    model: str | None = None
 
 
 class DemoStartRequest(BaseModel):
@@ -282,6 +292,7 @@ def _datasource_to_dict(ds: DataSource) -> dict[str, Any]:
         "project_id": ds.project_id or DEFAULT_PROJECT_ID,
         "environment_id": ds.environment_id,
         "name": ds.name,
+        "db_type": ds.db_type or "mysql",
         "host": ds.host,
         "port": ds.port,
         "database_name": ds.database_name,
@@ -568,9 +579,10 @@ def api_test_connection(req: DataSourceTestRequest) -> dict[str, Any]:
 @router.post("/datasources")
 def api_create_datasource(req: DataSourceCreateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     try:
-        build_mysql_ssl_params(req.model_dump())
+        if req.db_type == "mysql":
+            build_mysql_ssl_params(req.model_dump())
         project_id = _resolve_project_id(db, req.project_id)
-        cipher, nonce = encrypt_password(req.password)
+        cipher, nonce = encrypt_password(req.password or "")
 
         ssh_password_ciphertext = ""
         ssh_password_nonce = ""
@@ -586,6 +598,7 @@ def api_create_datasource(req: DataSourceCreateRequest, db: Session = Depends(ge
             id=str(uuid.uuid4()),
             project_id=project_id,
             name=req.name,
+            db_type=req.db_type,
             host=req.host,
             port=req.port,
             database_name=req.database_name,
@@ -691,6 +704,7 @@ def api_list_tables(datasource_id: str = Query(...), db: Session = Depends(get_d
             "table_type": table.table_type,
             "row_count_estimate": table.row_count_estimate,
             "columns_count": len(table.columns),
+            "module_tag": _guess_module_tag(str(table.table_name)),
         }
         for table in tables
     ]
@@ -730,6 +744,21 @@ def api_get_er_diagram(datasource_id: str = Query(...), db: Session = Depends(ge
             status_code=500,
             detail={"code": "DIAGRAM_FAILED", "message": "生成 ER 图失败，请确认已完成 Schema 同步。"},
         )
+
+
+@router.post("/schema/design/ai-modify")
+def api_generate_schema_alteration(req: SchemaAlterationRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
+    try:
+        from engine.ai import generate_schema_alteration_ai
+        llm_config = {
+            "api_key": req.api_key,
+            "api_base": req.api_base,
+            "model": req.model
+        }
+        return generate_schema_alteration_ai(db, req.datasource_id, req.instruction, llm_config)
+    except Exception as exc:
+        logger.exception("AI Schema alteration DDL generation failed")
+        raise HTTPException(status_code=500, detail={"code": "AI_MODIFY_FAILED", "message": f"AI 批注式修改失败: {str(exc)}"})
 
 
 @router.post("/schema/design/create-table-ddl")

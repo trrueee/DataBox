@@ -568,11 +568,178 @@ def get_mysql_connection_params(datasource_dict: dict[str, Any]) -> dict[str, An
     params.update(build_mysql_ssl_params(datasource_dict))
     return params
 
+
+def get_postgres_connection_params(datasource_dict: dict[str, Any]) -> dict[str, Any]:
+    """Decrypt password and construct parameters for PostgreSQL connection"""
+    pw = decrypt_password(datasource_dict["password_ciphertext"], datasource_dict["password_nonce"])
+    host = datasource_dict["host"]
+    port = int(datasource_dict.get("port", 5432) or 5432)
+
+    if datasource_dict.get("ssh_enabled"):
+        tunnel = get_or_create_tunnel_for_dict(datasource_dict)
+        host = "127.0.0.1"
+        port = tunnel.local_bind_port
+
+    params = {
+        "host": host,
+        "port": port,
+        "user": datasource_dict["username"],
+        "password": pw,
+        "database": datasource_dict["database_name"],
+    }
+    return params
+
 def test_connection(config: dict[str, Any]) -> dict[str, Any]:
     """
-    Test connectivity to a MySQL database (or demo database).
+    Test connectivity to a database (MySQL, PostgreSQL, or SQLite).
     Returns basic database stats and checks if permissions are readonly or have write capabilities.
     """
+    db_type = config.get("db_type", "mysql")
+
+    # 1. Handle SQLite Database Connection Test
+    if db_type == "sqlite":
+        db_path = config.get("database_name", "")
+        if not db_path:
+            raise DataSourceConnectionError("未提供 SQLite 数据库文件路径。")
+
+        # If it's a demo db
+        if is_demo_db("", db_path):
+            return {
+                "ok": True,
+                "serverVersion": "SQLite 3.42.0-demo-databox",
+                "readonly": True,
+                "tablesCount": len(MOCK_TABLES_INFO),
+                "warnings": ["当前使用的是内置演示环境 (Mock SQLite Mode)。所有写入已被模拟隔离。"],
+                "message": "演示环境连接成功！"
+            }
+
+        import os
+        try:
+            import sqlite3
+            conn = sqlite3.connect(db_path, timeout=5)
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT sqlite_version()")
+                version_row = cursor.fetchone()
+                version = str(version_row[0]) if version_row else "unknown"
+
+                cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'")
+                tables_row = cursor.fetchone()
+                tables_count = int(tables_row[0]) if tables_row else 0
+
+                readonly = False
+                if os.path.exists(db_path) and not os.access(db_path, os.W_OK):
+                    readonly = True
+
+                return {
+                    "ok": True,
+                    "serverVersion": f"SQLite {version}",
+                    "readonly": readonly,
+                    "tablesCount": tables_count,
+                    "warnings": [],
+                    "message": "SQLite 数据库连接测试成功！"
+                }
+            finally:
+                conn.close()
+        except Exception as e:
+            raise DataSourceConnectionError(f"无法建立 SQLite 数据库连接，请检查路径配置。错误: {str(e)}")
+
+    # 2. Handle PostgreSQL Database Connection Test
+    if db_type == "postgresql":
+        host = config.get("host", "")
+        port = config.get("port", 5432)
+        database_name = config.get("database_name", "")
+        username = config.get("username", "")
+        password = config.get("password", "")
+
+        if not host or not database_name or not username:
+            raise DataSourceConnectionError("Missing host, database name, or username configuration.")
+
+        temp_tunnel = None
+        try:
+            test_host = host
+            test_port = port
+
+            if config.get("ssh_enabled"):
+                ssh_host = config.get("ssh_host")
+                ssh_port = int(config.get("ssh_port", 22))
+                ssh_username = config.get("ssh_username")
+                ssh_password = config.get("ssh_password")
+                ssh_pkey = config.get("ssh_pkey_path") if config.get("ssh_pkey_path") else None
+                pkey_passphrase = config.get("ssh_pkey_passphrase")
+
+                try:
+                    temp_tunnel = SSHTunnelForwarder(
+                        (ssh_host, ssh_port),
+                        ssh_username=ssh_username,
+                        ssh_password=ssh_password,
+                        ssh_pkey=ssh_pkey,
+                        ssh_private_key_password=pkey_passphrase,
+                        remote_bind_address=(host, port),
+                        local_bind_address=('127.0.0.1', 0),
+                    )
+                    temp_tunnel.start()
+                    test_host = "127.0.0.1"
+                    test_port = temp_tunnel.local_bind_port
+                except Exception as se:
+                    raise DataSourceConnectionError(f"无法建立 SSH 隧道，请检查跳板机配置。错误: {str(se)}")
+
+            import psycopg2
+            conn = psycopg2.connect(
+                host=test_host,
+                port=test_port,
+                user=username,
+                password=password,
+                database=database_name,
+                connect_timeout=5
+            )
+            try:
+                with conn.cursor() as cursor:
+                    # Get PostgreSQL server version
+                    cursor.execute("SELECT version()")
+                    version_row = cursor.fetchone()
+                    version = str(version_row[0]) if version_row else "unknown"
+
+                    # Get count of tables in this database (non-system tables)
+                    cursor.execute("""
+                        SELECT COUNT(*) 
+                        FROM information_schema.tables 
+                        WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+                    """)
+                    tables_row = cursor.fetchone()
+                    tables_count = int(tables_row[0]) if tables_row else 0
+
+                    # Assess write permissions
+                    cursor.execute("SELECT current_setting('transaction_read_only')")
+                    ro_res = cursor.fetchone()
+                    readonly = (ro_res[0] == 'on') if ro_res else False
+
+                    warnings = []
+                    if not readonly:
+                        warnings.append("提示：当前数据库账号包含写入权限，建议在生产环境使用只读账号以保安全。")
+
+                    return {
+                        "ok": True,
+                        "serverVersion": version,
+                        "readonly": readonly,
+                        "tablesCount": tables_count,
+                        "warnings": warnings,
+                        "message": "PostgreSQL 数据库连接测试成功！"
+                    }
+            finally:
+                conn.close()
+        except Exception as e:
+            if isinstance(e, DataSourceConnectionError):
+                raise e
+            raise DataSourceConnectionError(f"无法建立 PostgreSQL 数据库连接，请检查配置信息。错误详情: {str(e)}")
+        finally:
+            if temp_tunnel:
+                try:
+                    temp_tunnel.stop()
+                except Exception:
+                    pass
+
+    # 3. Handle Real MySQL Connection Test
     host = config.get("host", "")
     port = config.get("port", 3306)
     database_name = config.get("database_name", "")
@@ -582,7 +749,7 @@ def test_connection(config: dict[str, Any]) -> dict[str, Any]:
     if not host or not database_name or not username:
         raise DataSourceConnectionError("Missing host, database name, or username configuration.")
 
-    # 1. Handle Demo Database Connection Test
+    # Handle Demo Database Connection Test
     if is_demo_db(host, database_name):
         return {
             "ok": True,
@@ -593,7 +760,6 @@ def test_connection(config: dict[str, Any]) -> dict[str, Any]:
             "message": "演示环境连接成功！"
         }
 
-    # 2. Handle Real MySQL Connection Test
     temp_tunnel = None
     try:
         test_host = host

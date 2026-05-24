@@ -1,17 +1,20 @@
-import { useEffect, useState } from "react";
-import { Eye, HardDrive, Key, Link2, Search, Table, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Copy, Eye, HardDrive, Key, Link2, Search, Table, Terminal, X, Settings, Wand2, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { api } from "../lib/api";
 import type { DataSource, ERDiagramData, QueryResult, SchemaColumn, SchemaTable } from "../lib/api";
 import { DataTable } from "../components/DataTable";
 import { ErDiagram } from "../components/ErDiagram";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { TableDesignDraft } from "../components/TableDesignDraft";
 
 interface SchemaPageProps {
   datasource: DataSource;
   initialViewTab?: "fields" | "er" | "data";
+  selectedTableName?: string | null;
+  onOpenSql?: (sql: string, title?: string) => void;
 }
 
-export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
+export const SchemaPage = ({ datasource, initialViewTab, selectedTableName, onOpenSql }: SchemaPageProps) => {
   const [tables, setTables] = useState<SchemaTable[]>([]);
   const [selectedTable, setSelectedTable] = useState<SchemaTable | null>(null);
   const [columns, setColumns] = useState<SchemaColumn[]>([]);
@@ -23,6 +26,13 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState<QueryResult | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewSqlCopied, setPreviewSqlCopied] = useState(false);
+
+  // ER diagram controls
+  const [erFocusTable, setErFocusTable] = useState<string | null>(null);
+  const [erViewMode, setErViewMode] = useState<"focus" | "module" | "full">("focus");
+  const [erDepth, setErDepth] = useState<1 | 2>(1);
+  const [erShowInferred, setErShowInferred] = useState(true);
 
   // Test data generation states
   const [showTestDataModal, setShowTestDataModal] = useState(false);
@@ -58,10 +68,73 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
     }
   };
 
+  // AI ER Diagram alteration states
+  const [showAiAlterPanel, setShowAiAlterPanel] = useState(false);
+  const [aiAlterPrompt, setAiAlterPrompt] = useState("");
+  const [aiAlterApiKey, setAiAlterApiKey] = useState("");
+  const [aiAlterApiBase, setAiAlterApiBase] = useState("");
+  const [aiAlterModelName, setAiAlterModelName] = useState("");
+  const [aiAlterGenerating, setAiAlterGenerating] = useState(false);
+  const [aiAlterResultDdl, setAiAlterResultDdl] = useState<string | null>(null);
+  const [showAiAlterLlmConfig, setShowAiAlterLlmConfig] = useState(false);
+  const [aiAlterError, setAiAlterError] = useState<string | null>(null);
+  const [applyingAlter, setApplyingAlter] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+
+  const handleAiAlterSubmit = async () => {
+    if (!aiAlterPrompt.trim()) return;
+    setAiAlterGenerating(true);
+    setAiAlterError(null);
+    setAiAlterResultDdl(null);
+    try {
+      const data = await api.generateSchemaAlteration({
+        datasource_id: datasource.id,
+        instruction: aiAlterPrompt,
+        api_key: aiAlterApiKey || undefined,
+        api_base: aiAlterApiBase || undefined,
+        model: aiAlterModelName || undefined,
+      });
+      setAiAlterResultDdl(data.ddl);
+    } catch (err: any) {
+      setAiAlterError(err.message ?? "AI 批注式修改失败，请检查模型配置。");
+    } finally {
+      setAiAlterGenerating(false);
+    }
+  };
+
+  const handleApplyAlter = async () => {
+    if (!aiAlterResultDdl) return;
+    setApplyingAlter(true);
+    setAiAlterError(null);
+    try {
+      await api.executeTableDesignDDL(datasource.id, aiAlterResultDdl);
+      setApplySuccess(true);
+      setTimeout(() => {
+        void fetchTables();
+        void fetchERDiagram();
+        setAiAlterResultDdl(null);
+        setAiAlterPrompt("");
+        setApplySuccess(false);
+      }, 1500);
+    } catch (err: any) {
+      setAiAlterError(err.message ?? "应用 DDL 变更失败，请检查 SQL 语法或外键冲突。");
+    } finally {
+      setApplyingAlter(false);
+    }
+  };
+
   useEffect(() => {
-    void fetchTables();
+    void fetchTables(selectedTableName ?? undefined);
     void fetchERDiagram();
   }, [datasource.id]);
+
+  useEffect(() => {
+    if (!selectedTableName || tables.length === 0) return;
+    const nextTable = tables.find((table) => table.table_name === selectedTableName);
+    if (nextTable && nextTable.id !== selectedTable?.id) {
+      void handleSelectTable(nextTable);
+    }
+  }, [selectedTableName, tables]);
 
   useEffect(() => {
     if (initialViewTab === "data" && selectedTable) setViewTab("data");
@@ -109,7 +182,7 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
     setPreviewError(null);
     setPreviewData(null);
     try {
-      const result = await api.executeSql(datasource.id, `SELECT * FROM \`${tableName}\` LIMIT 100`);
+      const result = await api.executeSql(datasource.id, buildPreviewSql(tableName));
       setPreviewData(result);
     } catch (error: any) {
       setPreviewError(error.message ?? "预览失败");
@@ -118,8 +191,25 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
     }
   };
 
+  const buildPreviewSql = (tableName: string) => `SELECT * FROM \`${tableName}\` LIMIT 100;`;
+
+  const previewSql = selectedTable ? buildPreviewSql(selectedTable.table_name) : "";
+
+  const handleCopyPreviewSql = async () => {
+    if (!previewSql) return;
+    await navigator.clipboard.writeText(previewSql);
+    setPreviewSqlCopied(true);
+    window.setTimeout(() => setPreviewSqlCopied(false), 1400);
+  };
+
+  const handleOpenPreviewSql = () => {
+    if (!previewSql || !selectedTable) return;
+    onOpenSql?.(previewSql, `Preview ${selectedTable.table_name}`);
+  };
+
   const handleSelectTable = async (table: SchemaTable) => {
     setSelectedTable(table);
+    setErFocusTable(table.table_name);
     setColumnsLoading(true);
     setPreviewData(null);
     setPreviewError(null);
@@ -137,6 +227,99 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
       t.table_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.table_comment.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const safeErData = useMemo<ERDiagramData>(
+    () => ({
+      nodes: Array.isArray(erData?.nodes) ? erData.nodes : [],
+      edges: Array.isArray(erData?.edges) ? erData.edges : [],
+    }),
+    [erData],
+  );
+
+  // Module prefix → display name mapping
+  const MODULE_PREFIXES: [string, string][] = [
+    ["account_", "账号模块"],
+    ["ai_", "AI 智能模块"],
+    ["agent_", "任务模块"],
+    ["auto_", "任务模块"],
+    ["billing_", "计费模块"],
+    ["content_", "内容模块"],
+    ["id_", "身份组织模块"],
+    ["login_", "认证会话模块"],
+    ["media_", "媒体素材模块"],
+    ["monitoring_", "监控模块"],
+    ["nurture_", "客户培育模块"],
+    ["notification_", "通知模块"],
+    ["platform_", "平台账号模块"],
+    ["publish_", "发布模块"],
+    ["rbac_", "权限模块"],
+    ["sales_", "销售模块"],
+    ["token_", "Token 账户模块"],
+    ["user_", "用户模块"],
+    ["video_", "视频模块"],
+    ["xhs_", "小红书模块"],
+    ["audit_", "审计模块"],
+    ["scheduler_", "调度模块"],
+  ];
+
+  const MODULE_ORDER = [
+    "账号模块",
+    "身份组织模块",
+    "认证会话模块",
+    "平台账号模块",
+    "Token 账户模块",
+    "销售模块",
+    "发布模块",
+    "媒体素材模块",
+    "视频模块",
+    "小红书模块",
+    "客户培育模块",
+    "AI 智能模块",
+    "任务模块",
+    "计费模块",
+    "审计模块",
+    "权限模块",
+    "监控模块",
+    "通知模块",
+    "用户模块",
+    "内容模块",
+    "调度模块",
+    "通用模块",
+  ];
+
+  function getModuleTag(tableName: string): string {
+    for (const [prefix, tag] of MODULE_PREFIXES) {
+      if (tableName.startsWith(prefix)) return tag;
+    }
+    return "通用模块";
+  }
+
+  // Group tables by module
+  const groupedTables = useMemo(() => {
+    const groups = new Map<string, SchemaTable[]>();
+    for (const t of filteredTables) {
+      const tag = t.module_tag || getModuleTag(t.table_name);
+      if (!groups.has(tag)) {
+        groups.set(tag, []);
+      }
+      groups.get(tag)!.push(t);
+    }
+    return Array.from(groups.entries())
+      .sort(([left], [right]) => {
+        const leftIndex = MODULE_ORDER.indexOf(left);
+        const rightIndex = MODULE_ORDER.indexOf(right);
+        const normalizedLeft = leftIndex === -1 ? MODULE_ORDER.length : leftIndex;
+        const normalizedRight = rightIndex === -1 ? MODULE_ORDER.length : rightIndex;
+        return normalizedLeft - normalizedRight || left.localeCompare(right, "zh-Hans-CN");
+      })
+      .map(([tag, group]) => ({
+        tag,
+        tables: [...group].sort((a, b) => a.table_name.localeCompare(b.table_name)),
+      }));
+  }, [filteredTables]);
+
+  // Collapse state for module groups
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   return (
     <div
@@ -180,52 +363,77 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
               没有匹配的表
             </div>
           ) : (
-            filteredTables.map((table) => {
-              const isSelected = selectedTable?.id === table.id;
+            groupedTables.map(({ tag, tables: groupTables }) => {
+              const isCollapsed = collapsedGroups.has(tag);
               return (
-                <button
-                  key={table.id}
-                  onClick={() => void handleSelectTable(table)}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "8px 12px",
-                    border: "none",
-                    borderRadius: 5,
-                    background: isSelected ? "var(--bg-active)" : "transparent",
-                    color: isSelected ? "var(--accent-indigo)" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    transition: "background 0.1s",
-                    marginBottom: 1,
-                  }}
-                >
+                <div key={tag} className="er-table-group">
                   <div
-                    style={{
-                      fontSize: "0.84rem",
-                      fontWeight: isSelected ? 600 : 500,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                    className="er-table-group-header"
+                    onClick={() => {
+                      setCollapsedGroups((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(tag)) next.delete(tag);
+                        else next.add(tag);
+                        return next;
+                      });
                     }}
                   >
-                    {table.table_name}
+                    <span style={{ fontSize: "0.6rem", transition: "transform 0.15s", transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)" }}>
+                      ▼
+                    </span>
+                    <span>{tag}</span>
+                    <span className="er-table-group-count">({groupTables.length})</span>
                   </div>
-                  {table.table_comment && (
-                    <div
-                      style={{
-                        fontSize: "0.7rem",
-                        color: "var(--text-muted)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        marginTop: 1,
-                      }}
-                    >
-                      {table.table_comment}
-                    </div>
-                  )}
-                </button>
+                  {!isCollapsed &&
+                    groupTables.map((table) => {
+                      const isSelected = selectedTable?.id === table.id;
+                      return (
+                        <button
+                          key={table.id}
+                          onClick={() => void handleSelectTable(table)}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            padding: "8px 12px 8px 28px",
+                            border: "none",
+                            borderRadius: 5,
+                            background: isSelected ? "var(--bg-active)" : "transparent",
+                            color: isSelected ? "var(--accent-indigo)" : "var(--text-secondary)",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            transition: "background 0.1s",
+                            marginBottom: 1,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "0.84rem",
+                              fontWeight: isSelected ? 600 : 500,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {table.table_name}
+                          </div>
+                          {table.table_comment && (
+                            <div
+                              style={{
+                                fontSize: "0.7rem",
+                                color: "var(--text-muted)",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                marginTop: 1,
+                              }}
+                            >
+                              {table.table_comment}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
               );
             })
           )}
@@ -352,9 +560,534 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
 
           {/* ER Tab */}
           {viewTab === "er" && (
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              {erData && erData.nodes.length > 0 ? (
-                <ErDiagram data={erData} />
+            <div style={{ flex: 1, overflow: "hidden", position: "relative", display: "flex", flexDirection: "column" }}>
+              {safeErData.nodes.length > 0 ? (
+                <>
+                  {/* Toolbar */}
+                  <div className="er-toolbar">
+                    <div className="er-toolbar-group">
+                      <button
+                        className={`pill-tab ${erViewMode === "focus" ? "active" : ""}`}
+                        onClick={() => setErViewMode("focus")}
+                      >
+                        当前表关系
+                      </button>
+                      <button
+                        className={`pill-tab ${erViewMode === "module" ? "active" : ""}`}
+                        onClick={() => setErViewMode("module")}
+                      >
+                        业务模块
+                      </button>
+                      <button
+                        className={`pill-tab ${erViewMode === "full" ? "active" : ""}`}
+                        onClick={() => setErViewMode("full")}
+                      >
+                        全库关系
+                      </button>
+                    </div>
+
+                    {erViewMode === "focus" && (
+                      <>
+                        <div className="er-toolbar-divider" />
+                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>深度</span>
+                        <div className="er-toolbar-group">
+                          <button
+                            className={`pill-tab ${erDepth === 1 ? "active" : ""}`}
+                            onClick={() => setErDepth(1)}
+                          >
+                            1 跳
+                          </button>
+                          <button
+                            className={`pill-tab ${erDepth === 2 ? "active" : ""}`}
+                            onClick={() => setErDepth(2)}
+                          >
+                            2 跳
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="er-toolbar-divider" />
+                    <label
+                      style={{
+                        fontSize: "0.72rem",
+                        color: "var(--text-secondary)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={erShowInferred}
+                        onChange={(e) => setErShowInferred(e.target.checked)}
+                        style={{ cursor: "pointer" }}
+                      />
+                      显示推断关系
+                    </label>
+
+                    <div className="er-legend">
+                      <div className="er-legend-item">
+                        <div className="er-legend-line" style={{ background: "var(--accent-teal)" }} />
+                        <span>真实 FK</span>
+                      </div>
+                      <div className="er-legend-item">
+                        <div
+                          className="er-legend-line"
+                          style={{
+                            background: "#94A3B8",
+                            backgroundImage: "repeating-linear-gradient(90deg, #94A3B8 0 4px, transparent 4px 8px)",
+                          }}
+                        />
+                        <span>推断</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Diagram + optional side panel */}
+                  <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+                    <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+                      <ErrorBoundary title="ER 图渲染异常">
+                        <ErDiagram
+                          data={safeErData}
+                          focusTable={erFocusTable}
+                          depth={erDepth}
+                          viewMode={erViewMode}
+                          showInferred={erShowInferred}
+                          onNodeClick={(tableName) => {
+                            setErFocusTable(tableName);
+                            // Also select in left panel
+                            const found = tables.find((t) => t.table_name === tableName);
+                            if (found) {
+                              setSelectedTable(found);
+                              setColumnsLoading(true);
+                              api.listColumns(found.id).then(setColumns).catch(console.error).finally(() => setColumnsLoading(false));
+                            }
+                          }}
+                        />
+                      </ErrorBoundary>
+
+                      {/* AI Floating Toggle Button */}
+                      <button
+                        onClick={() => setShowAiAlterPanel(!showAiAlterPanel)}
+                        className="hover-lift"
+                        style={{
+                          position: "absolute",
+                          bottom: 16,
+                          right: 16,
+                          background: "linear-gradient(135deg, #2D3B8C, #4A5BC0)",
+                          color: "#FFFFFF",
+                          border: "none",
+                          borderRadius: 30,
+                          padding: "10px 20px",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          boxShadow: "0 8px 16px rgba(45, 59, 140, 0.25)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          cursor: "pointer",
+                          zIndex: 9,
+                        }}
+                      >
+                        <Wand2 size={15} />
+                        {showAiAlterPanel ? "关闭 AI 批注修改" : "🪄 AI 智能改图"}
+                      </button>
+
+                      {/* Glassmorphic Control panel */}
+                      {showAiAlterPanel && (
+                        <div
+                          className="animate-fade-in"
+                          style={{
+                            position: "absolute",
+                            bottom: 70,
+                            right: 16,
+                            width: 320,
+                            background: "rgba(255, 255, 255, 0.82)",
+                            backdropFilter: "blur(14px)",
+                            borderRadius: 12,
+                            border: "1px solid rgba(255, 255, 255, 0.5)",
+                            boxShadow: "0 12px 32px rgba(0, 0, 0, 0.12)",
+                            padding: 16,
+                            zIndex: 9,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 12,
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+                              <Wand2 size={14} style={{ color: "var(--accent-indigo)" }} />
+                              AI 批注式架构修改
+                            </span>
+                            <button
+                              onClick={() => setShowAiAlterLlmConfig(!showAiAlterLlmConfig)}
+                              className="btn-ghost"
+                              style={{ padding: 4 }}
+                            >
+                              <Settings size={13} />
+                            </button>
+                          </div>
+
+                          {showAiAlterLlmConfig && (
+                            <div
+                              style={{
+                                padding: 10,
+                                borderRadius: 6,
+                                background: "rgba(0, 0, 0, 0.03)",
+                                border: "1px solid var(--border-light)",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 8,
+                              }}
+                            >
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 6 }}>
+                                <div>
+                                  <label style={{ fontSize: "0.68rem", color: "var(--text-muted)", display: "block", marginBottom: 2 }}>API Key</label>
+                                  <input
+                                    type="password"
+                                    className="input-field input-field-sm"
+                                    placeholder="留空使用本地启发式引擎"
+                                    value={aiAlterApiKey}
+                                    onChange={(e) => setAiAlterApiKey(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: "0.68rem", color: "var(--text-muted)", display: "block", marginBottom: 2 }}>API Base</label>
+                                  <input
+                                    className="input-field input-field-sm"
+                                    placeholder="https://api.openai.com/v1"
+                                    value={aiAlterApiBase}
+                                    onChange={(e) => setAiAlterApiBase(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: "0.68rem", color: "var(--text-muted)", display: "block", marginBottom: 2 }}>Model</label>
+                                  <input
+                                    className="input-field input-field-sm"
+                                    placeholder="gpt-4o-mini"
+                                    value={aiAlterModelName}
+                                    onChange={(e) => setAiAlterModelName(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <textarea
+                            className="input-field"
+                            placeholder="例如：给 users 表和 products 表增加 deleted_at 软删除字段..."
+                            rows={3}
+                            value={aiAlterPrompt}
+                            onChange={(e) => setAiAlterPrompt(e.target.value)}
+                            style={{ fontSize: "0.82rem", resize: "none" }}
+                          />
+
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            <button
+                              onClick={() => setAiAlterPrompt("所有表加上 deleted_at 字段")}
+                              className="btn-ghost"
+                              style={{ fontSize: "0.72rem", padding: "2px 8px", borderRadius: 4, background: "rgba(0,0,0,0.03)" }}
+                            >
+                              + 软删除
+                            </button>
+                            <button
+                              onClick={() => setAiAlterPrompt("为 orders 表增加 status 状态与索引")}
+                              className="btn-ghost"
+                              style={{ fontSize: "0.72rem", padding: "2px 8px", borderRadius: 4, background: "rgba(0,0,0,0.03)" }}
+                            >
+                              + 状态与索引
+                            </button>
+                            <button
+                              onClick={() => setAiAlterPrompt("为 users 表增加 uuid 唯一码字段")}
+                              className="btn-ghost"
+                              style={{ fontSize: "0.72rem", padding: "2px 8px", borderRadius: 4, background: "rgba(0,0,0,0.03)" }}
+                            >
+                              + UUID字段
+                            </button>
+                          </div>
+
+                          {aiAlterError && (
+                            <div style={{ fontSize: "0.76rem", color: "var(--accent-amber)", display: "flex", gap: 4, alignItems: "flex-start" }}>
+                              <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+                              <span>{aiAlterError}</span>
+                            </div>
+                          )}
+
+                          <button
+                            onClick={handleAiAlterSubmit}
+                            disabled={aiAlterGenerating || !aiAlterPrompt.trim()}
+                            className="btn-primary hover-lift"
+                            style={{
+                              background: aiAlterGenerating ? undefined : "linear-gradient(135deg, #2D3B8C, #4A5BC0)",
+                              fontSize: "0.8rem",
+                              padding: "8px 12px",
+                              width: "100%",
+                            }}
+                          >
+                            {aiAlterGenerating ? (
+                              <>
+                                <Loader2 size={13} className="animate-spin" />
+                                智能计算架构 Diffs...
+                              </>
+                            ) : (
+                              <>
+                                <Wand2 size={13} />
+                                生成架构 DDL 变更
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* DDL Preview & Execution Drawer Overlay */}
+                      {aiAlterResultDdl && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            width: 380,
+                            background: "#FFFFFF",
+                            boxShadow: "-8px 0 32px rgba(0,0,0,0.15)",
+                            borderLeft: "1px solid var(--border-light)",
+                            display: "flex",
+                            flexDirection: "column",
+                            padding: 20,
+                            zIndex: 20,
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                            <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
+                              <CheckCircle2 size={16} style={{ color: "var(--accent-teal)" }} />
+                              审核架构 DDL 变更
+                            </h4>
+                            <button
+                              onClick={() => setAiAlterResultDdl(null)}
+                              className="btn-ghost"
+                              style={{ padding: 4 }}
+                              disabled={applyingAlter}
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+
+                          <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginBottom: 12 }}>
+                            AI 根据您的批注生成了以下数据架构变更 SQL。请在应用前仔细审核。
+                          </div>
+
+                          <pre
+                            style={{
+                              flex: 1,
+                              background: "var(--bg-secondary)",
+                              color: "var(--text-primary)",
+                              padding: 12,
+                              borderRadius: 8,
+                              fontSize: "0.78rem",
+                              fontFamily: "'JetBrains Mono', monospace",
+                              overflow: "auto",
+                              border: "1px solid var(--border-light)",
+                              marginBottom: 16,
+                              whiteSpace: "pre-wrap",
+                            }}
+                          >
+                            {aiAlterResultDdl}
+                          </pre>
+
+                          {aiAlterResultDdl.toLowerCase().includes("drop") && (
+                            <div
+                              style={{
+                                padding: 10,
+                                borderRadius: 6,
+                                background: "rgba(217, 119, 6, 0.08)",
+                                border: "1px solid rgba(217, 119, 6, 0.2)",
+                                color: "var(--accent-amber)",
+                                fontSize: "0.76rem",
+                                display: "flex",
+                                gap: 6,
+                                marginBottom: 16,
+                              }}
+                            >
+                              <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                              <div>
+                                <strong>高危操作警告：</strong>
+                                DDL 中包含 DROP 指令，可能会永久删除表或列，请确保这是您的预期行为！
+                              </div>
+                            </div>
+                          )}
+
+                          {applySuccess ? (
+                            <div
+                              style={{
+                                padding: "12px 16px",
+                                borderRadius: 8,
+                                background: "rgba(13, 115, 119, 0.08)",
+                                border: "1px solid rgba(13, 115, 119, 0.2)",
+                                color: "var(--accent-teal)",
+                                fontSize: "0.82rem",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                marginBottom: 10,
+                              }}
+                            >
+                              <CheckCircle2 size={16} />
+                              <div>架构修改成功！正在重绘 ER 关系图...</div>
+                            </div>
+                          ) : null}
+
+                          <div style={{ display: "flex", gap: 10 }}>
+                            <button
+                              onClick={() => setAiAlterResultDdl(null)}
+                              className="btn-ghost"
+                              style={{ flex: 1 }}
+                              disabled={applyingAlter}
+                            >
+                              取消
+                            </button>
+                            <button
+                              onClick={handleApplyAlter}
+                              disabled={applyingAlter || applySuccess}
+                              className="btn-primary"
+                              style={{
+                                flex: 2,
+                                background: "linear-gradient(135deg, #0D7377, #14B8A6)",
+                              }}
+                            >
+                              {applyingAlter ? (
+                                <>
+                                  <Loader2 size={14} className="animate-spin" />
+                                  执行中...
+                                </>
+                              ) : (
+                                "确认执行变更"
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Relationship side panel (focus mode) */}
+                    {erViewMode === "focus" && erFocusTable && safeErData.nodes.length > 0 && (() => {
+                      const focusNode = safeErData.nodes.find((n) => n.label === erFocusTable);
+                      const filteredEdges = erShowInferred
+                        ? safeErData.edges
+                        : safeErData.edges.filter((e) => e.edge_type === "real");
+                      const relatedEdges = filteredEdges.filter(
+                        (e) => e.source === erFocusTable || e.target === erFocusTable,
+                      );
+                      const realEdges = relatedEdges.filter((e) => e.edge_type === "real");
+                      const inferredEdges = relatedEdges.filter((e) => e.edge_type === "inferred");
+
+                      return (
+                        <div className="er-rel-panel">
+                          <div className="er-rel-panel-header">
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem" }}>
+                              {erFocusTable}
+                            </span>
+                            关系
+                          </div>
+                          <div className="er-rel-panel-body">
+                            {focusNode && (
+                              <>
+                                <div>
+                                  <span className="er-module-badge">{focusNode.module_tag}</span>
+                                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginLeft: 8 }}>
+                                    {focusNode.fields.length} 个字段
+                                  </span>
+                                </div>
+                                {focusNode.comment && (
+                                  <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                                    {focusNode.comment}
+                                  </div>
+                                )}
+                              </>
+                            )}
+
+                            {realEdges.length > 0 && (
+                              <div>
+                                <div className="er-rel-section-title" style={{ marginBottom: 6 }}>
+                                  真实外键 ({realEdges.length})
+                                </div>
+                                {realEdges.map((e) => (
+                                  <div
+                                    key={e.id}
+                                    className="er-rel-item er-rel-item-real"
+                                    onClick={() => {
+                                      const other = e.source === erFocusTable ? e.target : e.source;
+                                      setErFocusTable(other);
+                                      const found = tables.find((t) => t.table_name === other);
+                                      if (found) {
+                                        setSelectedTable(found);
+                                        setColumnsLoading(true);
+                                        api.listColumns(found.id).then(setColumns).catch(console.error).finally(() => setColumnsLoading(false));
+                                      }
+                                    }}
+                                  >
+                                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", fontWeight: 500 }}>
+                                      {e.source === erFocusTable ? (
+                                        <>{e.sourceHandle} → {e.target}.{e.targetHandle}</>
+                                      ) : (
+                                        <>{e.targetHandle} ← {e.source}.{e.sourceHandle}</>
+                                      )}
+                                    </div>
+                                    <div style={{ fontSize: "0.66rem", color: "var(--text-muted)", marginTop: 2 }}>
+                                      {e.source === erFocusTable ? `关联 → ${e.target}` : `← ${e.source} 引用`}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {inferredEdges.length > 0 && (
+                              <div>
+                                <div className="er-rel-section-title" style={{ marginBottom: 6 }}>
+                                  推断关系 ({inferredEdges.length})
+                                </div>
+                                {inferredEdges.map((e) => (
+                                  <div
+                                    key={e.id}
+                                    className="er-rel-item er-rel-item-inferred"
+                                    onClick={() => {
+                                      const other = e.source === erFocusTable ? e.target : e.source;
+                                      setErFocusTable(other);
+                                      const found = tables.find((t) => t.table_name === other);
+                                      if (found) {
+                                        setSelectedTable(found);
+                                        setColumnsLoading(true);
+                                        api.listColumns(found.id).then(setColumns).catch(console.error).finally(() => setColumnsLoading(false));
+                                      }
+                                    }}
+                                  >
+                                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", fontWeight: 500, color: "#64748B" }}>
+                                      {e.source === erFocusTable ? (
+                                        <>{e.sourceHandle} → {e.target}.{e.targetHandle}</>
+                                      ) : (
+                                        <>{e.targetHandle} ← {e.source}.{e.sourceHandle}</>
+                                      )}
+                                    </div>
+                                    <div style={{ fontSize: "0.66rem", color: "var(--text-muted)", marginTop: 2 }}>
+                                      {e.source === erFocusTable ? `可能关联 → ${e.target}` : `← 可能被 ${e.source} 引用`}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {relatedEdges.length === 0 && (
+                              <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                                当前表暂无关联关系
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </>
               ) : (
                 <div className="empty-state" style={{ height: "100%" }}>
                   <HardDrive size={36} className="empty-state-icon" />
@@ -396,6 +1129,39 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
                     style={{
                       padding: "3px 10px",
                       fontSize: "0.76rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontWeight: 600,
+                    }}
+                    onClick={() => void handleCopyPreviewSql()}
+                    disabled={!previewSql}
+                    title={previewSql || "请选择表"}
+                  >
+                    <Copy size={12} />
+                    {previewSqlCopied ? "已复制" : "复制 SQL"}
+                  </button>
+                  <button
+                    className="btn-secondary hover-lift"
+                    style={{
+                      padding: "3px 10px",
+                      fontSize: "0.76rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontWeight: 600,
+                    }}
+                    onClick={handleOpenPreviewSql}
+                    disabled={!previewSql}
+                  >
+                    <Terminal size={12} />
+                    打开到工作台
+                  </button>
+                  <button
+                    className="btn-secondary hover-lift"
+                    style={{
+                      padding: "3px 10px",
+                      fontSize: "0.76rem",
                       color: "var(--accent-indigo)",
                       borderColor: "rgba(74, 91, 192, 0.2)",
                       display: "flex",
@@ -418,7 +1184,12 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
                     ))}
                   </div>
                 ) : previewData && previewData.rows.length > 0 ? (
-                  <DataTable columns={previewData.columns} rows={previewData.rows} />
+                  <DataTable
+                    columns={previewData.columns}
+                    rows={previewData.rows}
+                    tableName={selectedTable?.table_name}
+                    databaseName={datasource.database_name}
+                  />
                 ) : previewData && previewData.rows.length === 0 ? (
                   <div className="empty-state">
                     <div className="empty-state-desc">该表暂无数据</div>
@@ -433,6 +1204,36 @@ export const SchemaPage = ({ datasource, initialViewTab }: SchemaPageProps) => {
                 ) : !previewError ? (
                   <div className="empty-state"><div className="empty-state-desc">切换到「数据预览」查看前 100 行</div></div>
                 ) : null}
+              </div>
+              <div
+                style={{
+                  borderTop: "1px solid var(--border-light)",
+                  background: "var(--bg-secondary)",
+                  padding: "8px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  minHeight: 38,
+                  fontSize: "0.76rem",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <span style={{ fontWeight: 700, color: "var(--text-muted)" }}>当前 SQL</span>
+                <code
+                  className="text-mono"
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: "var(--text-primary)",
+                  }}
+                  title={previewSql}
+                >
+                  {previewSql || "选择表后生成预览 SQL"}
+                </code>
+                <span style={{ color: "var(--text-muted)" }}>可复制或发送到 SQL 工作台继续编辑</span>
               </div>
             </div>
           )}

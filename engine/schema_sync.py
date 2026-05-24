@@ -261,6 +261,230 @@ def _build_real_schema_snapshot(ds: DataSource, datasource_id: str) -> SchemaSna
         engine.dispose()
 
 
+def _build_sqlite_schema_snapshot(ds: DataSource, datasource_id: str) -> SchemaSnapshot:
+    db_path = str(ds.database_name)
+    engine = create_engine(f"sqlite:///{db_path}")
+    try:
+        tables_to_insert: list[SchemaTable] = []
+        columns_to_insert: list[SchemaColumn] = []
+        table_name_to_id: dict[str, str] = {}
+        column_name_to_id: dict[tuple[str, str], str] = {}
+        column_objects: dict[tuple[str, str], SchemaColumn] = {}
+
+        inspector = inspect(engine)
+        table_names = inspector.get_table_names()
+        view_names = inspector.get_view_names()
+
+        for t_name in table_names + view_names:
+            table_id = str(uuid.uuid4())
+            table_name_to_id[t_name] = table_id
+            
+            is_view = t_name in view_names
+            t_type = "VIEW" if is_view else "BASE TABLE"
+            
+            tables_to_insert.append(
+                SchemaTable(
+                    id=table_id,
+                    data_source_id=datasource_id,
+                    table_schema="main",
+                    table_name=t_name,
+                    table_comment=None,
+                    table_type=t_type,
+                    row_count_estimate=0,
+                    engine_name=None,
+                )
+            )
+
+        # Build columns and PKs
+        for t_name in table_names + view_names:
+            table_id = table_name_to_id[t_name]
+            cols = inspector.get_columns(t_name)
+            pk_constraint = inspector.get_pk_constraint(t_name)
+            pk_cols = pk_constraint.get("constrained_columns", []) or []
+
+            for i, col in enumerate(cols):
+                c_name = col["name"]
+                col_id = str(uuid.uuid4())
+                column_name_to_id[(t_name, c_name)] = col_id
+                
+                is_nullable = col.get("nullable", True)
+                col_default = col.get("default")
+                
+                column = SchemaColumn(
+                    id=col_id,
+                    table_id=table_id,
+                    column_name=c_name,
+                    data_type=str(col["type"]).lower(),
+                    column_type=str(col["type"]),
+                    is_nullable=is_nullable,
+                    column_default=str(col_default) if col_default is not None else None,
+                    column_comment=col.get("comment"),
+                    is_primary_key=(c_name in pk_cols),
+                    is_foreign_key=False,
+                    ordinal_position=i + 1,
+                )
+                column_objects[(t_name, c_name)] = column
+                columns_to_insert.append(column)
+
+        # Build foreign keys
+        for t_name in table_names:
+            fkeys = inspector.get_foreign_keys(t_name)
+            for fk in fkeys:
+                constrained_cols = fk.get("constrained_columns", [])
+                referred_table = fk.get("referred_table")
+                referred_cols = fk.get("referred_columns", [])
+                
+                if not referred_table or not constrained_cols or not referred_cols:
+                    continue
+                
+                ref_table_id = table_name_to_id.get(referred_table)
+                if not ref_table_id:
+                    continue
+                
+                for c_col, r_col in zip(constrained_cols, referred_cols):
+                    fk_column = column_objects.get((t_name, c_col))
+                    ref_col_id = column_name_to_id.get((referred_table, r_col))
+                    if fk_column and ref_col_id:
+                        fk_column.is_foreign_key = True
+                        fk_column.foreign_table_id = ref_table_id
+                        fk_column.foreign_column_id = ref_col_id
+
+        return tables_to_insert, columns_to_insert, len(tables_to_insert)
+    finally:
+        engine.dispose()
+
+
+def _build_postgresql_schema_snapshot(ds: DataSource, datasource_id: str) -> SchemaSnapshot:
+    host = str(ds.host)
+    port = int(ds.port)
+    user = str(ds.username)
+    database_name = str(ds.database_name)
+    password = decrypt_password(str(ds.password_ciphertext), str(ds.password_nonce))
+
+    if ds.ssh_enabled:
+        from engine.datasource import get_or_create_tunnel_for_dict
+
+        ds_dict = {
+            "id": ds.id,
+            "host": ds.host,
+            "port": ds.port,
+            "username": ds.username,
+            "database_name": ds.database_name,
+            "ssh_enabled": True,
+            "ssh_host": ds.ssh_host,
+            "ssh_port": ds.ssh_port,
+            "ssh_username": ds.ssh_username,
+            "ssh_password_ciphertext": ds.ssh_password_ciphertext,
+            "ssh_password_nonce": ds.ssh_password_nonce,
+            "ssh_pkey_path": ds.ssh_pkey_path,
+            "ssh_pkey_passphrase_ciphertext": ds.ssh_pkey_passphrase_ciphertext,
+            "ssh_pkey_passphrase_nonce": ds.ssh_pkey_passphrase_nonce,
+        }
+        tunnel = get_or_create_tunnel_for_dict(ds_dict)
+        host = "127.0.0.1"
+        port = tunnel.local_bind_port
+
+    dsn = URL.create(
+        drivername="postgresql+psycopg2",
+        username=user,
+        password=password,
+        host=host,
+        port=port,
+        database=database_name,
+    )
+    engine = create_engine(dsn, connect_args={"connect_timeout": 5})
+
+    try:
+        tables_to_insert: list[SchemaTable] = []
+        columns_to_insert: list[SchemaColumn] = []
+        
+        table_name_to_id: dict[str, str] = {}
+        column_name_to_id: dict[tuple[str, str], str] = {}
+        column_objects: dict[tuple[str, str], SchemaColumn] = {}
+
+        inspector = inspect(engine)
+        schema = inspector.default_schema_name or "public"
+        
+        table_names = inspector.get_table_names(schema=schema)
+        view_names = inspector.get_view_names(schema=schema)
+
+        for t_name in table_names + view_names:
+            table_id = str(uuid.uuid4())
+            table_name_to_id[t_name] = table_id
+            
+            is_view = t_name in view_names
+            t_type = "VIEW" if is_view else "BASE TABLE"
+            
+            tables_to_insert.append(
+                SchemaTable(
+                    id=table_id,
+                    data_source_id=datasource_id,
+                    table_schema=schema,
+                    table_name=t_name,
+                    table_comment=None,
+                    table_type=t_type,
+                    row_count_estimate=0,
+                    engine_name=None,
+                )
+            )
+
+        for t_name in table_names + view_names:
+            table_id = table_name_to_id[t_name]
+            cols = inspector.get_columns(t_name, schema=schema)
+            pk_constraint = inspector.get_pk_constraint(t_name, schema=schema)
+            pk_cols = pk_constraint.get("constrained_columns", []) or []
+
+            for i, col in enumerate(cols):
+                c_name = col["name"]
+                col_id = str(uuid.uuid4())
+                column_name_to_id[(t_name, c_name)] = col_id
+                
+                is_nullable = col.get("nullable", True)
+                col_default = col.get("default")
+                
+                column = SchemaColumn(
+                    id=col_id,
+                    table_id=table_id,
+                    column_name=c_name,
+                    data_type=str(col["type"]).lower(),
+                    column_type=str(col["type"]),
+                    is_nullable=is_nullable,
+                    column_default=str(col_default) if col_default is not None else None,
+                    column_comment=col.get("comment"),
+                    is_primary_key=(c_name in pk_cols),
+                    is_foreign_key=False,
+                    ordinal_position=i + 1,
+                )
+                column_objects[(t_name, c_name)] = column
+                columns_to_insert.append(column)
+
+        for t_name in table_names:
+            fkeys = inspector.get_foreign_keys(t_name, schema=schema)
+            for fk in fkeys:
+                constrained_cols = fk.get("constrained_columns", [])
+                referred_table = fk.get("referred_table")
+                referred_cols = fk.get("referred_columns", [])
+                
+                if not referred_table or not constrained_cols or not referred_cols:
+                    continue
+                
+                ref_table_id = table_name_to_id.get(referred_table)
+                if not ref_table_id:
+                    continue
+                
+                for c_col, r_col in zip(constrained_cols, referred_cols):
+                    fk_column = column_objects.get((t_name, c_col))
+                    ref_col_id = column_name_to_id.get((referred_table, r_col))
+                    if fk_column and ref_col_id:
+                        fk_column.is_foreign_key = True
+                        fk_column.foreign_table_id = ref_table_id
+                        fk_column.foreign_column_id = ref_col_id
+
+        return tables_to_insert, columns_to_insert, len(tables_to_insert)
+    finally:
+        engine.dispose()
+
+
 def _replace_schema_snapshot(
     db: Session,
     datasource_id: str,
@@ -290,6 +514,10 @@ def sync_schema(db: Session, datasource_id: str) -> dict[str, Any]:
     try:
         if is_demo_db(str(ds.host), str(ds.database_name)):
             tables_to_insert, columns_to_insert, tables_synced = _build_demo_schema_snapshot(ds, datasource_id)
+        elif ds.db_type == "sqlite":
+            tables_to_insert, columns_to_insert, tables_synced = _build_sqlite_schema_snapshot(ds, datasource_id)
+        elif ds.db_type == "postgresql":
+            tables_to_insert, columns_to_insert, tables_synced = _build_postgresql_schema_snapshot(ds, datasource_id)
         else:
             tables_to_insert, columns_to_insert, tables_synced = _build_real_schema_snapshot(ds, datasource_id)
 
@@ -324,53 +552,156 @@ def sync_schema(db: Session, datasource_id: str) -> dict[str, Any]:
         raise ValueError(f"Schema sync failed: {str(e)}")
 
 
+MODULE_PREFIX_RULES: list[tuple[str, str]] = [
+    ("account_", "账号模块"),
+    ("ai_", "AI 智能模块"),
+    ("agent_", "任务模块"),
+    ("auto_", "任务模块"),
+    ("billing_", "计费模块"),
+    ("content_", "内容模块"),
+    ("id_", "身份组织模块"),
+    ("login_", "认证会话模块"),
+    ("media_", "媒体素材模块"),
+    ("monitoring_", "监控模块"),
+    ("nurture_", "客户培育模块"),
+    ("notification_", "通知模块"),
+    ("platform_", "平台账号模块"),
+    ("publish_", "发布模块"),
+    ("rbac_", "权限模块"),
+    ("sales_", "销售模块"),
+    ("token_", "Token 账户模块"),
+    ("user_", "用户模块"),
+    ("video_", "视频模块"),
+    ("xhs_", "小红书模块"),
+    ("audit_", "审计模块"),
+    ("scheduler_", "调度模块"),
+]
+
+
+def _guess_module_tag(table_name: str) -> str:
+    for prefix, tag in MODULE_PREFIX_RULES:
+        if table_name.startswith(prefix):
+            return tag
+    return "通用模块"
+
+
+def _resolve_inferred_target(col_name: str, table_names: set[str]) -> str | None:
+    """Try to match a column name like 'user_id' to an existing table like 'users'."""
+    if not col_name.endswith("_id"):
+        return None
+    base = col_name[:-3]
+    candidates = [
+        base,
+        base + "s",
+        base + "es",
+        base.rstrip("s") if base.endswith("s") else None,
+    ]
+    for candidate in candidates:
+        if candidate and candidate in table_names:
+            return candidate
+    return None
+
+
 def build_er_diagram_data(db: Session, datasource_id: str) -> dict[str, Any]:
     """
-    Constructs ER diagram node and link data based on synchronized tables & columns in SQLite
-    for rendering with React Flow or simple visualizations.
+    Constructs ER diagram node and link data based on synchronized tables & columns in SQLite.
+
+    Returns nodes with module_tag and edges with edge_type ("real" | "inferred").
+    Inferred edges are guessed from column names ending in _id that match a known table.
     """
     tables = db.query(SchemaTable).filter(SchemaTable.data_source_id == datasource_id).all()
 
     nodes = []
     edges = []
 
-    table_id_to_name = {t.id: t.table_name for t in tables}
+    table_id_to_name = {str(t.id): str(t.table_name) for t in tables}
+    table_name_set = {str(t.table_name) for t in tables}
+
+    # Track which (source, target) pairs already have real FK edges to avoid duplicates
+    real_fk_pairs: set[tuple[str, str]] = set()
 
     for t in tables:
+        table_name = str(t.table_name)
         fields = []
+        fk_source_cols: list[str] = []
+
         for col in t.columns:
+            column_name = str(col.column_name)
             fields.append(
                 {
-                    "name": col.column_name,
-                    "type": col.column_type,
+                    "name": column_name,
+                    "type": str(col.column_type or ""),
                     "is_pk": bool(col.is_primary_key),
                     "is_fk": bool(col.is_foreign_key),
-                    "comment": col.column_comment,
+                    "comment": str(col.column_comment or ""),
                 }
             )
 
             if col.is_foreign_key and col.foreign_table_id:
-                target_table_name = table_id_to_name.get(col.foreign_table_id)
+                target_table_name = table_id_to_name.get(str(col.foreign_table_id))
                 target_col = db.query(SchemaColumn).filter(SchemaColumn.id == col.foreign_column_id).first()
-                target_col_name = target_col.column_name if target_col else "id"
+                target_col_name = str(target_col.column_name) if target_col else "id"
 
                 if target_table_name:
+                    real_fk_pairs.add((table_name, target_table_name))
+                    fk_source_cols.append(column_name)
                     edges.append(
                         {
-                            "id": f"fk-{t.table_name}-{col.column_name}__to__{target_table_name}-{target_col_name}",
-                            "source": t.table_name,
-                            "sourceHandle": col.column_name,
+                            "id": f"fk-{table_name}-{column_name}__to__{target_table_name}-{target_col_name}",
+                            "source": table_name,
+                            "sourceHandle": column_name,
                             "target": target_table_name,
                             "targetHandle": target_col_name,
                             "label": "FK",
+                            "edge_type": "real",
                         }
                     )
 
+        # Inferred FK edges: columns ending in _id, not already real FK, matching a known table
+        for col in t.columns:
+            column_name = str(col.column_name)
+            if col.is_foreign_key and col.foreign_table_id:
+                continue  # already handled as real FK
+            if not column_name.endswith("_id"):
+                continue
+
+            target_table_name = _resolve_inferred_target(column_name, table_name_set)
+            if not target_table_name or target_table_name == table_name:
+                continue
+            if (table_name, target_table_name) in real_fk_pairs:
+                continue
+
+            target_table = next((x for x in tables if str(x.table_name) == target_table_name), None)
+            target_pk_col = "id"
+            if target_table:
+                # Prefer an actual PK column name
+                for tc in target_table.columns:
+                    if tc.is_primary_key:
+                        target_pk_col = str(tc.column_name)
+                        break
+
+            edge_id = f"inf-{table_name}-{column_name}__to__{target_table_name}-{target_pk_col}"
+            if any(e["id"] == edge_id for e in edges):
+                continue
+
+            edges.append(
+                {
+                    "id": edge_id,
+                    "source": table_name,
+                    "sourceHandle": column_name,
+                    "target": target_table_name,
+                    "targetHandle": target_pk_col,
+                    "label": "推断",
+                    "edge_type": "inferred",
+                }
+            )
+
         nodes.append(
             {
-                "id": t.table_name,
-                "label": t.table_name,
+                "id": table_name,
+                "label": table_name,
                 "comment": t.table_comment or "",
+                "module_tag": _guess_module_tag(table_name),
                 "fields": fields,
             }
         )

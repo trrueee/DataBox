@@ -255,7 +255,7 @@ def generate_create_table_ddl(design: Mapping[str, Any]) -> dict[str, Any]:
 def execute_table_design_ddl(db: Any, datasource_id: str, ddl: str) -> dict[str, Any]:
     from engine.models import DataSource, QueryHistory
     from engine.datasource import get_mysql_connection_params, is_demo_db
-    from engine.executor import get_mysql_pool
+    from engine.executor import _ping_mysql_connection, get_mysql_pool
     from engine.schema_sync import sync_schema
     from engine.demo_db_init import init_demo_database
     import sqlite3
@@ -316,6 +316,7 @@ def execute_table_design_ddl(db: Any, datasource_id: str, ddl: str) -> dict[str,
             pool = get_mysql_pool(datasource_id, conn_params)
             conn_proxy: Any = pool.connect()
             try:
+                _ping_mysql_connection(conn_proxy)
                 with conn_proxy.cursor() as cursor:
                     cursor.execute(clean_ddl)
                 conn_proxy.commit()
@@ -359,4 +360,3 @@ def execute_table_design_ddl(db: Any, datasource_id: str, ddl: str) -> dict[str,
         "syncResult": sync_result,
         "message": "表结构执行成功！已自动完成元数据同步。"
     }
-

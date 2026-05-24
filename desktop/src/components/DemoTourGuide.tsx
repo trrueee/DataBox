@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, ChevronDown, ChevronUp, CheckCircle, ArrowRight, Play, Check, AlertCircle } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp, ArrowRight, Play, Check, AlertCircle } from "lucide-react";
 import type { DataSource, Project, SchemaTable } from "../lib/api";
 
 interface DemoTourGuideProps {
@@ -16,7 +16,6 @@ interface DemoTourGuideProps {
 export const DemoTourGuide = ({
   activeTab,
   setActiveTab,
-  activeProject,
   projects,
   activeDataSource,
   datasources,

@@ -203,6 +203,7 @@ def test_list_tables(client, db_session) -> None:
     assert any(t["table_name"] == "users" for t in tables)
     assert all("id" in t for t in tables)
     assert all("columns_count" in t for t in tables)
+    assert all("module_tag" in t for t in tables)
 
 
 def test_list_columns(client, db_session) -> None:

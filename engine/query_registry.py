@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 import pymysql
 
-BackendKind = Literal["sqlite", "mysql"]
+BackendKind = Literal["sqlite", "mysql", "postgresql"]
 
 
 @dataclass
@@ -18,6 +18,7 @@ class RunningQuery:
     sqlite_connection: sqlite3.Connection | None = None
     mysql_thread_id: int | None = None
     mysql_params: dict[str, Any] | None = None
+    postgres_connection: Any = None
     cancel_requested: bool = False
 
 
@@ -39,6 +40,22 @@ class QueryRegistry:
                 datasource_id=datasource_id,
                 backend="sqlite",
                 sqlite_connection=connection,
+                cancel_requested=existing.cancel_requested if existing else False,
+            )
+
+    def register_postgres(
+        self,
+        execution_id: str,
+        datasource_id: str,
+        connection: Any,
+    ) -> None:
+        with self._lock:
+            existing = self._queries.get(execution_id)
+            self._queries[execution_id] = RunningQuery(
+                execution_id=execution_id,
+                datasource_id=datasource_id,
+                backend="postgresql",
+                postgres_connection=connection,
                 cancel_requested=existing.cancel_requested if existing else False,
             )
 
@@ -91,6 +108,7 @@ class QueryRegistry:
             sqlite_connection = query.sqlite_connection
             mysql_thread_id = query.mysql_thread_id
             mysql_params = dict(query.mysql_params or {})
+            postgres_connection = query.postgres_connection
 
         if backend == "sqlite" and sqlite_connection is not None:
             sqlite_connection.interrupt()
@@ -100,6 +118,23 @@ class QueryRegistry:
                 "executionId": execution_id,
                 "message": "SQLite query interruption requested.",
             }
+
+        if backend == "postgresql" and postgres_connection is not None:
+            try:
+                postgres_connection.cancel()
+                return {
+                    "success": True,
+                    "cancelled": True,
+                    "executionId": execution_id,
+                    "message": "PostgreSQL query cancellation requested.",
+                }
+            except Exception as exc:
+                return {
+                    "success": False,
+                    "cancelled": False,
+                    "executionId": execution_id,
+                    "message": f"Failed to issue PostgreSQL cancellation: {exc}",
+                }
 
         if backend == "mysql" and mysql_thread_id is not None and mysql_params:
             try:

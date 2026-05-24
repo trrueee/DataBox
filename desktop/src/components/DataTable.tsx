@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { Check, Copy, X } from "lucide-react";
+import { Check, Copy, Database, EyeOff, FileJson, ListPlus, MoreVertical, X } from "lucide-react";
+import { buildInsertSql, buildRowJson, normalizeCopyValue } from "../lib/sqlCopy";
+import { useDataTableView } from "../hooks/useDataTableView";
 
 interface DataTableProps {
   columns: string[];
   rows: Record<string, unknown>[];
   numericColumns?: string[];
   maxHeight?: string;
+  tableName?: string;
+  databaseName?: string;
 }
 
 function isNumeric(val: unknown): boolean {
@@ -126,8 +130,25 @@ const JsonTree: React.FC<{ data: any; depth?: number }> = ({ data, depth = 0 }) 
   );
 };
 
-export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTableProps) {
+export function DataTable({ columns, rows, numericColumns, maxHeight, tableName, databaseName }: DataTableProps) {
   const numericSet = new Set(numericColumns ?? []);
+  
+  const {
+    visibleColumns,
+    visibleRows,
+    sortState,
+    setSortState,
+    filters,
+    setFilter,
+    clearFilter,
+    clearAllFilters,
+    hiddenColumns,
+    toggleHideColumn,
+    showAllColumns,
+  } = useDataTableView({ columns, rows });
+
+  const [toast, setToast] = useState<string | null>(null);
+  const [openColumnMenu, setOpenColumnMenu] = useState<string | null>(null);
   
   // Persistent inspector Modal state
   const [activeInspect, setActiveInspect] = useState<{
@@ -152,11 +173,58 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
     setCopied(false);
   };
 
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast((current) => (current === message ? null : current)), 1500);
+  };
+
+  const copyText = async (text: string, message: string) => {
+    await navigator.clipboard.writeText(text);
+    showToast(message);
+  };
+
   const handleCopyValue = async () => {
     if (!activeInspect) return;
-    await navigator.clipboard.writeText(activeInspect.val);
+    await copyText(activeInspect.val, "已复制完整内容");
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleCopyCell = async (value: unknown) => {
+    await copyText(normalizeCopyValue(value), "已复制单元格");
+  };
+
+  const handleCopyRowJson = async (row: Record<string, unknown>) => {
+    await copyText(buildRowJson(columns, row), "已复制行 JSON");
+  };
+
+  const handleCopyInsert = async (row: Record<string, unknown>) => {
+    if (!tableName) {
+      showToast("缺少表名，无法生成 INSERT");
+      return;
+    }
+    await copyText(buildInsertSql(tableName, columns, row, databaseName), "已复制 INSERT SQL");
+  };
+
+  const handleCopyColumnName = async (col: string) => {
+    await copyText(col, "已复制列名");
+    setOpenColumnMenu(null);
+  };
+
+  const handleCopySelectColumn = async (col: string) => {
+    if (!tableName) {
+      showToast("缺少表名，无法生成 SELECT");
+      return;
+    }
+    const qualifiedTable = databaseName ? `\`${databaseName}\`.\`${tableName}\`` : `\`${tableName}\``;
+    await copyText(`SELECT \`${col}\`\nFROM ${qualifiedTable}\nLIMIT 100;`, "已复制 SELECT 当前列");
+    setOpenColumnMenu(null);
+  };
+
+  const handleHideColumn = (col: string) => {
+    toggleHideColumn(col);
+    setOpenColumnMenu(null);
+    showToast(`已隐藏列 ${col}`);
   };
 
   const handleMouseEnterCell = (col: string, val: unknown, e: React.MouseEvent<HTMLTableCellElement>) => {
@@ -180,6 +248,224 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
 
   return (
     <div className="select-text" style={{ overflow: "auto", maxHeight: maxHeight ?? "100%", position: "relative", userSelect: "text" }}>
+      {toast && (
+        <div
+          style={{
+            position: "sticky",
+            top: 8,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "fit-content",
+            zIndex: 80,
+            background: "rgba(13, 115, 119, 0.94)",
+            color: "#fff",
+            borderRadius: 999,
+            padding: "6px 12px",
+            fontSize: "0.76rem",
+            fontWeight: 700,
+            boxShadow: "var(--shadow-md)",
+          }}
+        >
+          {toast}
+        </div>
+      )}
+
+      {/* 📊 TABLE VIEWPORT METADATA & ACTIONS DASHBOARD */}
+      {(Object.keys(filters).length > 0 || hiddenColumns.size > 0 || sortState) ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "8px 16px",
+            borderBottom: "1px solid var(--border-medium)",
+            background: "var(--bg-secondary)",
+            fontSize: "0.76rem",
+            color: "var(--text-secondary)",
+            flexWrap: "wrap",
+          }}
+        >
+          {/* Left section: Filter & Sort Indicators */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            {Object.keys(filters).length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontWeight: 600, color: "var(--accent-indigo)" }}>已启用筛选:</span>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {Object.keys(filters).map((col) => {
+                    const filter = filters[col];
+                    let text = `${col}`;
+                    if (filter.mode === "is_null") text += " 为 NULL";
+                    else if (filter.mode === "is_not_null") text += " 非 NULL";
+                    else if (filter.mode === "contains") text += ` 包含 "${filter.value}"`;
+
+                    return (
+                      <span
+                        key={col}
+                        style={{
+                          background: "var(--bg-surface)",
+                          border: "1px solid var(--border-light)",
+                          borderRadius: 4,
+                          padding: "2px 6px",
+                          fontSize: "0.7rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        {text}
+                        <button
+                          onClick={() => clearFilter(col)}
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                            color: "var(--text-muted)",
+                            cursor: "pointer",
+                            padding: "0 2px",
+                            fontWeight: "bold",
+                          }}
+                          title="清除该列筛选"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {sortState && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontWeight: 600, color: "var(--accent-indigo)" }}>已排序:</span>
+                <span
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border-light)",
+                    borderRadius: 4,
+                    padding: "2px 6px",
+                    fontSize: "0.7rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  {sortState.column} {sortState.direction === "asc" ? "升序 ▲" : "降序 ▼"}
+                  <button
+                    onClick={() => setSortState(null)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                      padding: "0 2px",
+                      fontWeight: "bold",
+                    }}
+                    title="取消排序"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+            )}
+
+            {hiddenColumns.size > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontWeight: 600, color: "var(--text-muted)" }}>隐藏列:</span>
+                <span
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border-light)",
+                    borderRadius: 4,
+                    padding: "2px 6px",
+                    fontSize: "0.7rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  已隐藏 {hiddenColumns.size} 列
+                  <button
+                    onClick={showAllColumns}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                      padding: "0 2px",
+                      fontWeight: "bold",
+                    }}
+                    title="显示所有列"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Right section: Count & Warning */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: "0.74rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
+              显示 <strong>{visibleRows.length}</strong> / {rows.length} 行
+              <span
+                style={{
+                  background: "rgba(245, 158, 11, 0.12)",
+                  color: "var(--accent-amber)",
+                  border: "1px solid rgba(245, 158, 11, 0.3)",
+                  borderRadius: 4,
+                  padding: "1px 5px",
+                  fontSize: "0.68rem",
+                  fontWeight: 500,
+                }}
+                title="所有排序和筛选均仅在本地已加载的预览数据中执行，不影响数据库源数据。"
+              >
+                ⚠️ 当前仅筛选已加载的预览结果
+              </span>
+            </span>
+
+            <button
+              className="btn-ghost"
+              onClick={() => {
+                clearAllFilters();
+                showAllColumns();
+                setSortState(null);
+              }}
+              style={{
+                padding: "3px 10px",
+                fontSize: "0.72rem",
+                color: "var(--accent-indigo)",
+                fontWeight: 600,
+                border: "1px solid var(--border-light)",
+                borderRadius: 4,
+                background: "var(--bg-surface)",
+              }}
+            >
+              清除所有过滤/排序
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Default small indicator when no filters are active */
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "6px 16px",
+            borderBottom: "1px solid var(--border-light)",
+            background: "var(--bg-secondary)",
+            fontSize: "0.74rem",
+            color: "var(--text-muted)",
+          }}
+        >
+          <span>共 {rows.length} 行数据</span>
+          <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", opacity: 0.8 }}>
+            💡 可点击列头右侧菜单进行本地排序/筛选
+          </span>
+        </div>
+      )}
+
       {/* Dynamic CSS injection for anti-串行 hover row highlights and crisp borders */}
       <style>{`
         .data-table-premium {
@@ -222,22 +508,261 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
           user-select: none;
           border-right: 2px solid var(--border-medium) !important;
         }
+        .row-actions-cell {
+          background: var(--bg-secondary) !important;
+          border-right: 2px solid var(--border-medium) !important;
+          white-space: nowrap;
+          width: 74px;
+        }
+        .data-table-menu-item {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          border: none;
+          border-radius: 6px;
+          background: transparent;
+          color: var(--text-secondary);
+          cursor: pointer;
+          font-size: 0.74rem;
+          padding: 7px 8px;
+          text-align: left;
+        }
+        .data-table-menu-item:hover {
+          background: var(--bg-active);
+          color: var(--accent-indigo);
+        }
       `}</style>
 
       <table className="data-table-premium">
         <thead>
           <tr>
             <th className="row-counter-cell">#</th>
-            {columns.map((col) => (
-              <th key={col}>{col}</th>
-            ))}
+            <th className="row-actions-cell">操作</th>
+            {visibleColumns.map((col) => {
+              const currentFilter = filters[col];
+              const filterVal = currentFilter?.mode === "contains" ? currentFilter.value || "" : "";
+
+              return (
+                <th key={col}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      {col}
+                      {sortState?.column === col && (
+                        <span style={{ color: "var(--accent-indigo)", fontSize: "0.75rem", flexShrink: 0, fontWeight: "bold" }}>
+                          {sortState.direction === "asc" ? "▲" : "▼"}
+                        </span>
+                      )}
+                      {filters[col] && (
+                        <span
+                          title="该列已启用筛选"
+                          style={{
+                            color: "var(--accent-teal)",
+                            fontSize: "0.8rem",
+                            lineHeight: 1,
+                            flexShrink: 0,
+                          }}
+                        >
+                          ●
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      className="btn-ghost"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setOpenColumnMenu((current) => (current === col ? null : col));
+                      }}
+                      style={{
+                        padding: 2,
+                        flexShrink: 0,
+                        background: openColumnMenu === col ? "var(--bg-active)" : undefined,
+                      }}
+                      title="列操作"
+                    >
+                      <MoreVertical size={12} />
+                    </button>
+                    {openColumnMenu === col && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 24,
+                          right: 0,
+                          minWidth: 175,
+                          background: "var(--bg-surface)",
+                          border: "1px solid var(--border-light)",
+                          borderRadius: 8,
+                          boxShadow: "var(--shadow-lg)",
+                          padding: 6,
+                          zIndex: 40,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* 1. Sort Section */}
+                        <div style={{ borderBottom: "1px solid var(--border-light)", paddingBottom: 4, marginBottom: 4 }}>
+                          <button
+                            className="data-table-menu-item"
+                            onClick={() => {
+                              setSortState({ column: col, direction: "asc" });
+                              setOpenColumnMenu(null);
+                            }}
+                            style={{
+                              fontWeight: sortState?.column === col && sortState.direction === "asc" ? "bold" : "normal",
+                              color: sortState?.column === col && sortState.direction === "asc" ? "var(--accent-indigo)" : undefined,
+                            }}
+                          >
+                            <span style={{ fontSize: "10px", width: 14 }}>▲</span> 升序排序
+                          </button>
+                          <button
+                            className="data-table-menu-item"
+                            onClick={() => {
+                              setSortState({ column: col, direction: "desc" });
+                              setOpenColumnMenu(null);
+                            }}
+                            style={{
+                              fontWeight: sortState?.column === col && sortState.direction === "desc" ? "bold" : "normal",
+                              color: sortState?.column === col && sortState.direction === "desc" ? "var(--accent-indigo)" : undefined,
+                            }}
+                          >
+                            <span style={{ fontSize: "10px", width: 14 }}>▼</span> 降序排序
+                          </button>
+                          {sortState?.column === col && (
+                            <button
+                              className="data-table-menu-item"
+                              onClick={() => {
+                                setSortState(null);
+                                setOpenColumnMenu(null);
+                              }}
+                              style={{ color: "var(--text-muted)" }}
+                            >
+                              <span style={{ fontSize: "12px", width: 14 }}>✕</span> 取消排序
+                            </button>
+                          )}
+                        </div>
+
+                        {/* 2. Filter Section */}
+                        <div style={{ borderBottom: "1px solid var(--border-light)", paddingBottom: 4, marginBottom: 4 }}>
+                          {/* Search Input Box */}
+                          <div style={{ padding: "2px 4px 6px 4px" }}>
+                            <input
+                              type="text"
+                              value={filterVal}
+                              placeholder="搜索当前列值..."
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  setFilter(col, "contains", val);
+                                } else {
+                                  clearFilter(col);
+                                }
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: "4px 8px",
+                                fontSize: "0.72rem",
+                                borderRadius: 4,
+                                border: "1px solid var(--border-medium)",
+                                background: "var(--bg-surface)",
+                                color: "var(--text-primary)",
+                                outline: "none",
+                              }}
+                            />
+                          </div>
+
+                          <button
+                            className="data-table-menu-item"
+                            onClick={() => {
+                              setFilter(col, "is_null");
+                              setOpenColumnMenu(null);
+                            }}
+                            style={{
+                              fontWeight: currentFilter?.mode === "is_null" ? "bold" : "normal",
+                              color: currentFilter?.mode === "is_null" ? "var(--accent-indigo)" : undefined,
+                            }}
+                          >
+                            <span style={{ width: 14 }}>◇</span> 只看 NULL
+                          </button>
+                          <button
+                            className="data-table-menu-item"
+                            onClick={() => {
+                              setFilter(col, "is_not_null");
+                              setOpenColumnMenu(null);
+                            }}
+                            style={{
+                              fontWeight: currentFilter?.mode === "is_not_null" ? "bold" : "normal",
+                              color: currentFilter?.mode === "is_not_null" ? "var(--accent-indigo)" : undefined,
+                            }}
+                          >
+                            <span style={{ width: 14 }}>◆</span> 只看非 NULL
+                          </button>
+                          {currentFilter && (
+                            <button
+                              className="data-table-menu-item"
+                              onClick={() => {
+                                clearFilter(col);
+                                setOpenColumnMenu(null);
+                              }}
+                              style={{ color: "var(--text-muted)" }}
+                            >
+                              <span style={{ fontSize: "12px", width: 14 }}>✕</span> 清除筛选
+                            </button>
+                          )}
+                        </div>
+
+                        {/* 3. Base Actions Section */}
+                        <div>
+                          <button className="data-table-menu-item" onClick={() => void handleCopyColumnName(col)}>
+                            <Copy size={12} /> 复制列名
+                          </button>
+                          <button className="data-table-menu-item" onClick={() => void handleCopySelectColumn(col)}>
+                            <Database size={12} /> 复制 SELECT 当前列
+                          </button>
+                          <button className="data-table-menu-item" onClick={() => handleHideColumn(col)}>
+                            <EyeOff size={12} /> 隐藏列
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, ri) => (
+          {visibleRows.map((row, ri) => (
             <tr key={ri}>
               <td className="row-counter-cell">{ri + 1}</td>
-              {columns.map((col) => {
+              <td className="row-actions-cell">
+                <button
+                  className="btn-ghost"
+                  style={{ padding: "2px 5px" }}
+                  title="复制行 JSON"
+                  onClick={() => void handleCopyRowJson(row)}
+                >
+                  <FileJson size={12} />
+                </button>
+                <button
+                  className="btn-ghost"
+                  style={{ padding: "2px 5px" }}
+                  title="复制为 INSERT"
+                  onClick={() => void handleCopyInsert(row)}
+                  disabled={!tableName}
+                >
+                  <ListPlus size={12} />
+                </button>
+              </td>
+              {visibleColumns.map((col) => {
                 const val = row[col];
                 const isNum = numericSet.has(col) || isNumeric(val);
 
@@ -246,6 +771,9 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
                     <td
                       key={`${ri}-${col}`}
                       className="cell-null"
+                      tabIndex={0}
+                      title="点击复制单元格"
+                      onClick={() => void handleCopyCell(val)}
                       onMouseEnter={(e) => handleMouseEnterCell(col, "NULL", e)}
                       onMouseLeave={() => setHoveredCell(null)}
                     >
@@ -261,6 +789,9 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
                     <td
                       key={`${ri}-${col}`}
                       style={{ whiteSpace: "nowrap" }}
+                      tabIndex={0}
+                      title="点击复制单元格"
+                      onClick={() => void handleCopyCell(val)}
                       onMouseEnter={(e) => handleMouseEnterCell(col, val, e)}
                       onMouseLeave={() => setHoveredCell(null)}
                     >
@@ -292,7 +823,10 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
                           {String(val)}
                         </span>
                         <button
-                          onClick={() => handleOpenInspect(col, String(val), true)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenInspect(col, String(val), true);
+                          }}
                           style={{
                             border: "none",
                             background: "rgba(74, 91, 192, 0.08)",
@@ -317,6 +851,9 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
                   return (
                     <td
                       key={`${ri}-${col}`}
+                      tabIndex={0}
+                      title="点击复制单元格"
+                      onClick={() => void handleCopyCell(val)}
                       onMouseEnter={(e) => handleMouseEnterCell(col, val, e)}
                       onMouseLeave={() => setHoveredCell(null)}
                     >
@@ -335,7 +872,10 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
                           {valStr}
                         </span>
                         <button
-                          onClick={() => handleOpenInspect(col, valStr, false)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenInspect(col, valStr, false);
+                          }}
                           style={{
                             border: "none",
                             background: "rgba(100, 116, 139, 0.08)",
@@ -358,6 +898,9 @@ export function DataTable({ columns, rows, numericColumns, maxHeight }: DataTabl
                   <td
                     key={`${ri}-${col}`}
                     className={isNum ? "cell-number" : undefined}
+                    tabIndex={0}
+                    title="点击复制单元格"
+                    onClick={() => void handleCopyCell(val)}
                     onMouseEnter={(e) => handleMouseEnterCell(col, val, e)}
                     onMouseLeave={() => setHoveredCell(null)}
                   >

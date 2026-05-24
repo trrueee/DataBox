@@ -23,6 +23,12 @@ import { DemoTourGuide } from "./components/DemoTourGuide";
 
 type AppTab = "environments" | "datasources" | "backups" | "schema" | "query" | "dashboard";
 
+type QueryDraft = {
+  sql: string;
+  title?: string;
+  nonce: number;
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>("datasources");
   const [projects, setProjects] = useState<Project[]>([]);
@@ -36,6 +42,7 @@ export default function App() {
   const [objectsOpen, setObjectsOpen] = useState(true);
   const [selectedTableName, setSelectedTableName] = useState<string | null>(null);
   const [schemaInitialView, setSchemaInitialView] = useState<"fields" | "er" | "data" | null>(null);
+  const [queryDraft, setQueryDraft] = useState<QueryDraft | null>(null);
 
   useEffect(() => {
     void refreshProjects();
@@ -125,6 +132,11 @@ export default function App() {
     setSelectedTableName(tableName);
     setActiveTab("schema");
     setSchemaInitialView(showPreview ? "data" : null);
+  };
+
+  const handleOpenSqlWorkbench = (sql: string, title?: string) => {
+    setQueryDraft({ sql, title, nonce: Date.now() });
+    setActiveTab("query");
   };
 
   const workspaceTitle =
@@ -654,10 +666,12 @@ export default function App() {
             <SchemaPage
               datasource={activeDataSource}
               initialViewTab={schemaInitialView ?? undefined}
+              selectedTableName={selectedTableName}
+              onOpenSql={handleOpenSqlWorkbench}
             />
           )}
           {activeTab === "query" && activeDataSource && (
-            <QueryPage datasource={activeDataSource} />
+            <QueryPage datasource={activeDataSource} initialDraft={queryDraft} />
           )}
           {activeTab === "dashboard" && activeDataSource && (
             <DashboardPage datasource={activeDataSource} />

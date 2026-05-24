@@ -2,7 +2,7 @@
 import uuid
 import pytest
 import engine.schema_sync as schema_sync_module
-from engine.schema_sync import sync_schema, build_er_diagram_data
+from engine.schema_sync import _guess_module_tag, sync_schema, build_er_diagram_data
 from engine.models import DataSource, SchemaTable, SchemaColumn
 
 
@@ -13,6 +13,15 @@ def test_sync_tables(db_session, demo_datasource) -> None:
         SchemaTable.data_source_id == demo_datasource.id
     ).all()
     assert len(tables) == 20
+
+
+def test_guess_module_tag_for_product_workbench_prefixes() -> None:
+    assert _guess_module_tag("account_cookie_versions") == "账号模块"
+    assert _guess_module_tag("token_accounts") == "Token 账户模块"
+    assert _guess_module_tag("sales_messages") == "销售模块"
+    assert _guess_module_tag("video_watch_records") == "视频模块"
+    assert _guess_module_tag("xhs_notes") == "小红书模块"
+    assert _guess_module_tag("unknown_table") == "通用模块"
 
 
 def test_sync_columns(db_session, demo_datasource) -> None:

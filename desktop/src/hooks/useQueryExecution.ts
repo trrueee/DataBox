@@ -17,14 +17,14 @@ export type QueryTabState = {
   status: QueryStatus;
 };
 
-const defaultSql = "SELECT * FROM your_table LIMIT 100;";
+const defaultSql = "-- Select a table from Schema, or start typing with autocomplete.\nSELECT 1;";
 
-function createQueryTab(index: number): QueryTabState {
+function createQueryTab(index: number, sql = defaultSql, title?: string): QueryTabState {
   return {
     id: `qt-${index}-${Date.now()}`,
-    title: `Query ${index}`,
-    sql: defaultSql,
-    savedSql: defaultSql,
+    title: title || `Query ${index}`,
+    sql,
+    savedSql: sql,
     queryResult: null,
     queryError: null,
     guardrail: null,
@@ -79,11 +79,17 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
     });
   };
 
-  const handleAddTab = () => {
-    const next = createQueryTab(tabs.length + 1);
+  const handleAddTab = (sql?: string, title?: string) => {
+    const next = createQueryTab(tabs.length + 1, sql || defaultSql, title);
     setTabs((c) => [...c, next]);
     setActiveEditorTabId(next.id);
     setRenamingTabId(null);
+  };
+
+  const openSqlDraft = (sql: string, title?: string) => {
+    const trimmedSql = sql.trim();
+    if (!trimmedSql) return;
+    handleAddTab(trimmedSql, title || `Query ${tabs.length + 1}`);
   };
 
   const handleCloseTab = (id: string) => {
@@ -267,6 +273,7 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
     renameDraft,
     setRenameDraft,
     handleAddTab,
+    openSqlDraft,
     handleCloseTab,
     startRenaming,
     commitRename,

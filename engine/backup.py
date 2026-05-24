@@ -108,13 +108,127 @@ def _run_mysqldump(ds: DataSource, output_path: Path) -> None:
         raise BackupError("mysqldump timed out after 300 seconds.", code="BACKUP_TIMEOUT") from exc
 
 
+def _pymysql_fallback_backup(ds: DataSource, output_path: Path) -> None:
+    import pymysql
+    params = get_mysql_connection_params(_datasource_connection_dict(ds))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    conn = pymysql.connect(
+        host=params["host"],
+        port=int(params["port"]),
+        user=params["user"],
+        password=str(params["password"]),
+        database=str(params["database"]),
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.Cursor
+    )
+    
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("-- DataBox Fallback Database Dump (Pure-Python)\n")
+            f.write(f"-- Dump Date: {datetime.now(UTC).isoformat()}\n")
+            f.write(f"-- Database: {params['database']}\n\n")
+            f.write("SET FOREIGN_KEY_CHECKS=0;\n\n")
+            
+            with conn.cursor() as cursor:
+                # 1. Fetch tables
+                cursor.execute("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")
+                tables = [row[0] for row in cursor.fetchall()]
+                
+                for table in tables:
+                    f.write(f"-- Table structure for table `{table}`\n")
+                    f.write(f"DROP TABLE IF EXISTS `{table}`;\n")
+                    cursor.execute(f"SHOW CREATE TABLE `{table}`")
+                    create_table_sql = cursor.fetchone()[1]
+                    f.write(f"{create_table_sql};\n\n")
+                    
+                    # 2. Fetch rows
+                    f.write(f"-- Dumping data for table `{table}`\n")
+                    cursor.execute(f"SELECT * FROM `{table}`")
+                    columns = [desc[0] for desc in cursor.description]
+                    
+                    rows = cursor.fetchall()
+                    if rows:
+                        for row in rows:
+                            values = []
+                            for val in row:
+                                if val is None:
+                                    values.append("NULL")
+                                elif isinstance(val, (int, float)):
+                                    values.append(str(val))
+                                else:
+                                    escaped_val = str(val).replace("\\", "\\\\").replace("'", "\\'")
+                                    values.append(f"'{escaped_val}'")
+                            
+                            col_str = ", ".join([f"`{c}`" for c in columns])
+                            val_str = ", ".join(values)
+                            f.write(f"INSERT INTO `{table}` ({col_str}) VALUES ({val_str});\n")
+                        f.write("\n")
+                
+                # 3. Fetch views
+                cursor.execute("SHOW FULL TABLES WHERE Table_type = 'VIEW'")
+                views = [row[0] for row in cursor.fetchall()]
+                for view in views:
+                    f.write(f"-- View structure for view `{view}`\n")
+                    f.write(f"DROP VIEW IF EXISTS `{view}`;\n")
+                    cursor.execute(f"SHOW CREATE VIEW `{view}`")
+                    create_view_sql = cursor.fetchone()[1]
+                    f.write(f"{create_view_sql};\n\n")
+            
+            f.write("SET FOREIGN_KEY_CHECKS=1;\n")
+    finally:
+        conn.close()
+
+
+def _pymysql_fallback_restore(ds: DataSource, sql_file_path: Path) -> None:
+    import pymysql
+    params = get_mysql_connection_params(_datasource_connection_dict(ds))
+    
+    conn = pymysql.connect(
+        host=params["host"],
+        port=int(params["port"]),
+        user=params["user"],
+        password=str(params["password"]),
+        database=str(params["database"]),
+        charset="utf8mb4",
+        autocommit=True
+    )
+    
+    try:
+        with conn.cursor() as cursor:
+            sql_content = sql_file_path.read_text(encoding="utf-8", errors="ignore")
+            statements = []
+            current_statement = []
+            
+            for line in sql_content.splitlines():
+                stripped = line.strip()
+                if not stripped or stripped.startswith("--") or stripped.startswith("/*"):
+                    continue
+                current_statement.append(line)
+                if stripped.endswith(";"):
+                    statements.append("\n".join(current_statement))
+                    current_statement = []
+                    
+            if current_statement:
+                stmt = "\n".join(current_statement).strip()
+                if stmt:
+                    statements.append(stmt)
+                    
+            for stmt in statements:
+                stmt_stripped = stmt.strip()
+                if stmt_stripped:
+                    cursor.execute(stmt_stripped)
+    finally:
+        conn.close()
+
+
 def create_backup(db: Session, datasource_id: str, label: str | None = None) -> BackupRecord:
     ds = db.query(DataSource).filter(DataSource.id == datasource_id).first()
     if not ds:
         raise BackupError("Data source not found.", code="DATASOURCE_NOT_FOUND")
     if is_demo_db(str(ds.host), str(ds.database_name)):
         raise BackupError(
-            "Built-in mock demo datasource cannot be backed up with mysqldump. Start a local Docker MySQL environment first.",
+            "Built-in mock demo datasource cannot be backed up. Start a local Docker MySQL environment first.",
             code="BACKUP_UNSUPPORTED_DATASOURCE",
         )
 
@@ -137,13 +251,23 @@ def create_backup(db: Session, datasource_id: str, label: str | None = None) -> 
     db.flush()
 
     start_time = time.monotonic()
+    backup_mode = "mysqldump"
     try:
-        _run_mysqldump(ds, output_path)
+        try:
+            _run_mysqldump(ds, output_path)
+        except BackupError as exc:
+            if "not found" in str(exc).lower():
+                _pymysql_fallback_backup(ds, output_path)
+                backup_mode = "pymysql_fallback"
+            else:
+                raise
+
         if not output_path.exists() or output_path.stat().st_size <= 0:
             raise BackupError("Backup file was not created or is empty.")
 
         completed = datetime.now(UTC)
         setattr(record, "status", "success")
+        setattr(record, "backup_type", backup_mode)
         setattr(record, "completed_at", completed)
         setattr(record, "duration_ms", int((time.monotonic() - start_time) * 1000))
         setattr(record, "file_size_bytes", output_path.stat().st_size)
@@ -179,7 +303,7 @@ def precheck_restore(record: BackupRecord) -> dict[str, Any]:
         if path.suffix.lower() != ".sql":
             warnings.append("Backup file does not use .sql extension.")
         sample = path.read_text(encoding="utf-8", errors="ignore")[:4096].lower()
-        if "create table" not in sample and "insert into" not in sample and "mysql dump" not in sample:
+        if "create table" not in sample and "insert into" not in sample and "mysql dump" not in sample and "fallback database dump" not in sample:
             warnings.append("Backup file does not look like a standard SQL dump.")
 
     if str(record.status) != "success":
@@ -240,14 +364,18 @@ def execute_restore(db: Session, backup_id: str) -> dict[str, Any]:
     if ds.is_read_only:
         raise BackupError("Cannot restore to a read-only data source.", code="RESTORE_READONLY_ERROR")
 
-    # Run pre-check first
     precheck = precheck_restore(record)
     if not precheck["ok"]:
         raise BackupError(f"Restore pre-check failed: {', '.join(precheck['errors'])}", code="RESTORE_PRECHECK_FAILED")
 
-    # Perform restore
     sql_path = Path(precheck["filePath"])
-    _run_mysql_restore(ds, sql_path)
+    try:
+        _run_mysql_restore(ds, sql_path)
+    except BackupError as exc:
+        if "not found" in str(exc).lower():
+            _pymysql_fallback_restore(ds, sql_path)
+        else:
+            raise
 
     return {
         "success": True,
@@ -256,4 +384,5 @@ def execute_restore(db: Session, backup_id: str) -> dict[str, Any]:
         "database_name": ds.database_name,
         "message": f"Successfully restored database '{ds.database_name}' from backup file."
     }
+
 

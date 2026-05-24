@@ -31,6 +31,7 @@ export interface DataSource {
   project_id?: string;
   environment_id?: string;
   name: string;
+  db_type?: string;
   host: string;
   port: number;
   database_name: string;
@@ -127,6 +128,7 @@ export interface SchemaTable {
   table_type: string;
   row_count_estimate: number;
   columns_count: number;
+  module_tag?: string;
 }
 
 export interface SchemaColumn {
@@ -236,6 +238,7 @@ export interface ERDiagramData {
     id: string;
     label: string;
     comment: string;
+    module_tag: string;
     fields: Array<{
       name: string;
       type: string;
@@ -251,6 +254,7 @@ export interface ERDiagramData {
     target: string;
     targetHandle: string;
     label: string;
+    edge_type: "real" | "inferred";
   }>;
 }
 
@@ -345,6 +349,18 @@ export const api = {
 
   generateCreateTableDDL: (params: TableDesignDDLRequest) =>
     request<TableDesignDDLResponse>("/schema/design/create-table-ddl", {
+      method: "POST",
+      body: JSON.stringify(params),
+    }),
+
+  generateSchemaAlteration: (params: {
+    datasource_id: string;
+    instruction: string;
+    api_key?: string;
+    api_base?: string;
+    model?: string;
+  }) =>
+    request<{ ddl: string; model: string; mode: string }>("/schema/design/ai-modify", {
       method: "POST",
       body: JSON.stringify(params),
     }),
@@ -480,4 +496,3 @@ export interface TableDesignAiResponse {
     unique: boolean;
   }>;
 }
-

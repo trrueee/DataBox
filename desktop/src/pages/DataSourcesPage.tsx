@@ -52,6 +52,7 @@ export const DataSourcesPage = ({
     details?: { serverVersion?: string; readonly?: boolean; tablesCount?: number };
   }>({ status: "idle", message: "" });
   const [form, setForm] = useState({
+    db_type: "mysql",
     name: "",
     host: "",
     port: 3306,
@@ -128,9 +129,16 @@ export const DataSourcesPage = ({
   };
 
   const handleTestConnection = async () => {
-    if (!form.host || !form.database_name || !form.username) {
-      setTestResult({ status: "error", message: "请先填写主机、数据库名和用户名。" });
-      return;
+    if (form.db_type === "sqlite") {
+      if (!form.database_name) {
+        setTestResult({ status: "error", message: "请先填写 SQLite 数据库文件路径。" });
+        return;
+      }
+    } else {
+      if (!form.host || !form.database_name || !form.username) {
+        setTestResult({ status: "error", message: "请先填写主机、数据库名和用户名。" });
+        return;
+      }
     }
     setTestResult({ status: "testing", message: "正在测试连接..." });
     try {
@@ -143,6 +151,7 @@ export const DataSourcesPage = ({
 
   const resetForm = () => {
     setForm({
+      db_type: "mysql",
       name: "",
       host: "",
       port: 3306,
@@ -169,9 +178,16 @@ export const DataSourcesPage = ({
   };
 
   const handleCreateDataSource = async () => {
-    if (!form.name || !form.host || !form.database_name || !form.username || !form.password) {
-      setFormError("请完整填写必填项。");
-      return;
+    if (form.db_type === "sqlite") {
+      if (!form.name || !form.database_name) {
+        setFormError("请完整填写连接名称和数据库路径。");
+        return;
+      }
+    } else {
+      if (!form.name || !form.host || !form.database_name || !form.username) {
+        setFormError("请完整填写必填项。");
+        return;
+      }
     }
     try {
       setSubmitting(true);
@@ -245,67 +261,135 @@ export const DataSourcesPage = ({
       {showAddForm && (
         <div className="lab-card animate-slide-down" style={{ padding: 24 }}>
           <h3 className="text-display" style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: 20 }}>
-            新增 MySQL 数据源
+            新增数据源
           </h3>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div>
-              <label className="field-label">连接名称</label>
-              <input
-                className="input-field"
-                value={form.name}
-                onChange={(e) => updateForm("name", e.target.value)}
-                placeholder="例：生产只读库"
-              />
-            </div>
-            <div>
-              <label className="field-label">主机地址</label>
-              <input
-                className="input-field"
-                value={form.host}
-                onChange={(e) => updateForm("host", e.target.value)}
-                placeholder="db.example.com"
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr", gap: 16, marginTop: 16 }}>
-            <div>
-              <label className="field-label">端口</label>
-              <input
-                className="input-field"
-                type="number"
-                value={form.port}
-                onChange={(e) => updateForm("port", Number(e.target.value) || 3306)}
-              />
-            </div>
-            <div>
-              <label className="field-label">数据库名</label>
-              <input
-                className="input-field"
-                value={form.database_name}
-                onChange={(e) => updateForm("database_name", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="field-label">用户名</label>
-              <input
-                className="input-field"
-                value={form.username}
-                onChange={(e) => updateForm("username", e.target.value)}
-              />
+          <div style={{ marginBottom: 20 }}>
+            <label className="field-label">数据库类型</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 6 }}>
+              {[
+                { id: "mysql", label: "MySQL", icon: "🐬" },
+                { id: "postgresql", label: "PostgreSQL", icon: "🐘" },
+                { id: "sqlite", label: "SQLite", icon: "📁" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    updateForm("db_type", item.id);
+                    if (item.id === "mysql") updateForm("port", 3306);
+                    else if (item.id === "postgresql") updateForm("port", 5432);
+                    else updateForm("port", 0);
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: "10px 16px",
+                    borderRadius: 8,
+                    border: form.db_type === item.id ? "2px solid var(--accent-indigo)" : "1px solid var(--border-light)",
+                    background: form.db_type === item.id ? "rgba(79, 70, 229, 0.08)" : "var(--bg-secondary)",
+                    color: form.db_type === item.id ? "var(--accent-indigo)" : "var(--text-secondary)",
+                    fontWeight: form.db_type === item.id ? 600 : 500,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div style={{ marginTop: 16 }}>
-            <label className="field-label">密码</label>
-            <input
-              className="input-field"
-              type="password"
-              value={form.password}
-              onChange={(e) => updateForm("password", e.target.value)}
-            />
-          </div>
+          {form.db_type === "sqlite" ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <label className="field-label">连接名称</label>
+                <input
+                  className="input-field"
+                  value={form.name}
+                  onChange={(e) => updateForm("name", e.target.value)}
+                  placeholder="例：本地 SQLite 数据库"
+                />
+              </div>
+              <div>
+                <label className="field-label">SQLite 数据库文件绝对路径</label>
+                <input
+                  className="input-field"
+                  value={form.database_name}
+                  onChange={(e) => updateForm("database_name", e.target.value)}
+                  placeholder="C:\Users\username\databases\mydb.sqlite"
+                />
+                <p style={{ marginTop: 4, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                  请输入本地 .db 或 .sqlite 文件的完整绝对路径。若该文件不存在，系统连接测试时将自动创建。
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label className="field-label">连接名称</label>
+                  <input
+                    className="input-field"
+                    value={form.name}
+                    onChange={(e) => updateForm("name", e.target.value)}
+                    placeholder={form.db_type === "postgresql" ? "例：测试 PG 数据库" : "例：生产只读库"}
+                  />
+                </div>
+                <div>
+                  <label className="field-label">主机地址</label>
+                  <input
+                    className="input-field"
+                    value={form.host}
+                    onChange={(e) => updateForm("host", e.target.value)}
+                    placeholder="db.example.com"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr", gap: 16, marginTop: 16 }}>
+                <div>
+                  <label className="field-label">端口</label>
+                  <input
+                    className="input-field"
+                    type="number"
+                    value={form.port}
+                    onChange={(e) => updateForm("port", Number(e.target.value) || (form.db_type === "postgresql" ? 5432 : 3306))}
+                  />
+                </div>
+                <div>
+                  <label className="field-label">数据库名</label>
+                  <input
+                    className="input-field"
+                    value={form.database_name}
+                    onChange={(e) => updateForm("database_name", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="field-label">用户名</label>
+                  <input
+                    className="input-field"
+                    value={form.username}
+                    onChange={(e) => updateForm("username", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <label className="field-label">密码</label>
+                <input
+                  className="input-field"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => updateForm("password", e.target.value)}
+                  placeholder="若无密码请留空"
+                />
+              </div>
+            </>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 16 }}>
             <div>
@@ -337,20 +421,22 @@ export const DataSourcesPage = ({
             </div>
           </div>
 
-          {/* SSH Tunnel Toggle */}
-          <div style={{ marginTop: 20, borderTop: "1px solid var(--border-light)", paddingTop: 16 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: "0.88rem", color: "var(--text-primary)" }}>
-              <input
-                type="checkbox"
-                checked={form.ssh_enabled}
-                onChange={(e) => updateForm("ssh_enabled", e.target.checked)}
-                style={{ width: 15, height: 15, accentColor: "var(--accent-indigo)", cursor: "pointer" }}
-              />
-              启用 SSH 隧道连接 (堡垒机 / 跳板机)
-            </label>
-          </div>
+          {/* SSH Tunnel Toggle (Non-SQLite only) */}
+          {form.db_type !== "sqlite" && (
+            <div style={{ marginTop: 20, borderTop: "1px solid var(--border-light)", paddingTop: 16 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: "0.88rem", color: "var(--text-primary)" }}>
+                <input
+                  type="checkbox"
+                  checked={form.ssh_enabled}
+                  onChange={(e) => updateForm("ssh_enabled", e.target.checked)}
+                  style={{ width: 15, height: 15, accentColor: "var(--accent-indigo)", cursor: "pointer" }}
+                />
+                启用 SSH 隧道连接 (堡垒机 / 跳板机)
+              </label>
+            </div>
+          )}
 
-          {form.ssh_enabled && (
+          {form.db_type !== "sqlite" && form.ssh_enabled && (
             <div className="animate-slide-down shadow-sm" style={{ marginTop: 16, padding: 18, background: "var(--bg-primary)", borderRadius: 10, border: "1px dashed var(--border-light)", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 1fr", gap: 14 }}>
                 <div>
@@ -419,23 +505,25 @@ export const DataSourcesPage = ({
             </div>
           )}
 
-          {/* MySQL SSL/TLS Toggle */}
-          <div style={{ marginTop: 20, borderTop: "1px solid var(--border-light)", paddingTop: 16 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: "0.88rem", color: "var(--text-primary)" }}>
-              <input
-                type="checkbox"
-                checked={form.ssl_enabled}
-                onChange={(e) => updateForm("ssl_enabled", e.target.checked)}
-                style={{ width: 15, height: 15, accentColor: "var(--accent-indigo)", cursor: "pointer" }}
-              />
-              启用 MySQL SSL/TLS 证书校验
-            </label>
-            <p style={{ marginTop: 6, fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              建议远程数据库开启 TLS；默认校验服务端证书和主机名，避免把连接降级成“只加密不验身份”。
-            </p>
-          </div>
+          {/* MySQL SSL/TLS Toggle (MySQL only) */}
+          {form.db_type === "mysql" && (
+            <div style={{ marginTop: 20, borderTop: "1px solid var(--border-light)", paddingTop: 16 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600, fontSize: "0.88rem", color: "var(--text-primary)" }}>
+                <input
+                  type="checkbox"
+                  checked={form.ssl_enabled}
+                  onChange={(e) => updateForm("ssl_enabled", e.target.checked)}
+                  style={{ width: 15, height: 15, accentColor: "var(--accent-indigo)", cursor: "pointer" }}
+                />
+                启用 MySQL SSL/TLS 证书校验
+              </label>
+              <p style={{ marginTop: 6, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                建议远程数据库开启 TLS；默认校验服务端证书 and 主机名，避免把连接降级成“只加密不验身份”。
+              </p>
+            </div>
+          )}
 
-          {form.ssl_enabled && (
+          {form.db_type === "mysql" && form.ssl_enabled && (
             <div className="animate-slide-down shadow-sm" style={{ marginTop: 16, padding: 18, background: "var(--bg-primary)", borderRadius: 10, border: "1px dashed var(--border-light)", display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
                 <label className="field-label">CA 证书路径</label>
@@ -825,6 +913,9 @@ export const DataSourcesPage = ({
                           {ds.name}
                         </h4>
                         {isActive && <span className="tag tag-indigo">当前</span>}
+                        {ds.db_type === "postgresql" && <span className="tag tag-indigo" style={{ background: "rgba(99, 102, 241, 0.1)", color: "#818CF8", border: "1px solid rgba(99, 102, 241, 0.2)", fontWeight: 600 }}>PostgreSQL</span>}
+                        {ds.db_type === "sqlite" && <span className="tag tag-neutral" style={{ background: "rgba(100, 116, 139, 0.1)", color: "#94A3B8", border: "1px solid rgba(100, 116, 139, 0.2)", fontWeight: 600 }}>SQLite</span>}
+                        {(ds.db_type === "mysql" || !ds.db_type) && <span className="tag tag-indigo" style={{ background: "rgba(59, 130, 246, 0.1)", color: "#60A5FA", border: "1px solid rgba(59, 130, 246, 0.2)", fontWeight: 600 }}>MySQL</span>}
                         {ds.env === "prod" && <span className="tag tag-error" style={{ background: "rgba(220, 38, 38, 0.1)", color: "var(--accent-red)", border: "1px solid rgba(220, 38, 38, 0.2)", fontWeight: 600 }}>PROD</span>}
                         {ds.env === "test" && <span className="tag tag-warning" style={{ background: "rgba(217, 119, 6, 0.1)", color: "var(--accent-amber)", border: "1px solid rgba(217, 119, 6, 0.2)" }}>测试</span>}
                         {ds.env === "dev" && <span className="tag tag-neutral" style={{ background: "var(--bg-active)", color: "var(--text-secondary)", border: "1px solid var(--border-light)" }}>开发</span>}
@@ -843,11 +934,13 @@ export const DataSourcesPage = ({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {ds.host}:{ds.port} / {ds.database_name}
+                        {ds.db_type === "sqlite" ? ds.database_name : `${ds.host}:${ds.port} / ${ds.database_name}`}
                       </p>
                     </div>
 
-                    <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>{ds.username}</div>
+                    <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>
+                      {ds.db_type === "sqlite" ? "-" : ds.username}
+                    </div>
 
                     <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
                       {ds.last_sync_at ? new Date(ds.last_sync_at).toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "未同步"}

@@ -29,12 +29,17 @@ import { useQueryExecution } from "../hooks/useQueryExecution";
 
 interface QueryPageProps {
   datasource: DataSource;
+  initialDraft?: {
+    sql: string;
+    title?: string;
+    nonce: number;
+  } | null;
 }
 
 type ViewTab = "results" | "history";
 type ResultViewMode = "table" | "chart" | "explain";
 
-export const QueryPage = ({ datasource }: QueryPageProps) => {
+export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
   const [activeBottomTab, setActiveBottomTab] = useState<ViewTab>("results");
   const [resultViewMode, setResultViewMode] = useState<ResultViewMode>("table");
   const [history, setHistory] = useState<QueryHistory[]>([]);
@@ -80,6 +85,7 @@ export const QueryPage = ({ datasource }: QueryPageProps) => {
     commitRename,
     setRenameDraft,
     updateActiveTab,
+    openSqlDraft,
     handleValidateSql,
     handleExecuteSql,
     handleCancelQuery,
@@ -87,10 +93,29 @@ export const QueryPage = ({ datasource }: QueryPageProps) => {
     void fetchHistory();
   });
 
+  const [schemaTables, setSchemaTables] = useState<any[]>([]);
+
+  const fetchSchemaMetadata = async () => {
+    try {
+      const data = await api.getERDiagram(datasource.id);
+      setSchemaTables(data.nodes || []);
+    } catch (e) {
+      console.error("Failed to fetch schema metadata for autocomplete:", e);
+      setSchemaTables([]);
+    }
+  };
+
   useEffect(() => {
     setActiveBottomTab("results");
     void fetchHistory();
+    void fetchSchemaMetadata();
   }, [datasource.id]);
+
+  useEffect(() => {
+    if (!initialDraft?.sql) return;
+    openSqlDraft(initialDraft.sql, initialDraft.title);
+    setActiveBottomTab("results");
+  }, [initialDraft?.nonce]);
 
   const isExplainQuery = useMemo(() => {
     if (!activeEditorTab?.queryResult) return false;
@@ -341,7 +366,7 @@ export const QueryPage = ({ datasource }: QueryPageProps) => {
                     </div>
                   );
                 })}
-                <button className="btn-ghost" onClick={handleAddTab} style={{ padding: "4px 8px", flexShrink: 0 }}>
+                <button className="btn-ghost" onClick={() => handleAddTab()} style={{ padding: "4px 8px", flexShrink: 0 }}>
                   <Plus size={13} />
                 </button>
               </div>
@@ -445,6 +470,7 @@ export const QueryPage = ({ datasource }: QueryPageProps) => {
               <SqlEditor
                 value={activeEditorTab?.sql ?? ""}
                 onChange={(v) => updateActiveTab(() => ({ sql: v }))}
+                schemaTables={schemaTables}
               />
             </div>
           </div>

@@ -1,11 +1,31 @@
+import { useEffect, useRef, useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
+
+export interface SchemaColumnMeta {
+  name: string;
+  type: string;
+  is_pk: boolean;
+  is_fk: boolean;
+  comment: string;
+}
+
+export interface SchemaTableMeta {
+  id: string;
+  label: string; // table name
+  comment: string; // table comment
+  fields: SchemaColumnMeta[];
+}
 
 interface SqlEditorProps {
   value: string;
   onChange: (value: string) => void;
+  schemaTables?: SchemaTableMeta[];
 }
 
-export function SqlEditor({ value, onChange }: SqlEditorProps) {
+export function SqlEditor({ value, onChange, schemaTables = [] }: SqlEditorProps) {
+  const [monacoInstance, setMonacoInstance] = useState<any>(null);
+  const providerRef = useRef<any>(null);
+
   const handleMount: OnMount = (editor, monaco) => {
     editor.focus();
 
@@ -40,34 +60,201 @@ export function SqlEditor({ value, onChange }: SqlEditorProps) {
     });
 
     monaco.editor.setTheme("lightLab");
+    setMonacoInstance(monaco);
+  };
 
-    monaco.languages.registerCompletionItemProvider("sql", {
+  useEffect(() => {
+    if (!monacoInstance) return;
+
+    // Dispose of any previous provider to avoid duplicate registers
+    if (providerRef.current) {
+      providerRef.current.dispose();
+      providerRef.current = null;
+    }
+
+    providerRef.current = monacoInstance.languages.registerCompletionItemProvider("sql", {
+      triggerCharacters: [".", " "],
       provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordUntilPosition(position);
+        const lineContent = model.getLineContent(position.lineNumber);
+        const textUntilCursor = lineContent.substring(0, position.column - 1);
+
         const range = {
           startLineNumber: position.lineNumber,
           endLineNumber: position.lineNumber,
           startColumn: word.startColumn,
           endColumn: word.endColumn,
         };
-        const suggestions: any[] = [
+
+        // Helper to resolve alias to corresponding table
+        const resolveAliasToTable = (sql: string, alias: string): SchemaTableMeta | null => {
+          const cleanAlias = alias.trim().toLowerCase();
+          if (!cleanAlias) return null;
+
+          const escapedAlias = cleanAlias.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+          for (const t of schemaTables) {
+            const tableLabel = t.label;
+            const escapedTable = tableLabel.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+            // Regex patterns for alias bindings like "FROM table_name [AS] alias"
+            const pattern = new RegExp(`\\b(?:FROM|JOIN|UPDATE|INTO|MERGE)\\s+[\`"]?${escapedTable}[\`"]?\\s+(?:AS\\s+)?${escapedAlias}\\b`, "i");
+            const patternSimple = new RegExp(`[\`"]?${escapedTable}[\`"]?\\s+(?:AS\\s+)?${escapedAlias}\\b`, "i");
+
+            if (pattern.test(sql) || patternSimple.test(sql)) {
+              return t;
+            }
+          }
+
+          // Fallback to table name direct matching
+          return schemaTables.find((t) => t.label.toLowerCase() === cleanAlias) || null;
+        };
+
+        // 1. Column Trigger (Dotted notation: e.g., users. or u.)
+        const dotMatch = textUntilCursor.match(/([a-zA-Z0-9_]+)\.$/);
+        if (dotMatch) {
+          const aliasOrTable = dotMatch[1];
+          const targetTable = resolveAliasToTable(model.getValue(), aliasOrTable);
+
+          if (targetTable && targetTable.fields) {
+            const columnSuggestions = targetTable.fields.map((col) => {
+              let detail = `[Column] ${col.type}`;
+              if (col.is_pk) detail += " | 🔑 PK";
+              if (col.is_fk) detail += " | 🔗 FK";
+
+              return {
+                label: col.name,
+                kind: monacoInstance.languages.CompletionItemKind.Property,
+                insertText: col.name,
+                detail,
+                documentation: col.comment || undefined,
+                range,
+              };
+            });
+            return { suggestions: columnSuggestions };
+          }
+        }
+
+        // 2. JOIN ... ON Trigger
+        // Matches e.g. "JOIN users AS u ON " or "join departments ON  "
+        const onMatch = textUntilCursor.match(/(?:JOIN|LEFT JOIN|RIGHT JOIN|INNER JOIN|CROSS JOIN)\s+([`"]?[a-zA-Z0-9_-]+[`"]?)(?:\s+(?:AS\s+)?([a-zA-Z0-9_-]+))?\s+ON\s*$/i);
+        if (onMatch) {
+          const joinedTableRaw = onMatch[1].replace(/[`"]/g, "");
+          const joinedAlias = onMatch[2];
+
+          const joinedTable = schemaTables.find(
+            (t) => t.label.toLowerCase() === joinedTableRaw.toLowerCase()
+          );
+
+          if (joinedTable && joinedTable.fields) {
+            // Find all tables that appear in the SQL before the cursor
+            const activeTablesInQuery: Array<{ table: SchemaTableMeta; alias?: string }> = [];
+
+            for (const t of schemaTables) {
+              const escapedTable = t.label.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+              const tableInSqlRegex = new RegExp(`\\b${escapedTable}\\b`, "i");
+              if (tableInSqlRegex.test(textUntilCursor)) {
+                // Find if there is an alias for this table in the query
+                const aliasRegex = new RegExp(`\\b${escapedTable}\\b\\s+(?:AS\\s+)?([a-zA-Z0-9_-]+)\\b`, "i");
+                const aliasMatch = textUntilCursor.match(aliasRegex);
+                const alias = aliasMatch ? aliasMatch[1] : undefined;
+                activeTablesInQuery.push({ table: t, alias });
+              }
+            }
+
+            const onSuggestions: any[] = [];
+            for (const other of activeTablesInQuery) {
+              if (other.table.label.toLowerCase() === joinedTable.label.toLowerCase()) continue;
+
+              for (const col1 of joinedTable.fields) {
+                for (const col2 of other.table.fields) {
+                  let isMatch = false;
+                  let priority = 1;
+
+                  if (
+                    col1.name.toLowerCase() === col2.name.toLowerCase() &&
+                    col1.name.toLowerCase().endsWith("_id")
+                  ) {
+                    isMatch = true;
+                    priority = 3;
+                  } else if (
+                    col1.name.toLowerCase() === `${other.table.label.toLowerCase()}_id` &&
+                    col2.is_pk
+                  ) {
+                    isMatch = true;
+                    priority = 4;
+                  } else if (
+                    col2.name.toLowerCase() === `${joinedTable.label.toLowerCase()}_id` &&
+                    col1.is_pk
+                  ) {
+                    isMatch = true;
+                    priority = 4;
+                  }
+
+                  if (isMatch) {
+                    const joinedName = joinedAlias || joinedTable.label;
+                    const otherName = other.alias || other.table.label;
+
+                    const suggestionText = `${joinedName}.${col1.name} = ${otherName}.${col2.name}`;
+
+                    onSuggestions.push({
+                      label: `${joinedName}.${col1.name} = ${otherName}.${col2.name}`,
+                      kind: monacoInstance.languages.CompletionItemKind.Snippet,
+                      insertText: suggestionText,
+                      detail: `[Join Condition] ${joinedTable.label} ⟷ ${other.table.label} (${
+                        priority === 4 ? "🔑 PK-FK Match" : "Name Match"
+                      })`,
+                      documentation: `Automatically inferred join matching condition based on schema definitions.`,
+                      sortText: `0_${5 - priority}`,
+                      range,
+                    });
+                  }
+                }
+              }
+            }
+
+            if (onSuggestions.length > 0) {
+              return { suggestions: onSuggestions };
+            }
+          }
+        }
+
+        // 3. Default suggestions (Tables + Keywords + Functions)
+        const tableSuggestions = schemaTables.map((t) => ({
+          label: t.label,
+          kind: monacoInstance.languages.CompletionItemKind.Field,
+          insertText: t.label,
+          detail: `[Table] ${t.comment || ""}`,
+          range,
+        }));
+
+        const suggestions = [
+          ...tableSuggestions,
           ...SQL_KEYWORDS.map((kw) => ({
             label: kw,
-            kind: monaco.languages.CompletionItemKind.Keyword,
+            kind: monacoInstance.languages.CompletionItemKind.Keyword,
             insertText: kw,
             range,
           })),
           ...SQL_FUNCTIONS.map((fn) => ({
             label: fn,
-            kind: monaco.languages.CompletionItemKind.Function,
+            kind: monacoInstance.languages.CompletionItemKind.Function,
             insertText: fn,
             range,
           })),
         ];
+
         return { suggestions };
       },
     });
-  };
+
+    return () => {
+      if (providerRef.current) {
+        providerRef.current.dispose();
+        providerRef.current = null;
+      }
+    };
+  }, [schemaTables, monacoInstance]);
 
   return (
     <div className="select-text" style={{ height: "100%", userSelect: "text" }}>
