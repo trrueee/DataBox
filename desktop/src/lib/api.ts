@@ -401,10 +401,10 @@ export const api = {
       }),
     }),
 
-  validateSql: (sql: string, signal?: AbortSignal) =>
+  validateSql: (sql: string, datasourceId?: string, signal?: AbortSignal) =>
     request<GuardrailCheckResult>("/query/validate", {
       method: "POST",
-      body: JSON.stringify({ sql }),
+      body: JSON.stringify({ sql, datasource_id: datasourceId }),
       signal,
     }),
 

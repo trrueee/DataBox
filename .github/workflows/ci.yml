@@ -7,30 +7,65 @@ on:
       - main
 
 jobs:
+  # ─────────────────────────────────────────────
+  # Job 1: Backend — pytest + mypy + migrations
+  # ─────────────────────────────────────────────
   backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: 'pip'
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-          
+
       - name: Run pytest test suite
         run: |
-          python -m pytest engine/tests
-          
+          python -m pytest engine/tests -q --tb=short
+
       - name: Run static type checking with mypy
         run: |
           python -m mypy engine
 
+      - name: Verify Alembic migrations apply cleanly on empty database
+        env:
+          DATABOX_MIGRATE_ONLY: "1"
+        run: |
+          # Use an ephemeral in-memory / temp-file SQLite DB to verify migration chain
+          export DATABOX_DB_PATH="$(mktemp).db"
+          python -c "
+          from alembic.config import Config
+          from alembic import command
+          cfg = Config('engine/migrations/alembic.ini')
+          cfg.set_main_option('script_location', 'engine/migrations')
+          command.upgrade(cfg, 'head')
+          print('Alembic upgrade head: OK')
+          "
+
+      - name: FastAPI startup smoke test
+        run: |
+          python -c "
+          import os
+          os.environ['DATABOX_DB_PATH'] = '/tmp/smoke_test.db'
+          from engine.main import app
+          from fastapi.testclient import TestClient
+          client = TestClient(app)
+          r = client.get('/api/v1/health')
+          assert r.status_code == 200, f'Health check failed: {r.status_code} {r.text}'
+          assert r.json()['status'] == 'healthy', f'Unexpected health payload: {r.json()}'
+          print('FastAPI smoke test: OK')
+          "
+
+  # ─────────────────────────────────────────────
+  # Job 2: Frontend — lint + build
+  # ─────────────────────────────────────────────
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -38,16 +73,19 @@ jobs:
         working-directory: desktop
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: 'npm'
           cache-dependency-path: desktop/package-lock.json
-          
+
       - name: Install npm dependencies
         run: npm ci
-        
-      - name: Compile and Build React/Vite/Tauri APP
+
+      - name: ESLint — TypeScript/React static analysis
+        run: npm run lint
+
+      - name: Compile and Build React/Vite APP
         run: npm run build
