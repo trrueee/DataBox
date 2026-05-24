@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 class SQLValidateRequest(BaseModel):
     sql: str
+    datasource_id: str | None = None
 
 
 class SQLExecuteRequest(BaseModel):

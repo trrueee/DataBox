@@ -22,6 +22,7 @@ from engine.errors import (
 )
 from engine.guardrail import guardrail_check
 from engine.models import DataSource, QueryHistory
+from engine.policy.redactor import DataRedactor
 from engine.query_registry import QUERY_REGISTRY
 
 MAX_ROWS = 1000
@@ -419,16 +420,17 @@ def execute_query(
             "message": "Bypassed via system request"
         }
     else:
-        guard_res = guardrail_check(sql_str)
+        guard_res = guardrail_check(sql_str, dialect=ds.db_type or "mysql")
     guardrail_ms = int((time.perf_counter() - t_guard_start) * 1000)
     guard_checks_json = json.dumps(guard_res["checks"], ensure_ascii=False)
 
     if guard_res["result"] == "reject":
+        redacted_sql = DataRedactor.redact_sql(sql_str)
         history = QueryHistory(
             data_source_id=datasource_id,
             question=question,
-            submitted_sql=sql_str,
-            generated_sql=sql_str,
+            submitted_sql=redacted_sql,
+            generated_sql=redacted_sql,
             safe_sql="",
             executed_sql="",
             guardrail_result="reject",
@@ -550,10 +552,10 @@ def execute_query(
         history = QueryHistory(
             data_source_id=datasource_id,
             question=question,
-            submitted_sql=sql_str,
-            generated_sql=sql_str,
-            safe_sql=safe_sql,
-            executed_sql=safe_sql if execution_status == "success" else "",
+            submitted_sql=DataRedactor.redact_sql(sql_str),
+            generated_sql=DataRedactor.redact_sql(sql_str),
+            safe_sql=DataRedactor.redact_sql(safe_sql),
+            executed_sql=DataRedactor.redact_sql(safe_sql) if execution_status == "success" else "",
             guardrail_result=guard_res["result"],
             guardrail_checks=guard_checks_json,
             execution_status=execution_status,
@@ -628,7 +630,11 @@ def explain_sql(
     if not sql_strip.startswith("SELECT"):
         raise ValueError("EXPLAIN 诊断仅支持 SELECT 语句")
 
-    guard_res = guardrail_check(sql_str)
+    ds = db.query(DataSource).filter(DataSource.id == datasource_id).first()
+    if not ds:
+        raise ValueError("Data source not found")
+
+    guard_res = guardrail_check(sql_str, dialect=ds.db_type or "mysql")
     if guard_res["result"] == "reject":
         from typing import cast
         raise GuardrailValidationError(
@@ -636,10 +642,6 @@ def explain_sql(
         )
         
     safe_sql = guard_res["safeSql"]
-    
-    ds = db.query(DataSource).filter(DataSource.id == datasource_id).first()
-    if not ds:
-        raise ValueError("Data source not found")
         
     warnings = []
     records = []

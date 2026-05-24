@@ -394,6 +394,9 @@ def generate_sql(
     model_name = llm_config.get("model", "gpt-4o-mini").strip()
     
     schema_context = generate_schema_context(db, datasource_id, question, optimize_rag)
+    from engine.models import DataSource
+    ds = db.query(DataSource).filter(DataSource.id == datasource_id).first()
+    dialect = ds.db_type or "mysql" if ds else "mysql"
     
     # Ensure standard prompt hash is saved
     prompt_raw = f"Context:\n{schema_context}\n\nQuestion: {question}"
@@ -406,7 +409,7 @@ def generate_sql(
         latency_ms = int((time.time() - start_time) * 1000)
         
         # Guardrail check generated query
-        guard_res = guardrail_check(generated_query)
+        guard_res = guardrail_check(generated_query, dialect=dialect)
         
         # Perform schema reference validation
         schema_warnings = validate_sql_schema(generated_query, db, datasource_id)
@@ -483,7 +486,7 @@ def generate_sql(
         generated_query = generated_query.replace(";", "").strip()
         
         # Enforce Guardrail validation on output SQL
-        guard_res = guardrail_check(generated_query)
+        guard_res = guardrail_check(generated_query, dialect=dialect)
         
         # Perform schema reference validation
         schema_warnings = validate_sql_schema(generated_query, db, datasource_id)

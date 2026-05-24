@@ -20,7 +20,16 @@ class GuardrailResult(TypedDict):
     message: str
 
 # System schemas we must block access to
-BLOCKED_SCHEMAS = {"information_schema", "mysql", "performance_schema", "sys"}
+BLOCKED_SCHEMAS = {
+    "information_schema",
+    "mysql",
+    "performance_schema",
+    "sys",
+    "pg_catalog",
+    "pg_toast",
+    "sqlite_master",
+    "sqlite_temp_master",
+}
 
 # Dangerous functions we must block
 DANGEROUS_FUNCTIONS = {"sleep", "benchmark", "load_file", "database", "user", "current_user", "version"}
@@ -45,7 +54,7 @@ BLOCKED_COMMAND_TYPES = (
     exp.Merge,
 )
 
-def guardrail_check(sql_str: str) -> GuardrailResult:
+def guardrail_check(sql_str: str, dialect: str = "mysql") -> GuardrailResult:
     """
     Analyzes SQL using sqlglot AST parsing to enforce V1 security guidelines.
     Checks:
@@ -87,13 +96,22 @@ def guardrail_check(sql_str: str) -> GuardrailResult:
             "message": "拒绝执行：SQL 语句过长"
         }
 
+    # Map input dialect to standard sqlglot dialect name
+    dialect_lower = dialect.lower() if dialect else "mysql"
+    if "postgres" in dialect_lower:
+        sqlglot_dialect = "postgres"
+    elif "sqlite" in dialect_lower:
+        sqlglot_dialect = "sqlite"
+    else:
+        sqlglot_dialect = "mysql"
+
     checks: list[GuardrailCheck] = []
     has_errors = False
 
     # 1. Parse and check multiple statements
     try:
         # sqlglot.parse parses multi-statement strings separated by semicolon
-        expressions = sqlglot.parse(sql_str, read="mysql")
+        expressions = sqlglot.parse(sql_str, read=sqlglot_dialect)
         if len(expressions) > 1:
             checks.append({
                 "rule": "multi_statement",
@@ -142,6 +160,24 @@ def guardrail_check(sql_str: str) -> GuardrailResult:
                 "rule": "blocked_command_type",
                 "level": "reject",
                 "message": f"禁止执行 SQL 指令类型: {type(node).__name__}"
+            })
+            has_errors = True
+
+        # Check recursive CTE / WITH clause
+        elif isinstance(node, exp.With) and node.args.get("recursive"):
+            checks.append({
+                "rule": "recursive_cte_blocked",
+                "level": "reject",
+                "message": "由于安全性与性能考量，禁止执行包含 RECURSIVE (递归) 的 CTE 语句。"
+            })
+            has_errors = True
+
+        # Check SELECT ... FOR UPDATE / LOCK IN SHARE MODE
+        elif isinstance(node, exp.Lock):
+            checks.append({
+                "rule": "row_locking_blocked",
+                "level": "reject",
+                "message": "在只读/安全模式下，禁止执行包含 row-locking (FOR UPDATE / FOR SHARE) 的锁表或锁行操作。"
             })
             has_errors = True
 
@@ -250,7 +286,7 @@ def guardrail_check(sql_str: str) -> GuardrailResult:
             # Fallback to string concatenation if AST manipulation fails
             pass
             
-    safe_sql = safe_expression.sql(dialect="mysql")
+    safe_sql = safe_expression.sql(dialect=sqlglot_dialect)
     
     # If warnings exist, the overall result is "warn", otherwise "pass"
     warn_count = sum(1 for c in checks if c["level"] == "warn")

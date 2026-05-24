@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from engine.db import Base
@@ -22,6 +22,7 @@ class Project(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "projects"
     __table_args__ = (
         Index("ix_projects_status", "status"),
+        UniqueConstraint("name", name="uq_projects_name"),
     )
 
     id = Column(String, primary_key=True, default=generate_uuid)
@@ -77,6 +78,9 @@ class DatabaseEnvironment(Base):  # type: ignore[misc,valid-type]
 
 class DataSource(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "data_sources"
+    __table_args__ = (
+        UniqueConstraint("project_id", "name", name="uq_datasources_project_name"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     project_id = Column(String, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -167,6 +171,7 @@ class SchemaTable(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "schema_tables"
     __table_args__ = (
         Index("ix_schema_tables_datasource", "data_source_id"),
+        UniqueConstraint("data_source_id", "table_schema", "table_name", name="uq_schema_tables_ds_schema_table"),
     )
 
     id = Column(String, primary_key=True, default=generate_uuid)
@@ -190,6 +195,7 @@ class SchemaColumn(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "schema_columns"
     __table_args__ = (
         Index("ix_schema_columns_table", "table_id"),
+        UniqueConstraint("table_id", "column_name", name="uq_schema_columns_table_column"),
     )
 
     id = Column(String, primary_key=True, default=generate_uuid)
@@ -284,6 +290,7 @@ class GoldenSQL(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "golden_sqls"
     __table_args__ = (
         Index("ix_golden_sqls_datasource", "data_source_id"),
+        UniqueConstraint("data_source_id", "question", name="uq_golden_sqls_ds_question"),
     )
 
     id = Column(String, primary_key=True, default=generate_uuid)

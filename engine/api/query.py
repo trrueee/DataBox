@@ -18,8 +18,13 @@ router = APIRouter()
 
 
 @router.post("/query/validate")
-def api_validate_sql(req: SQLValidateRequest) -> dict[str, Any]:
-    result = guardrail_check(req.sql)
+def api_validate_sql(req: SQLValidateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
+    dialect = "mysql"
+    if req.datasource_id:
+        ds = db.query(DataSource).filter(DataSource.id == req.datasource_id).first()
+        if ds:
+            dialect = ds.db_type or "mysql"
+    result = guardrail_check(req.sql, dialect=dialect)
     return dict(result)
 
 

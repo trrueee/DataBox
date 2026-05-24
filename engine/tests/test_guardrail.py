@@ -155,3 +155,55 @@ def test_syntax_error() -> None:
     r = guardrail_check("BROKEN !!! NOT VALID SQL @@@ ###")
     assert r["result"] == "reject"
     assert any(c["rule"] == "syntax_error" for c in r["checks"])
+
+
+# ============================================================
+# NEW IN SPRINT 1: RECURSIVE CTE, ROW LOCKING, & DYNAMIC DIALECT
+# ============================================================
+
+def test_recursive_cte_blocked() -> None:
+    # Standard recursive CTE query
+    sql = """
+    WITH RECURSIVE cte AS (
+        SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1 FROM cte WHERE n < 5
+    )
+    SELECT * FROM cte
+    """
+    r = guardrail_check(sql)
+    assert r["result"] == "reject"
+    assert any(c["rule"] == "recursive_cte_blocked" for c in r["checks"])
+
+
+def test_row_locking_blocked() -> None:
+    # SELECT ... FOR UPDATE should be rejected
+    r1 = guardrail_check("SELECT * FROM users WHERE id = 1 FOR UPDATE")
+    assert r1["result"] == "reject"
+    assert any(c["rule"] == "row_locking_blocked" for c in r1["checks"])
+
+    # SELECT ... FOR SHARE should also be rejected
+    r2 = guardrail_check("SELECT * FROM users WHERE id = 1 FOR SHARE")
+    assert r2["result"] == "reject"
+    assert any(c["rule"] == "row_locking_blocked" for c in r2["checks"])
+
+
+def test_dialect_specific_guardrail() -> None:
+    # 1. PostgreSQL dialect verification
+    # postgres dialect supports double colons :: for casting
+    sql_pg = "SELECT id::text FROM users"
+    r_pg = guardrail_check(sql_pg, dialect="postgres")
+    assert r_pg["result"] == "warn"  # warn because of no limit, meaning it parsed perfectly!
+    
+    # 2. SQLite dialect verification
+    # sqlite-specific master catalog access should be blocked
+    r_sl = guardrail_check("SELECT * FROM sqlite_master", dialect="sqlite")
+    assert r_sl["result"] == "reject"
+    assert any(c["rule"] == "system_catalog_blocked" for c in r_sl["checks"])
+
+    # 3. MySQL dialect verification
+    # MySQL specific row locking syntax
+    sql_my = "SELECT * FROM users FOR UPDATE"
+    r_my = guardrail_check(sql_my, dialect="mysql")
+    assert r_my["result"] == "reject"
+    assert any(c["rule"] == "row_locking_blocked" for c in r_my["checks"])
