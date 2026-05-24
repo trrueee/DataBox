@@ -91,6 +91,8 @@ def api_restore_precheck(backup_id: str, db: Session = Depends(get_db)) -> dict[
 def api_restore_backup(
     backup_id: str,
     allow_fallback: bool = Query(default=True),
+    confirm_token: str | None = Query(default=None),
+    confirm_text: str | None = Query(default=None),
     db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     record = db.query(BackupRecord).filter(BackupRecord.id == backup_id).first()
@@ -106,6 +108,32 @@ def api_restore_backup(
         PolicyEngine.enforce_restore_policy(datasource)
     except DataBoxError as exc:
         raise HTTPException(status_code=400, detail={"code": exc.code, "message": str(exc)})
+
+    # 🔒 Two-Phase confirmation check for dangerous database restores
+    import os
+    if os.environ.get("DATABOX_BYPASS_CONFIRMATION") != "1":
+        if not confirm_token:
+            from engine.policy.confirmation import confirmation_manager
+            token = confirmation_manager.create_confirmation(
+                datasource_id=str(record.datasource_id),
+                action="restore_backup",
+                details={"backup_id": backup_id},
+                expected_confirm_text=datasource.name
+            )
+            return {
+                "success": False,
+                "requires_confirmation": True,
+                "confirm_token": token,
+                "impact_summary": f"⚠️ 警告：您即将对数据源 '{datasource.name}' 执行备份恢复（覆盖还原）！\n\n该操作会覆盖目标数据库的所有当前数据，并可能导致现有修改被覆盖丢失！请输入数据源名称以确认执行。",
+                "expected_confirm_text": datasource.name
+            }
+        else:
+            from engine.policy.confirmation import confirmation_manager
+            is_valid, err_msg, details = confirmation_manager.validate_and_consume(
+                confirm_token, confirm_text or ""
+            )
+            if not is_valid:
+                raise HTTPException(status_code=400, detail={"code": "CONFIRMATION_FAILED", "message": err_msg})
 
     try:
         res = execute_restore(db, backup_id, allow_fallback=allow_fallback)

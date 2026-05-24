@@ -87,6 +87,32 @@ def api_execute_table_design_ddl(req: TableDesignExecuteRequest, db: Session = D
     except DataBoxError as exc:
         raise HTTPException(status_code=400, detail={"code": exc.code, "message": str(exc)})
 
+    # 🔒 Two-Phase confirmation check for dangerous DDL operations
+    import os
+    if os.environ.get("DATABOX_BYPASS_CONFIRMATION") != "1":
+        if not req.confirm_token:
+            from engine.policy.confirmation import confirmation_manager
+            token = confirmation_manager.create_confirmation(
+                datasource_id=req.datasource_id,
+                action="execute_ddl",
+                details={"ddl": req.ddl},
+                expected_confirm_text=datasource.name
+            )
+            return {
+                "success": False,
+                "requires_confirmation": True,
+                "confirm_token": token,
+                "impact_summary": f"⚠️ 警告：您即将在数据源 '{datasource.name}' 上执行以下结构变更 DDL：\n\n{req.ddl}\n\n该操作无法撤销！请输入数据源名称以确认执行。",
+                "expected_confirm_text": datasource.name
+            }
+        else:
+            from engine.policy.confirmation import confirmation_manager
+            is_valid, err_msg, details = confirmation_manager.validate_and_consume(
+                req.confirm_token, req.confirm_text or ""
+            )
+            if not is_valid:
+                raise HTTPException(status_code=400, detail={"code": "CONFIRMATION_FAILED", "message": err_msg})
+
     try:
         from engine.table_design import execute_table_design_ddl
         return execute_table_design_ddl(db, req.datasource_id, req.ddl)
@@ -204,6 +230,32 @@ def api_generate_test_data(req: TestDataGenerateRequest, db: Session = Depends(g
         PolicyEngine.enforce_test_data_policy(datasource)
     except DataBoxError as exc:
         raise HTTPException(status_code=400, detail={"code": exc.code, "message": str(exc)})
+
+    # 🔒 Two-Phase confirmation check for test data generation
+    import os
+    if os.environ.get("DATABOX_BYPASS_CONFIRMATION") != "1":
+        if not req.confirm_token:
+            from engine.policy.confirmation import confirmation_manager
+            token = confirmation_manager.create_confirmation(
+                datasource_id=req.datasource_id,
+                action="generate_test_data",
+                details={"table_name": req.table_name, "row_count": req.row_count},
+                expected_confirm_text=datasource.name
+            )
+            return {
+                "success": False,
+                "requires_confirmation": True,
+                "confirm_token": token,
+                "impact_summary": f"⚠️ 警告：您即将在数据源 '{datasource.name}' 的表 '{req.table_name}' 上批量生成 {req.row_count} 条智能测试数据。\n\n这会向该表插入大量模拟行！请输入数据源名称以确认执行。",
+                "expected_confirm_text": datasource.name
+            }
+        else:
+            from engine.policy.confirmation import confirmation_manager
+            is_valid, err_msg, details = confirmation_manager.validate_and_consume(
+                req.confirm_token, req.confirm_text or ""
+            )
+            if not is_valid:
+                raise HTTPException(status_code=400, detail={"code": "CONFIRMATION_FAILED", "message": err_msg})
 
     try:
         from engine.test_data import generate_smart_test_data

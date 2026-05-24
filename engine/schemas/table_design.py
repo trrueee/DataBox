@@ -29,6 +29,8 @@ class TableDesignDDLRequest(BaseModel):
 class TableDesignExecuteRequest(BaseModel):
     datasource_id: str
     ddl: str
+    confirm_token: str | None = None
+    confirm_text: str | None = None
 
 
 class TableDesignDraftSaveRequest(BaseModel):
@@ -52,3 +54,5 @@ class TestDataGenerateRequest(BaseModel):
     table_name: str
     row_count: int = 10
     language: str = "zh"
+    confirm_token: str | None = None
+    confirm_text: str | None = None

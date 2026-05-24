@@ -1,0 +1,254 @@
+import uuid
+import os
+from pathlib import Path
+import pytest
+from fastapi.testclient import TestClient
+from engine.db import get_db
+from engine.main import LOCAL_SECURE_TOKEN, app
+from engine.models import DataSource, BackupRecord
+
+@pytest.fixture(autouse=True)
+def run_without_bypass():
+    old = os.environ.get("DATABOX_BYPASS_CONFIRMATION")
+    os.environ["DATABOX_BYPASS_CONFIRMATION"] = "0"
+    yield
+    if old is not None:
+        os.environ["DATABOX_BYPASS_CONFIRMATION"] = old
+    else:
+        del os.environ["DATABOX_BYPASS_CONFIRMATION"]
+
+def _headers() -> dict[str, str]:
+    return {"X-Local-Token": LOCAL_SECURE_TOKEN}
+
+def test_two_phase_ddl_execution_flow(db_session, demo_datasource) -> None:
+    def override_get_db():
+        yield db_session
+
+    tbl_name = f"confirm_table_{uuid.uuid4().hex[:8]}"
+    ddl = f"CREATE TABLE `{tbl_name}` (`id` INT PRIMARY KEY);"
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with TestClient(app) as client:
+            # Phase 1: Call without token
+            resp = client.post(
+                "/api/v1/schema/design/execute-ddl",
+                headers=_headers(),
+                json={
+                    "datasource_id": demo_datasource.id,
+                    "ddl": ddl
+                }
+            )
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["requires_confirmation"] is True
+            assert "confirm_token" in data
+            token = data["confirm_token"]
+
+            # Failure check: Call with invalid confirmation text
+            resp_fail = client.post(
+                "/api/v1/schema/design/execute-ddl",
+                headers=_headers(),
+                json={
+                    "datasource_id": demo_datasource.id,
+                    "ddl": ddl,
+                    "confirm_token": token,
+                    "confirm_text": "WRONG_DB_NAME"
+                }
+            )
+            assert resp_fail.status_code == 400
+            assert "二次确认文本不匹配" in resp_fail.json()["detail"]["message"]
+
+            # Token is single use, so we get a new one for Phase 2
+            resp_new = client.post(
+                "/api/v1/schema/design/execute-ddl",
+                headers=_headers(),
+                json={
+                    "datasource_id": demo_datasource.id,
+                    "ddl": ddl
+                }
+            )
+            token_new = resp_new.json()["confirm_token"]
+
+            # Phase 2: Call with correct confirmation text (datasource name)
+            resp_ok = client.post(
+                "/api/v1/schema/design/execute-ddl",
+                headers=_headers(),
+                json={
+                    "datasource_id": demo_datasource.id,
+                    "ddl": ddl,
+                    "confirm_token": token_new,
+                    "confirm_text": demo_datasource.name
+                }
+            )
+            assert resp_ok.status_code == 200
+            assert resp_ok.json()["success"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_two_phase_generate_test_data_flow(db_session) -> None:
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with TestClient(app) as client:
+            # 1. Setup a mockup database datasource
+            resp = client.post("/api/v1/datasources", json={
+                "name": "test_data_source",
+                "host": "demo",
+                "port": 3306,
+                "database_name": "demo_shop",
+                "username": "demo",
+                "password": "demo",
+            }, headers=_headers())
+            assert resp.status_code == 200
+            ds_data = resp.json()
+            ds_id = ds_data["id"]
+            ds_name = ds_data["name"]
+
+            # 2. Sync to populate the metastore
+            sync_resp = client.post(f"/api/v1/datasources/{ds_id}/sync", headers=_headers())
+            assert sync_resp.status_code == 200
+
+            # Phase 1: Call without token
+            resp_data = client.post(
+                "/api/v1/schema/generate-test-data",
+                headers=_headers(),
+                json={
+                    "datasource_id": ds_id,
+                    "table_name": "users",
+                    "row_count": 5
+                }
+            )
+            assert resp_data.status_code == 200
+            data = resp_data.json()
+            assert data["requires_confirmation"] is True
+            assert "confirm_token" in data
+            token = data["confirm_token"]
+
+            # Phase 2: Call with correct confirmation text
+            resp_ok = client.post(
+                "/api/v1/schema/generate-test-data",
+                headers=_headers(),
+                json={
+                    "datasource_id": ds_id,
+                    "table_name": "users",
+                    "row_count": 5,
+                    "confirm_token": token,
+                    "confirm_text": ds_name
+                }
+            )
+            assert resp_ok.status_code == 200
+            assert resp_ok.json()["success"] is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_two_phase_restore_backup_flow(db_session, monkeypatch) -> None:
+    def override_get_db():
+        yield db_session
+
+    from engine.crypto import encrypt_password
+    from engine.models import DEFAULT_PROJECT_ID
+
+    runtime_dir = Path("D:/Project/DataBox/.databox_runtime/test_restore_runtime_confirm") / str(uuid.uuid4())
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("DATABOX_RUNTIME_DIR", str(runtime_dir))
+
+    # Create MySQL datasource
+    cipher, nonce = encrypt_password("secret")
+    datasource = DataSource(
+        id="backup-ds-confirm",
+        project_id=DEFAULT_PROJECT_ID,
+        name="backup_test_confirm",
+        host="127.0.0.1",
+        port=3306,
+        database_name="analytics",
+        username="readonly",
+        password_ciphertext=cipher,
+        password_nonce=nonce,
+        status="active",
+    )
+    db_session.add(datasource)
+    db_session.commit()
+
+    # Mock mysqldump
+    def fake_dump(ds: DataSource, output_path) -> None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text("-- MySQL dump\nCREATE TABLE users (id int);\n", encoding="utf-8")
+
+    monkeypatch.setattr("engine.backup._run_mysqldump", fake_dump)
+
+    # Mock mysql restore
+    restore_called = False
+    def fake_restore(ds: DataSource, sql_file_path: Path) -> None:
+        nonlocal restore_called
+        restore_called = True
+        assert sql_file_path.exists()
+
+    monkeypatch.setattr("engine.backup._run_mysql_restore", fake_restore)
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with TestClient(app) as client:
+            # Create backup record
+            resp = client.post(
+                "/api/v1/backups",
+                json={"datasource_id": datasource.id, "label": "to restore"},
+                headers=_headers(),
+            )
+            assert resp.status_code == 200
+            backup = resp.json()
+            assert backup["status"] == "success"
+
+            # Phase 1: Call without token
+            resp_restore = client.post(
+                f"/api/v1/backups/{backup['id']}/restore",
+                headers=_headers()
+            )
+            assert resp_restore.status_code == 200
+            data = resp_restore.json()
+            assert data["requires_confirmation"] is True
+            assert "confirm_token" in data
+            token = data["confirm_token"]
+
+            # Phase 2: Call with correct confirmation text
+            resp_ok = client.post(
+                f"/api/v1/backups/{backup['id']}/restore?confirm_token={token}&confirm_text={datasource.name}",
+                headers=_headers()
+            )
+            assert resp_ok.status_code == 200
+            assert resp_ok.json()["success"] is True
+            assert restore_called is True
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_two_phase_delete_datasource_flow(db_session, demo_datasource) -> None:
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with TestClient(app) as client:
+            # Phase 1: Call without token
+            resp = client.delete(
+                f"/api/v1/datasources/{demo_datasource.id}",
+                headers=_headers()
+            )
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["requires_confirmation"] is True
+            assert "confirm_token" in data
+            token = data["confirm_token"]
+
+            # Phase 2: Call with correct confirmation text
+            resp_ok = client.delete(
+                f"/api/v1/datasources/{demo_datasource.id}?confirm_token={token}&confirm_text={demo_datasource.name}",
+                headers=_headers()
+            )
+            assert resp_ok.status_code == 200
+            assert resp_ok.json()["success"] is True
+    finally:
+        app.dependency_overrides.clear()

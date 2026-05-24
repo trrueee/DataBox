@@ -155,10 +155,41 @@ def api_list_datasources(
 
 
 @router.delete("/datasources/{id}")
-def api_delete_datasource(id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+def api_delete_datasource(
+    id: str,
+    confirm_token: str | None = Query(default=None),
+    confirm_text: str | None = Query(default=None),
+    db: Session = Depends(get_db)
+) -> dict[str, Any]:
     datasource = db.query(DataSource).filter(DataSource.id == id).first()
     if not datasource:
         raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "数据源不存在"})
+
+    # 🔒 Two-Phase confirmation check for deleting datasources
+    import os
+    if os.environ.get("DATABOX_BYPASS_CONFIRMATION") != "1":
+        if not confirm_token:
+            from engine.policy.confirmation import confirmation_manager
+            token = confirmation_manager.create_confirmation(
+                datasource_id=id,
+                action="delete_datasource",
+                details={"datasource_id": id},
+                expected_confirm_text=datasource.name
+            )
+            return {
+                "success": False,
+                "requires_confirmation": True,
+                "confirm_token": token,
+                "impact_summary": f"⚠️ 警告：您即将在系统中删除数据源 '{datasource.name}'！\n\n该操作会清空本地保存的所有相关 Schema 结构和元数据历史缓存！请输入数据源名称以确认执行。",
+                "expected_confirm_text": datasource.name
+            }
+        else:
+            from engine.policy.confirmation import confirmation_manager
+            is_valid, err_msg, details = confirmation_manager.validate_and_consume(
+                confirm_token, confirm_text or ""
+            )
+            if not is_valid:
+                raise HTTPException(status_code=400, detail={"code": "CONFIRMATION_FAILED", "message": err_msg})
 
     try:
         from engine.datasource import close_active_tunnel
