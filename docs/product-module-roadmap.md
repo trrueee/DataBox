@@ -1,5 +1,7 @@
 # DataBox 产品模块路线图
 
+> 当前产品需求请看 `docs/PRD.md`，聚焦版产品路线请看 `docs/ROADMAP.md`，可执行开发拆分请看 `docs/IMPLEMENTATION_BACKLOG.md`。本文档保留为历史路线、阶段完成标记和产品边界演进记录。
+
 更新时间：2026-05-24
 
 ## 1. 定位校正
