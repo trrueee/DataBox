@@ -18,3 +18,8 @@ desktop/dist/
 desktop/src-tauri/target/
 desktop/src-tauri/binaries/
 
+# IDE / Assistant / Tool states
+.claude/
+.impeccable/
+.gemini/
+docs/skills/
