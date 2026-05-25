@@ -1,0 +1,106 @@
+import { useState } from "react";
+
+interface PromptDialogProps {
+  open: boolean;
+  title: string;
+  placeholder?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm: (value: string) => void;
+  onCancel: () => void;
+}
+
+export function PromptDialog({
+  open,
+  title,
+  placeholder = "",
+  confirmLabel = "确认",
+  cancelLabel = "取消",
+  onConfirm,
+  onCancel,
+}: PromptDialogProps) {
+  const [value, setValue] = useState("");
+
+  if (!open) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0, 0, 0, 0.5)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 9998,
+      }}
+      onClick={onCancel}
+    >
+      <div
+        className="animate-slide-down"
+        style={{
+          background: "var(--bg-surface)",
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--shadow-xl)",
+          width: "min(380px, 90vw)",
+          overflow: "hidden",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ padding: "24px 24px 16px" }}>
+          <h3 style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: 12 }}>{title}</h3>
+          <input
+            className="input-field"
+            autoFocus
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={placeholder}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && value.trim()) {
+                onConfirm(value.trim());
+                setValue("");
+              }
+              if (e.key === "Escape") onCancel();
+            }}
+          />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            padding: "12px 24px",
+            borderTop: "1px solid var(--border-light)",
+            background: "var(--bg-secondary)",
+          }}
+        >
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              onCancel();
+              setValue("");
+            }}
+          >
+            {cancelLabel}
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              if (value.trim()) {
+                onConfirm(value.trim());
+                setValue("");
+              }
+            }}
+            disabled={!value.trim()}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
