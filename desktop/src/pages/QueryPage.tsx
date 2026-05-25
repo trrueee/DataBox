@@ -11,8 +11,12 @@ import {
   PencilLine,
   Play,
   Plus,
+  RefreshCw,
+  RotateCcw,
+  Search,
   ShieldAlert,
   Table,
+  Trash2,
   X,
 } from "lucide-react";
 import { api } from "../lib/api";
@@ -25,6 +29,8 @@ import { StatusIndicator } from "../components/StatusIndicator";
 import { ExplainVisualizer } from "../components/ExplainVisualizer";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { AiBenchmarkDrawer } from "../components/AiBenchmarkDrawer";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { useToast } from "../components/Toast";
 import { useQueryExecution } from "../hooks/useQueryExecution";
 
 interface QueryPageProps {
@@ -44,6 +50,9 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
   const [resultViewMode, setResultViewMode] = useState<ResultViewMode>("table");
   const [history, setHistory] = useState<QueryHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyMutating, setHistoryMutating] = useState(false);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStatus, setHistoryStatus] = useState<"all" | "success" | "failed" | "timeout" | "cancelled">("all");
   const [copied, setCopied] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -63,7 +72,13 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-      setHistory(await api.listHistory(datasource.id));
+      setHistory(
+        await api.listHistory(datasource.id, {
+          search: historySearch.trim() || undefined,
+          status: historyStatus,
+          limit: 100,
+        }),
+      );
     } catch (e) {
       console.error("Failed to load query history:", e);
     } finally {
@@ -89,10 +104,13 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
     handleValidateSql,
     handleExecuteSql,
     handleCancelQuery,
+    confirmRequest,
+    resolveConfirm,
   } = useQueryExecution(datasource, () => {
     void fetchHistory();
   });
 
+  const toast = useToast();
   const [schemaTables, setSchemaTables] = useState<any[]>([]);
 
   const fetchSchemaMetadata = async () => {
@@ -107,15 +125,55 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
 
   useEffect(() => {
     setActiveBottomTab("results");
-    void fetchHistory();
     void fetchSchemaMetadata();
   }, [datasource.id]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchHistory();
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [datasource.id, historySearch, historyStatus]);
 
   useEffect(() => {
     if (!initialDraft?.sql) return;
     openSqlDraft(initialDraft.sql, initialDraft.title);
     setActiveBottomTab("results");
   }, [initialDraft?.nonce]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          void handleValidateSql();
+        } else {
+          void handleExecuteSql(30000);
+        }
+        return;
+      }
+
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        handleAddTab();
+        return;
+      }
+
+      if (e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        if (activeEditorTab) {
+          void handleCloseTab(activeEditorTab.id);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeEditorTab, handleValidateSql, handleExecuteSql, handleAddTab, handleCloseTab]);
 
   const isExplainQuery = useMemo(() => {
     if (!activeEditorTab?.queryResult) return false;
@@ -158,6 +216,68 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
     a.download = `databox_export_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const getHistorySql = (item: QueryHistory) =>
+    item.executed_sql || item.safe_sql || item.generated_sql || item.submitted_sql || "";
+
+  const handleReuseHistory = (item: QueryHistory) => {
+    const sql = getHistorySql(item);
+    if (!sql) return;
+    openSqlDraft(sql, item.question || "历史查询");
+    setActiveBottomTab("results");
+  };
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{ item: QueryHistory } | null>(null);
+  const [clearConfirm, setClearConfirm] = useState(false);
+
+  const handleDeleteHistory = async (item: QueryHistory) => {
+    setDeleteConfirm({ item });
+  };
+
+  const doDeleteHistory = async () => {
+    const item = deleteConfirm?.item;
+    if (!item) return;
+    setDeleteConfirm(null);
+    try {
+      setHistoryMutating(true);
+      await api.deleteHistory(item.id);
+      setHistory((prev) => prev.filter((h) => h.id !== item.id));
+      toast.toast("查询历史已删除", "success");
+    } catch (e: any) {
+      toast.toast(e.message ?? "删除查询历史失败", "error");
+    } finally {
+      setHistoryMutating(false);
+    }
+  };
+
+  const doClearHistory = async () => {
+    setClearConfirm(false);
+    try {
+      setHistoryMutating(true);
+      await api.clearHistory(datasource.id);
+      setHistory([]);
+      toast.toast("查询历史已清空", "success");
+    } catch (e: any) {
+      toast.toast(e.message ?? "清空查询历史失败", "error");
+    } finally {
+      setHistoryMutating(false);
+    }
+  };
+
+  const formatHistoryStatus = (status: QueryHistory["execution_status"] | string) => {
+    switch (status) {
+      case "success":
+        return "成功";
+      case "failed":
+        return "失败";
+      case "timeout":
+        return "超时";
+      case "cancelled":
+        return "已取消";
+      default:
+        return status || "-";
+    }
   };
 
   const handleAiGenerate = async () => {
@@ -366,7 +486,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                     </div>
                   );
                 })}
-                <button className="btn-ghost" onClick={() => handleAddTab()} style={{ padding: "4px 8px", flexShrink: 0 }}>
+                <button className="btn-ghost" onClick={() => handleAddTab()} style={{ padding: "4px 8px", flexShrink: 0 }} title="新建查询标签 (Ctrl+N)">
                   <Plus size={13} />
                 </button>
               </div>
@@ -430,6 +550,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                   style={{ padding: "5px 10px", fontSize: "0.8rem" }}
                   onClick={handleValidateSql}
                   disabled={validating || !activeEditorTab || activeEditorTab.status === "running"}
+                  title="校验 SQL 安全性 (Ctrl+Shift+Enter)"
                 >
                   <ShieldAlert size={13} />
                   校验
@@ -455,8 +576,9 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                   <button
                     className="btn-primary"
                     style={{ padding: "5px 14px", fontSize: "0.82rem" }}
-                    onClick={() => handleExecuteSql(30000)} // Default to 30s timeout
+                    onClick={() => handleExecuteSql(30000)}
                     disabled={!activeEditorTab}
+                    title="执行 SQL 查询 (Ctrl+Enter)"
                   >
                     <Play size={13} />
                     执行
@@ -506,19 +628,85 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                   历史
                 </button>
               </div>
-              {activeEditorTab?.queryError && (
-                <span
-                  className="status-badge status-badge-error"
-                  style={{
-                    maxWidth: 320,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {activeEditorTab.queryError}
-                </span>
-              )}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
+                {activeBottomTab === "history" && (
+                  <>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        minWidth: 180,
+                        maxWidth: 240,
+                        padding: "4px 8px",
+                        border: "1px solid var(--border-light)",
+                        borderRadius: 6,
+                        background: "var(--bg-surface)",
+                      }}
+                    >
+                      <Search size={13} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                      <input
+                        value={historySearch}
+                        onChange={(e) => setHistorySearch(e.target.value)}
+                        placeholder="搜索问题或 SQL"
+                        style={{
+                          border: "none",
+                          outline: "none",
+                          background: "transparent",
+                          width: "100%",
+                          minWidth: 0,
+                          color: "var(--text-primary)",
+                          fontSize: "0.78rem",
+                        }}
+                      />
+                    </label>
+                    <select
+                      className="input-field input-field-sm"
+                      value={historyStatus}
+                      onChange={(e) => setHistoryStatus(e.target.value as typeof historyStatus)}
+                      style={{ width: 104, height: 30, fontSize: "0.78rem" }}
+                    >
+                      <option value="all">全部状态</option>
+                      <option value="success">成功</option>
+                      <option value="failed">失败</option>
+                      <option value="timeout">超时</option>
+                      <option value="cancelled">已取消</option>
+                    </select>
+                    <button
+                      className="btn-ghost"
+                      onClick={() => void fetchHistory()}
+                      disabled={historyLoading}
+                      title="刷新历史"
+                      style={{ padding: "5px 8px" }}
+                    >
+                      <RefreshCw size={13} />
+                    </button>
+                    <button
+                      className="btn-ghost"
+                      onClick={() => setClearConfirm(true)}
+                      disabled={historyMutating || history.length === 0}
+                      title="清空当前数据源历史"
+                      style={{ padding: "5px 8px", color: "var(--accent-red)" }}
+                    >
+                      <Trash2 size={13} />
+                      清空
+                    </button>
+                  </>
+                )}
+                {activeEditorTab?.queryError && (
+                  <span
+                    className="status-badge status-badge-error"
+                    style={{
+                      maxWidth: 320,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {activeEditorTab.queryError}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div style={{ flex: 1, overflow: "auto" }}>
@@ -526,11 +714,22 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                 <>
                   {!activeEditorTab?.queryResult ? (
                     <div className="empty-state" style={{ padding: 36 }}>
-                      <div className="empty-state-desc">
-                        {activeEditorTab?.status === "running"
-                          ? "SQL 正在安全执行中，请稍候..."
-                          : "执行安全 SQL 后，这里会展示查询结果"}
-                      </div>
+                      {activeEditorTab?.status === "running" ? (
+                        <>
+                          <div className="empty-state-desc">SQL 正在安全执行中，请稍候...</div>
+                          <div style={{ marginTop: 8, width: 120, height: 3, background: "var(--accent-indigo-light)", borderRadius: 2, overflow: "hidden" }}>
+                            <div className="progress-bar-glow" style={{ height: "100%", width: "60%", background: "var(--accent-indigo)", borderRadius: 2 }} />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Play size={28} className="empty-state-icon" style={{ color: "var(--accent-indigo)" }} />
+                          <div className="empty-state-desc">在编辑器中编写 SQL，点击「执行」或按 <strong>Ctrl+Enter</strong></div>
+                          <div style={{ marginTop: 12, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                            也可通过 AI 智能问数自动生成 SQL
+                          </div>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div>
@@ -726,12 +925,17 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                     </div>
                   ) : history.length === 0 ? (
                     <div className="empty-state" style={{ padding: 36 }}>
-                      <div className="empty-state-desc">还没有执行历史，执行一条 SQL 试试</div>
+                      <div className="empty-state-desc">
+                        {historySearch.trim() || historyStatus !== "all"
+                          ? "没有匹配的查询历史"
+                          : "还没有执行历史，执行一条 SQL 试试"}
+                      </div>
                     </div>
                   ) : (
                     <table className="data-table">
                       <thead>
                         <tr>
+                          <th>操作</th>
                           <th>时间</th>
                           <th>SQL</th>
                           <th>审核</th>
@@ -743,6 +947,27 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                       <tbody>
                         {history.map((item) => (
                           <tr key={item.id}>
+                            <td style={{ whiteSpace: "nowrap" }}>
+                              <button
+                                className="btn-ghost"
+                                onClick={() => handleReuseHistory(item)}
+                                disabled={!getHistorySql(item)}
+                                title="复用 SQL"
+                                style={{ padding: "3px 7px", fontSize: "0.74rem" }}
+                              >
+                                <RotateCcw size={12} />
+                                复用
+                              </button>
+                              <button
+                                className="btn-ghost"
+                                onClick={() => handleDeleteHistory(item)}
+                                disabled={historyMutating}
+                                title="删除历史"
+                                style={{ padding: "3px 7px", color: "var(--accent-red)" }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </td>
                             <td style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>
                               {new Date(item.created_at).toLocaleString("zh-CN", {
                                 month: "short",
@@ -760,8 +985,9 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                                 whiteSpace: "nowrap",
                                 fontSize: "0.78rem",
                               }}
+                              title={getHistorySql(item)}
                             >
-                              {item.executed_sql || item.safe_sql || item.submitted_sql}
+                              {getHistorySql(item) || "-"}
                             </td>
                             <td>
                               <StatusIndicator
@@ -785,7 +1011,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                                   fontSize: "0.8rem",
                                 }}
                               >
-                                {item.execution_status}
+                                {formatHistoryStatus(item.execution_status)}
                               </span>
                             </td>
                             <td className="cell-number">{item.rows_returned}</td>
@@ -973,6 +1199,34 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
           onClose={() => setShowBenchmarkDrawer(false)}
         />
       )}
+
+      {/* Confirm dialogs */}
+      <ConfirmDialog
+        open={confirmRequest !== null}
+        title={confirmRequest?.title ?? ""}
+        message={confirmRequest?.message ?? ""}
+        variant={confirmRequest?.variant ?? "info"}
+        onConfirm={() => resolveConfirm(true)}
+        onCancel={() => resolveConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm !== null}
+        title="删除查询历史"
+        message={`确认删除这条查询历史吗？\n\nSQL: ${deleteConfirm?.item ? (deleteConfirm.item.executed_sql || deleteConfirm.item.safe_sql || "").slice(0, 100) : ""}`}
+        variant="danger"
+        onConfirm={doDeleteHistory}
+        onCancel={() => setDeleteConfirm(null)}
+      />
+
+      <ConfirmDialog
+        open={clearConfirm}
+        title="清空查询历史"
+        message={`确认清空数据源「${datasource.name}」的全部查询历史吗？此操作不可撤销。`}
+        variant="danger"
+        onConfirm={doClearHistory}
+        onCancel={() => setClearConfirm(false)}
+      />
     </div>
   );
 };

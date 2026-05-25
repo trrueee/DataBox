@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { api } from "../lib/api";
 import type { DataSource, GuardrailCheckResult, QueryResult } from "../lib/api";
 
@@ -17,7 +17,16 @@ export type QueryTabState = {
   status: QueryStatus;
 };
 
-const defaultSql = "-- Select a table from Schema, or start typing with autocomplete.\nSELECT 1;";
+export interface ConfirmRequest {
+  title: string;
+  message: string;
+  variant: "danger" | "warning" | "info";
+  confirmLabel?: string;
+  cancelLabel?: string;
+  resolve: (confirmed: boolean) => void;
+}
+
+const defaultSql = "-- 从 Schema 选择一个表，或使用自动补全输入 SQL。\nSELECT 1;";
 
 function createQueryTab(index: number, sql = defaultSql, title?: string): QueryTabState {
   return {
@@ -39,7 +48,23 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
   const [validating, setValidating] = useState(false);
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
+  const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
 
+  const requestConfirm = useCallback(
+    (title: string, message: string, variant: "danger" | "warning" | "info" = "info"): Promise<boolean> => {
+      return new Promise<boolean>((resolve) => {
+        setConfirmRequest({ title, message, variant, resolve });
+      });
+    },
+    [],
+  );
+
+  const resolveConfirm = useCallback((confirmed: boolean) => {
+    setConfirmRequest((prev) => {
+      prev?.resolve(confirmed);
+      return null;
+    });
+  }, []);
   // Keep track of active AbortControllers mapped by tab ID so that cancellation is per-tab!
   const abortControllersRef = useRef<Record<string, AbortController>>({});
 
@@ -92,12 +117,19 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
     handleAddTab(trimmedSql, title || `Query ${tabs.length + 1}`);
   };
 
-  const handleCloseTab = (id: string) => {
+  const handleCloseTab = async (id: string) => {
     if (tabs.length === 1) return;
     const tab = tabs.find((t) => t.id === id);
     if (!tab) return;
     const isDirty = tab.sql !== tab.savedSql;
-    if (isDirty && !window.confirm(`"${tab.title}" 还有未执行的修改，确认关闭吗？`)) return;
+    if (isDirty) {
+      const confirmed = await requestConfirm(
+        "关闭标签页",
+        `"${tab.title}" 还有未执行的修改，确认关闭吗？`,
+        "warning",
+      );
+      if (!confirmed) return;
+    }
 
     // Abort if it's currently executing
     if (abortControllersRef.current[id]) {
@@ -151,14 +183,15 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
 
     // Double confirmation for PROD environment
     if (datasource.env === "prod") {
-      const confirmRun = window.confirm(
-        `⚠️ 安全警告：您当前正在对【生产环境 (PROD)】执行 SQL 操作！\n\n` +
-        `数据源名称: ${datasource.name}\n` +
-        `目标数据库: ${datasource.database_name}\n\n` +
-        `执行线上环境操作可能会影响线上业务性能或触发审计日志。请确保 SQL 语句符合规范。\n\n` +
-        `您确认要继续执行吗？`
+      const confirmed = await requestConfirm(
+        "生产环境操作确认",
+        `您正在对【生产环境 (PROD)】执行 SQL 操作！\n\n` +
+        `数据源: ${datasource.name}\n` +
+        `数据库: ${datasource.database_name}\n\n` +
+        `线上环境操作可能影响业务性能或触发审计日志。请确认 SQL 语句符合规范。`,
+        "danger",
       );
-      if (!confirmRun) return;
+      if (!confirmed) return;
     }
 
     // Cancel existing query execution on this tab if already running
@@ -281,5 +314,7 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
     handleValidateSql,
     handleExecuteSql,
     handleCancelQuery,
+    confirmRequest,
+    resolveConfirm,
   };
 };

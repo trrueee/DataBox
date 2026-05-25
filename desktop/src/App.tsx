@@ -20,6 +20,7 @@ import { QueryPage } from "./pages/QueryPage";
 import { SchemaPage } from "./pages/SchemaPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DemoTourGuide } from "./components/DemoTourGuide";
+import { PromptDialog } from "./components/PromptDialog";
 
 type AppTab = "environments" | "datasources" | "backups" | "schema" | "query" | "dashboard";
 
@@ -43,6 +44,7 @@ export default function App() {
   const [selectedTableName, setSelectedTableName] = useState<string | null>(null);
   const [schemaInitialView, setSchemaInitialView] = useState<"fields" | "er" | "data" | null>(null);
   const [queryDraft, setQueryDraft] = useState<QueryDraft | null>(null);
+  const [showCreateProject, setShowCreateProject] = useState(false);
 
   useEffect(() => {
     void refreshProjects();
@@ -64,6 +66,22 @@ export default function App() {
   useEffect(() => {
     if (activeTab !== "schema") setSchemaInitialView(null);
   }, [activeTab]);
+
+  // Global keyboard shortcuts for tab navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      if (e.key === "1") { e.preventDefault(); setActiveTab("environments"); }
+      if (e.key === "2") { e.preventDefault(); setActiveTab("backups"); }
+      if (e.key === "3") { e.preventDefault(); setActiveTab("datasources"); }
+      if (e.key === "4") { e.preventDefault(); setActiveTab("schema"); }
+      if (e.key === "5") { e.preventDefault(); setActiveTab("query"); }
+      if (e.key === "6") { e.preventDefault(); setActiveTab("dashboard"); }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const refreshProjects = async () => {
     const items = await api.listProjects();
@@ -88,12 +106,8 @@ export default function App() {
     }
   };
 
-  const handleCreateProject = async () => {
-    const name = window.prompt("Project name");
-    const trimmed = name?.trim();
-    if (!trimmed) return;
-
-    const created = await api.createProject({ name: trimmed });
+  const handleCreateProject = async (name: string) => {
+    const created = await api.createProject({ name });
     await refreshProjects();
     setActiveProject(created);
     setActiveDataSource(null);
@@ -141,9 +155,9 @@ export default function App() {
 
   const workspaceTitle =
     activeTab === "environments"
-      ? "Environment Lab"
+      ? "环境实验室"
       : activeTab === "backups"
-      ? "Backup Vault"
+      ? "备份仓库"
       : activeTab === "datasources"
       ? "数据源管理"
       : activeTab === "schema"
@@ -153,11 +167,11 @@ export default function App() {
       : "AI 监控审计";
 
   const navItems: { id: AppTab; label: string; icon: typeof Database }[] = [
-    { id: "environments", label: "Environments", icon: HardDrive },
-    { id: "backups", label: "Backups", icon: HardDrive },
+    { id: "environments", label: "环境实验室", icon: HardDrive },
+    { id: "backups", label: "备份仓库", icon: HardDrive },
     { id: "datasources", label: "数据源", icon: Database },
-    { id: "schema", label: "Schema", icon: BookOpen },
-    { id: "query", label: "工作台", icon: Terminal },
+    { id: "schema", label: "Schema 浏览", icon: BookOpen },
+    { id: "query", label: "SQL 工作台", icon: Terminal },
     { id: "dashboard", label: "监控审计", icon: Activity },
   ];
 
@@ -244,9 +258,9 @@ export default function App() {
               </select>
               <button
                 className="btn-ghost"
-                onClick={() => void handleCreateProject()}
+                onClick={() => setShowCreateProject(true)}
                 style={{ height: 34, padding: "0 10px", fontWeight: 700 }}
-                title="Create project"
+                title="创建项目"
               >
                 +
               </button>
@@ -584,7 +598,7 @@ export default function App() {
           }}
         >
           <div className="breadcrumb">
-            <span style={{ color: "var(--text-muted)" }}>工作区</span>
+            <span style={{ color: "var(--text-muted)" }}>{activeProject?.name || "DataBox"}</span>
             <span className="breadcrumb-sep">/</span>
             <span className="breadcrumb-current">{workspaceTitle}</span>
             {activeDataSource && (
@@ -692,10 +706,21 @@ export default function App() {
             color: "var(--text-muted)",
           }}
         >
-          <span>DataBox V1.0 — 本地数据库探索实验室</span>
-          <span>Desktop-first · MySQL Client</span>
+          <span>DataBox V1.0 · 本地优先的 AI 数据库工作台</span>
+          <span>MySQL / PostgreSQL / SQLite</span>
         </footer>
       </section>
+
+      <PromptDialog
+        open={showCreateProject}
+        title="创建新项目"
+        placeholder="输入项目名称"
+        onConfirm={(name) => {
+          setShowCreateProject(false);
+          void handleCreateProject(name);
+        }}
+        onCancel={() => setShowCreateProject(false)}
+      />
 
       <DemoTourGuide
         activeTab={activeTab}
@@ -705,7 +730,9 @@ export default function App() {
         activeDataSource={activeDataSource}
         datasources={datasources}
         schemaTables={schemaTables}
-        handleCreateProject={handleCreateProject}
+        handleCreateProject={async (name?: string) => {
+          await handleCreateProject(name || "新项目");
+        }}
       />
     </div>
   );

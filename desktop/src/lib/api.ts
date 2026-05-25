@@ -64,10 +64,28 @@ export interface DataSource {
   last_test_at?: string;
   last_test_status?: string;
   last_test_error?: string;
+  last_test_latency_ms?: number | null;
+  last_test_readonly?: boolean | null;
+  last_test_server_version?: string | null;
+  last_test_tables_count?: number | null;
+  last_test_warnings?: string[];
   last_sync_at?: string;
   last_sync_status?: string;
   last_sync_error?: string;
   created_at: string;
+}
+
+export interface DataSourceHealthResult {
+  ok: boolean;
+  status: "success" | "failed";
+  checkedAt?: string;
+  latencyMs?: number;
+  serverVersion?: string;
+  readonly?: boolean | null;
+  tablesCount?: number;
+  warnings: string[];
+  message: string;
+  datasource: DataSource;
 }
 
 export interface Project {
@@ -345,6 +363,9 @@ export const api = {
   listDatasources: (projectId?: string) =>
     request<DataSource[]>(projectId ? `/datasources?project_id=${encodeURIComponent(projectId)}` : "/datasources"),
 
+  checkDatasourceHealth: (id: string) =>
+    request<DataSourceHealthResult>(`/datasources/${id}/health`, { method: "POST" }),
+
   deleteDatasource: (id: string, confirm?: { token: string; text: string }) => {
     const query = confirm ? `?confirm_token=${encodeURIComponent(confirm.token)}&confirm_text=${encodeURIComponent(confirm.text)}` : "";
     return request<DangerousOperationResult<{ success: boolean; message: string }>>(`/datasources/${id}${query}`, { method: "DELETE" });
@@ -421,8 +442,26 @@ export const api = {
       body: JSON.stringify({ execution_id: executionId }),
     }),
 
-  listHistory: (datasourceId: string) =>
-    request<QueryHistory[]>(`/query/history?datasource_id=${datasourceId}`),
+  listHistory: (datasourceId?: string, filters?: { search?: string; status?: string; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (datasourceId) params.set("datasource_id", datasourceId);
+    if (filters?.search) params.set("search", filters.search);
+    if (filters?.status && filters.status !== "all") params.set("status", filters.status);
+    if (filters?.limit) params.set("limit", String(filters.limit));
+    const query = params.toString();
+    return request<QueryHistory[]>(`/query/history${query ? `?${query}` : ""}`);
+  },
+
+  deleteHistory: (historyId: string) =>
+    request<{ success: boolean; deleted: number }>(`/query/history/${encodeURIComponent(historyId)}`, {
+      method: "DELETE",
+    }),
+
+  clearHistory: (datasourceId: string) =>
+    request<{ success: boolean; deleted: number }>(
+      `/query/history?datasource_id=${encodeURIComponent(datasourceId)}`,
+      { method: "DELETE" },
+    ),
 
   generateSql: (datasourceId: string, question: string, config?: { apiKey?: string; apiBase?: string; model?: string; optimizeRag?: boolean }, signal?: AbortSignal) =>
     request<any>("/query/generate", {

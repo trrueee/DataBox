@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Award, X } from "lucide-react";
 import { api } from "../lib/api";
 import type { DataSource } from "../lib/api";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { useToast } from "./Toast";
 
 interface AiBenchmarkDrawerProps {
   datasource: DataSource;
@@ -23,12 +25,14 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
   initialSql = "",
   onClose,
 }) => {
+  const toast = useToast();
   const [goldenSqls, setGoldenSqls] = useState<any[]>([]);
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
   const [benchmarkResult, setBenchmarkResult] = useState<any | null>(null);
   const [goldenQuestion, setGoldenQuestion] = useState(initialQuestion);
   const [goldenSqlText, setGoldenSqlText] = useState(initialSql);
   const [addingGolden, setAddingGolden] = useState(false);
+  const [deleteGoldenId, setDeleteGoldenId] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchGoldenSqls();
@@ -57,20 +61,24 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
       setGoldenQuestion("");
       setGoldenSqlText("");
       await fetchGoldenSqls();
+      toast.toast("黄金 SQL 已保存", "success");
     } catch (e: any) {
-      alert(e.message || "添加失败");
+      toast.toast(e.message || "添加失败", "error");
     } finally {
       setAddingGolden(false);
     }
   };
 
-  const handleDeleteGolden = async (id: string) => {
-    if (!window.confirm("确定删除这个黄金测试句？")) return;
+  const doDeleteGolden = async () => {
+    const id = deleteGoldenId;
+    if (!id) return;
+    setDeleteGoldenId(null);
     try {
       await api.deleteGoldenSql(id);
       await fetchGoldenSqls();
+      toast.toast("黄金 SQL 已删除", "success");
     } catch (e: any) {
-      alert(e.message || "删除失败");
+      toast.toast(e.message || "删除失败", "error");
     }
   };
 
@@ -86,7 +94,7 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
       });
       setBenchmarkResult(res);
     } catch (e: any) {
-      alert(e.message || "运行评估失败");
+      toast.toast(e.message || "运行评估失败", "error");
     } finally {
       setBenchmarkRunning(false);
     }
@@ -438,7 +446,7 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
                   </div>
                   <button
                     className="btn-ghost"
-                    onClick={() => handleDeleteGolden(pair.id)}
+                    onClick={() => setDeleteGoldenId(pair.id)}
                     style={{ color: "var(--accent-red)", padding: 4 }}
                   >
                     <X size={14} />
@@ -449,6 +457,15 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteGoldenId !== null}
+        title="删除黄金 SQL"
+        message="确定删除这个黄金测试句吗？此操作不可撤销。"
+        variant="danger"
+        onConfirm={doDeleteGolden}
+        onCancel={() => setDeleteGoldenId(null)}
+      />
     </div>
   );
 };
