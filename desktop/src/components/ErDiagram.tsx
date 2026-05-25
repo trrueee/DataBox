@@ -239,11 +239,12 @@ function computeLayout(
 
     let y = 60;
     let col = 0;
-    const colX = [420, 700, 980];
+    // Increased column gap to 220px to prevent relationship labels from overlapping cards
+    const colX = [490, 920, 1350, 1780];
 
     others.forEach((node) => {
       const nodeH = getNodeHeight(node);
-      const x = colX[col] || 420 + col * 280;
+      const x = colX[col] || 490 + col * (NODE_W + 220);
       positions.set(node.label, { x, y });
       y += nodeH + GRID_ROW_GAP;
       if (y > 600) {
@@ -268,9 +269,11 @@ function computeLayout(
     for (const node of groupNodes) {
       const nodeH = getNodeHeight(node);
       positions.set(node.label, { x: colX, y: rowY });
-      rowY += nodeH + 50;
+      // Increased vertical row gap to 70px
+      rowY += nodeH + 70;
     }
-    colX += NODE_W + 70;
+    // Increased horizontal column gap to 220px for better label breathing room
+    colX += NODE_W + 220;
   }
 
   return positions;
@@ -504,16 +507,17 @@ function ErEdge({
               fontSize: "0.62rem",
               fontFamily: "var(--font-mono)",
               color: isInferred ? "#B45309" : "#0D7377",
-              background: "rgba(255,255,255,0.92)",
+              background: "rgba(255,255,255,0.96)", // Solid backdrop for absolute legibility
               padding: "2px 6px",
               borderRadius: 3,
               border: `1px solid ${isInferred ? "#FCD34D" : "#ccf0f0"}`,
               pointerEvents: "all",
               whiteSpace: "nowrap",
-              maxWidth: 180,
+              maxWidth: 220,
               overflow: "hidden",
               textOverflow: "ellipsis",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+              zIndex: 10, // Ensure edge labels render on top of overlapping nodes
             }}
             title={`${displayLabel}${isInferred ? " (系统推断关联)" : ""}`}
           >
