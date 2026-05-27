@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Award, X } from "lucide-react";
 import { api } from "../lib/api";
 import type { DataSource } from "../lib/api";
@@ -18,6 +18,38 @@ interface AiBenchmarkDrawerProps {
   onClose: () => void;
 }
 
+interface GoldenSql {
+  id: string;
+  data_source_id: string;
+  question: string;
+  golden_sql: string;
+  created_at: string | null;
+}
+
+interface BenchmarkDetail {
+  golden_id: string;
+  question: string;
+  golden_sql: string;
+  generated_sql: string;
+  status: "passed" | "failed";
+  match_type: "lexical" | "execution" | "none";
+  latency_ms: number;
+  error_message: string;
+}
+
+interface BenchmarkResult {
+  success: boolean;
+  total_queries: number;
+  passed_count: number;
+  accuracy_rate: number;
+  avg_latency_ms: number;
+  details: BenchmarkDetail[];
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
   datasource,
   aiConfig,
@@ -26,32 +58,38 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
   onClose,
 }) => {
   const toast = useToast();
-  const [goldenSqls, setGoldenSqls] = useState<any[]>([]);
+  const [goldenSqls, setGoldenSqls] = useState<GoldenSql[]>([]);
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
-  const [benchmarkResult, setBenchmarkResult] = useState<any | null>(null);
+  const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkResult | null>(null);
   const [goldenQuestion, setGoldenQuestion] = useState(initialQuestion);
   const [goldenSqlText, setGoldenSqlText] = useState(initialSql);
   const [addingGolden, setAddingGolden] = useState(false);
   const [deleteGoldenId, setDeleteGoldenId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void fetchGoldenSqls();
-  }, [datasource.id]);
-
-  // Sync initial presets if they change from parent actions
-  useEffect(() => {
-    if (initialQuestion) setGoldenQuestion(initialQuestion);
-    if (initialSql) setGoldenSqlText(initialSql);
-  }, [initialQuestion, initialSql]);
-
-  const fetchGoldenSqls = async () => {
+  const fetchGoldenSqls = useCallback(async () => {
     try {
       const items = await api.listGoldenSql(datasource.id);
-      setGoldenSqls(items);
+      setGoldenSqls(items as GoldenSql[]);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [datasource.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api.listGoldenSql(datasource.id)
+      .then((items) => {
+        if (!cancelled) {
+          setGoldenSqls(items as GoldenSql[]);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [datasource.id]);
 
   const handleCreateGoldenSql = async () => {
     if (!goldenQuestion.trim() || !goldenSqlText.trim()) return;
@@ -62,8 +100,8 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
       setGoldenSqlText("");
       await fetchGoldenSqls();
       toast.toast("黄金 SQL 已保存", "success");
-    } catch (e: any) {
-      toast.toast(e.message || "添加失败", "error");
+    } catch (e: unknown) {
+      toast.toast(getErrorMessage(e, "添加失败"), "error");
     } finally {
       setAddingGolden(false);
     }
@@ -77,8 +115,8 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
       await api.deleteGoldenSql(id);
       await fetchGoldenSqls();
       toast.toast("黄金 SQL 已删除", "success");
-    } catch (e: any) {
-      toast.toast(e.message || "删除失败", "error");
+    } catch (e: unknown) {
+      toast.toast(getErrorMessage(e, "删除失败"), "error");
     }
   };
 
@@ -92,9 +130,9 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
         model: aiConfig.model || undefined,
         optimizeRag: aiConfig.optimizeRag,
       });
-      setBenchmarkResult(res);
-    } catch (e: any) {
-      toast.toast(e.message || "运行评估失败", "error");
+      setBenchmarkResult(res as BenchmarkResult);
+    } catch (e: unknown) {
+      toast.toast(getErrorMessage(e, "运行评估失败"), "error");
     } finally {
       setBenchmarkRunning(false);
     }
@@ -309,7 +347,7 @@ export const AiBenchmarkDrawer: React.FC<AiBenchmarkDrawerProps> = ({
                 回归细节清单
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {benchmarkResult.details.map((detail: any, i: number) => {
+                {benchmarkResult.details.map((detail, i) => {
                   const passed = detail.status === "passed";
                   return (
                     <div

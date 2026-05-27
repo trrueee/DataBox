@@ -28,6 +28,16 @@ export interface ConfirmRequest {
 
 const defaultSql = "-- 从 Schema 选择一个表，或使用自动补全输入 SQL。\nSELECT 1;";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  return typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code?: unknown }).code)
+    : undefined;
+}
+
 function createQueryTab(index: number, sql = defaultSql, title?: string): QueryTabState {
   return {
     id: `qt-${index}-${Date.now()}`,
@@ -49,6 +59,7 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
+  const nextTabIndexRef = useRef(1);
 
   const requestConfirm = useCallback(
     (title: string, message: string, variant: "danger" | "warning" | "info" = "info"): Promise<boolean> => {
@@ -71,6 +82,7 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
   // Initialize tabs when datasource ID changes
   useEffect(() => {
     const initialTab = createQueryTab(1);
+    nextTabIndexRef.current = 2;
     setTabs([initialTab]);
     setActiveEditorTabId(initialTab.id);
     setRenamingTabId(null);
@@ -86,38 +98,39 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
     [activeEditorTabId, tabs],
   );
 
-  const updateTabById = (tabId: string, updater: (tab: QueryTabState) => Partial<QueryTabState>) => {
+  const updateTabById = useCallback((tabId: string, updater: (tab: QueryTabState) => Partial<QueryTabState>) => {
     setTabs((currentTabs) =>
       currentTabs.map((t) => (t.id === tabId ? { ...t, ...updater(t) } : t))
     );
-  };
+  }, []);
 
-  const updateActiveTab = (updater: (tab: QueryTabState) => Partial<QueryTabState>) => {
+  const updateActiveTab = useCallback((updater: (tab: QueryTabState) => Partial<QueryTabState>) => {
     if (!activeEditorTab) return;
     updateTabById(activeEditorTab.id, updater);
-  };
+  }, [activeEditorTab, updateTabById]);
 
-  const requestServerCancel = (executionId?: string) => {
+  const requestServerCancel = useCallback((executionId?: string) => {
     if (!executionId) return;
     void api.cancelQuery(executionId).catch((error) => {
       console.error("Failed to cancel server-side query:", error);
     });
-  };
+  }, []);
 
-  const handleAddTab = (sql?: string, title?: string) => {
-    const next = createQueryTab(tabs.length + 1, sql || defaultSql, title);
+  const handleAddTab = useCallback((sql?: string, title?: string) => {
+    const next = createQueryTab(nextTabIndexRef.current, sql || defaultSql, title);
+    nextTabIndexRef.current += 1;
     setTabs((c) => [...c, next]);
     setActiveEditorTabId(next.id);
     setRenamingTabId(null);
-  };
+  }, []);
 
-  const openSqlDraft = (sql: string, title?: string) => {
+  const openSqlDraft = useCallback((sql: string, title?: string) => {
     const trimmedSql = sql.trim();
     if (!trimmedSql) return;
-    handleAddTab(trimmedSql, title || `Query ${tabs.length + 1}`);
-  };
+    handleAddTab(trimmedSql, title);
+  }, [handleAddTab]);
 
-  const handleCloseTab = async (id: string) => {
+  const handleCloseTab = useCallback(async (id: string) => {
     if (tabs.length === 1) return;
     const tab = tabs.find((t) => t.id === id);
     if (!tab) return;
@@ -148,36 +161,36 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
       setRenamingTabId(null);
       setRenameDraft("");
     }
-  };
+  }, [activeEditorTabId, renamingTabId, requestConfirm, requestServerCancel, tabs]);
 
-  const startRenaming = (tab: QueryTabState) => {
+  const startRenaming = useCallback((tab: QueryTabState) => {
     setRenamingTabId(tab.id);
     setRenameDraft(tab.title);
-  };
+  }, []);
 
-  const commitRename = () => {
+  const commitRename = useCallback(() => {
     if (!renamingTabId) return;
     const nextTitle = renameDraft.trim();
     updateTabById(renamingTabId, (t) => ({ title: nextTitle || t.title }));
     setRenamingTabId(null);
     setRenameDraft("");
-  };
+  }, [renameDraft, renamingTabId, updateTabById]);
 
-  const handleValidateSql = async () => {
+  const handleValidateSql = useCallback(async () => {
     if (!activeEditorTab?.sql.trim()) return;
     try {
       setValidating(true);
       const guardrail = await api.validateSql(activeEditorTab.sql, datasource.id);
       updateActiveTab(() => ({ guardrail, queryError: null }));
-    } catch (error: any) {
-      updateActiveTab(() => ({ queryError: error.message ?? "SQL 校验失败" }));
+    } catch (error: unknown) {
+      updateActiveTab(() => ({ queryError: getErrorMessage(error, "SQL 校验失败") }));
     } finally {
       setValidating(false);
     }
-  };
+  }, [activeEditorTab, datasource.id, updateActiveTab]);
 
   // Execute SQL with Timeout & Cancellation Abort signals
-  const handleExecuteSql = async (timeoutMs: number = 30000) => {
+  const handleExecuteSql = useCallback(async (timeoutMs: number = 30000) => {
     if (!activeEditorTab?.sql.trim()) return;
     const tabId = activeEditorTab.id;
 
@@ -249,19 +262,20 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
       if (onExecuteSuccess) {
         onExecuteSuccess();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
+      const errorCode = getErrorCode(error);
       const isAborted = controller.signal.aborted;
       // Fetch uses abort DOMException, check if custom timeout was passed
       const isTimeout = isAborted && controller.signal.reason === "timeout";
 
       updateTabById(tabId, () => {
-        if (isTimeout || error.code === "SQL_QUERY_TIMEOUT") {
+        if (isTimeout || errorCode === "SQL_QUERY_TIMEOUT") {
           return {
             status: "timeout",
             queryError: `查询执行超时 (时间限制: ${timeoutMs / 1000} 秒)`
           };
-        } else if (isAborted || error.code === "SQL_QUERY_CANCELLED") {
+        } else if (isAborted || errorCode === "SQL_QUERY_CANCELLED") {
           return {
             status: "cancelled",
             queryError: "查询已被用户手动取消。"
@@ -269,7 +283,7 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
         } else {
           return {
             status: "error",
-            queryError: error.message ?? "SQL 执行发生错误"
+            queryError: getErrorMessage(error, "SQL 执行发生错误")
           };
         }
       });
@@ -278,10 +292,10 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
         delete abortControllersRef.current[tabId];
       }
     }
-  };
+  }, [activeEditorTab, datasource, onExecuteSuccess, requestConfirm, requestServerCancel, updateTabById]);
 
   // Manual cancellation
-  const handleCancelQuery = (tabId: string) => {
+  const handleCancelQuery = useCallback((tabId: string) => {
     const controller = abortControllersRef.current[tabId];
     const tab = tabs.find((t) => t.id === tabId);
     if (controller) {
@@ -293,7 +307,7 @@ export const useQueryExecution = (datasource: DataSource, onExecuteSuccess?: () 
         queryError: "查询已被用户手动取消。"
       }));
     }
-  };
+  }, [requestServerCancel, tabs, updateTabById]);
 
   return {
     tabs,

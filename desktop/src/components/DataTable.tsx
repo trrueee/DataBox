@@ -17,7 +17,9 @@ function isNumeric(val: unknown): boolean {
   return typeof val === "number";
 }
 
-function tryParseJson(str: unknown): any {
+type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+
+function tryParseJson(str: unknown): JsonValue | null {
   if (typeof str !== "string") return null;
   const trimmed = str.trim();
   if (
@@ -27,14 +29,14 @@ function tryParseJson(str: unknown): any {
     return null;
   }
   try {
-    return JSON.parse(trimmed);
+    return JSON.parse(trimmed) as JsonValue;
   } catch {
     return null;
   }
 }
 
 // 🌳 Collapsible JSON Tree Viewer Component
-const JsonTree: React.FC<{ data: any; depth?: number }> = ({ data, depth = 0 }) => {
+const JsonTree: React.FC<{ data: JsonValue; depth?: number }> = ({ data, depth = 0 }) => {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const toggle = (key: string) => {

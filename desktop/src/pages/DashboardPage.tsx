@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Activity,
   Award,
@@ -18,41 +18,90 @@ interface DashboardPageProps {
   datasource: DataSource;
 }
 
+interface ChartPoint {
+  date: string;
+  value: number;
+}
+
+interface ModelDistribution {
+  name: string;
+  value: number;
+}
+
+interface DashboardStats {
+  success_rate: number;
+  avg_latency_ms: number;
+  total_calls: number;
+  guardrail_block_rate: number;
+  chart_data: ChartPoint[];
+  model_dist: ModelDistribution[];
+}
+
+async function loadDashboardPayload(datasourceId: string) {
+  const [statsData, historyData] = await Promise.all([
+    api.getLlmStats(datasourceId),
+    api.listHistory(datasourceId),
+  ]);
+
+  return {
+    stats: statsData as DashboardStats,
+    history: historyData,
+  };
+}
+
 export function DashboardPage({ datasource }: DashboardPageProps) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [history, setHistory] = useState<QueryHistory[]>([]);
   const [selectedLog, setSelectedLog] = useState<QueryHistory | null>(null);
 
-  useEffect(() => {
-    void loadDashboardData();
-  }, [datasource.id]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsData, historyData] = await Promise.all([
-        api.getLlmStats(datasource.id),
-        api.listHistory(datasource.id),
-      ]);
-      setStats(statsData);
-      setHistory(historyData);
+      const data = await loadDashboardPayload(datasource.id);
+      setStats(data.stats);
+      setHistory(data.history);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasource.id]);
 
-  const lineChartOption = stats?.chart_data?.length > 0 ? {
+  useEffect(() => {
+    let cancelled = false;
+    void loadDashboardPayload(datasource.id)
+      .then((data) => {
+        if (!cancelled) {
+          setStats(data.stats);
+          setHistory(data.history);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [datasource.id]);
+
+  const chartData = stats?.chart_data ?? [];
+  const modelDist = stats?.model_dist ?? [];
+
+  const lineChartOption = chartData.length > 0 ? {
     color: ["#4A5BC0"],
     tooltip: { trigger: "axis" },
     grid: { left: "4%", right: "4%", bottom: "4%", top: "12%", containLabel: true },
     xAxis: {
       type: "category",
       boundaryGap: false,
-      data: stats.chart_data.map((d: any) => d.date),
+      data: chartData.map((d) => d.date),
       axisLabel: { color: "#8E9AA8", fontSize: 11 },
       axisLine: { lineStyle: { color: "rgba(142, 154, 168, 0.2)" } },
     },
@@ -82,12 +131,12 @@ export function DashboardPage({ datasource }: DashboardPageProps) {
             ],
           },
         },
-        data: stats.chart_data.map((d: any) => d.value),
+        data: chartData.map((d) => d.value),
       },
     ],
   } : null;
 
-  const pieChartOption = stats?.model_dist?.length > 0 ? {
+  const pieChartOption = modelDist.length > 0 ? {
     color: ["#4A5BC0", "#14A3A8", "#B45309", "#2E7D32", "#D97706"],
     tooltip: { trigger: "item" },
     legend: {
@@ -109,7 +158,7 @@ export function DashboardPage({ datasource }: DashboardPageProps) {
           borderWidth: 2,
         },
         label: { show: false },
-        data: stats.model_dist,
+        data: modelDist,
       },
     ],
   } : null;

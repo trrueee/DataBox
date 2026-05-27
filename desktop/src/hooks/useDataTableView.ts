@@ -72,13 +72,13 @@ export function useDataTableView({ columns, rows }: UseDataTableViewProps) {
       const isDateA = valA instanceof Date || (typeof valA === "string" && !isNaN(Date.parse(valA)) && isNaN(Number(valA)));
       const isDateB = valB instanceof Date || (typeof valB === "string" && !isNaN(Date.parse(valB)) && isNaN(Number(valB)));
 
-      let comparison = 0;
+      let comparison: number;
 
       if (typeof valA === "number" && typeof valB === "number") {
         comparison = valA - valB;
       } else if (isDateA && isDateB) {
-        const timeA = new Date(valA as any).getTime();
-        const timeB = new Date(valB as any).getTime();
+        const timeA = valA instanceof Date ? valA.getTime() : new Date(String(valA)).getTime();
+        const timeB = valB instanceof Date ? valB.getTime() : new Date(String(valB)).getTime();
         comparison = timeA - timeB;
       } else {
         comparison = String(valA).localeCompare(String(valB), "zh-Hans-CN", { numeric: true });

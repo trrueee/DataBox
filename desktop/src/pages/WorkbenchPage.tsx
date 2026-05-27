@@ -1,37 +1,51 @@
-import { useState, useMemo, useEffect } from "react";
-import { 
-  Database, 
-  Table2, 
-  Terminal, 
-  ChevronDown, 
-  ChevronRight, 
-  Plus, 
-  X, 
-  Eye, 
-  Sparkles, 
-  ShieldCheck, 
-  Keyboard, 
-  Play, 
-  Search, 
+﻿// Force Vite Hot-Reload to clear stale parser cache
+import { lazy, Suspense, useState, useMemo, useEffect, useCallback } from "react";
+import {
+  Database,
+  Table2,
+  Terminal,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  X,
+  Eye,
+  Sparkles,
+  ShieldCheck,
+  Keyboard,
+  Play,
+  Search,
   RefreshCw,
   Code2,
-  HardDrive
+  HardDrive,
+  Settings,
+  MoreHorizontal
 } from "lucide-react";
 import { api } from "../lib/api";
 import type { DataSource, Project, SchemaTable } from "../lib/api";
-import { QueryPage } from "./QueryPage";
-import { SchemaPage } from "./SchemaPage";
-import { DataPage } from "./DataPage";
+import { EnvironmentsPage } from "./EnvironmentsPage";
+import { BackupsPage } from "./BackupsPage";
+import { DataSourcesPage } from "./DataSourcesPage";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { PromptDialog } from "../components/PromptDialog";
 
 // Tab structure for the workspace
 export interface WorkbenchTab {
   id: string; // e.g. "query_123" or "table:users"
-  type: "query" | "table" | "ai_bench";
+  type: "query" | "table" | "er" | "datasources" | "history" | "diagnostics";
   title: string;
+  dirty?: boolean;
+  closable?: boolean;
+  connectionId?: string;
+  databaseName?: string;
   tableName?: string;
   activeSubTab?: "data" | "schema" | "er" | "design";
   sqlDraft?: string;
+  resultState?: "idle" | "running" | "success" | "error" | "timeout" | "cancelled";
+  lastExecutedAt?: number;
+  actionTrigger?: {
+    type: "execute" | "stop" | "validate" | "export" | "format";
+    nonce: number;
+  };
 }
 
 interface WorkbenchPageProps {
@@ -46,9 +60,30 @@ interface WorkbenchPageProps {
   loadingObjects: boolean;
   loadingTree: boolean;
   onRefreshSchemaTables: (datasourceId: string) => Promise<void>;
+  onRefreshDatasources: () => Promise<void>;
+  onCreateProject: (name: string) => Promise<void>;
 }
 
-// ═══ PREFIX GROUPS FOR TREE OBJECTS ═══
+type QueryTabStatePatch = Pick<WorkbenchTab, "resultState" | "sqlDraft" | "dirty">;
+
+const DashboardPage = lazy(() =>
+  import("./DashboardPage").then((module) => ({ default: module.DashboardPage })),
+);
+const QueryPage = lazy(() =>
+  import("./QueryPage").then((module) => ({ default: module.QueryPage })),
+);
+const SchemaPage = lazy(() =>
+  import("./SchemaPage").then((module) => ({ default: module.SchemaPage })),
+);
+const DataPage = lazy(() =>
+  import("./DataPage").then((module) => ({ default: module.DataPage })),
+);
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+// PREFIX GROUPS FOR TREE OBJECTS
 const MODULE_PREFIXES: [string, string][] = [
   ["account_", "账号模块"],
   ["ai_", "AI 智能模块"],
@@ -117,9 +152,18 @@ export const WorkbenchPage = ({
   loadingObjects,
   loadingTree,
   onRefreshSchemaTables,
+  onRefreshDatasources,
+  onCreateProject,
 }: WorkbenchPageProps) => {
+  // compact overlay modal states
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showBackupsModal, setShowBackupsModal] = useState(false);
+  const [showEnvironmentsModal, setShowEnvironmentsModal] = useState(false);
+  const [showDashboardModal, setShowDashboardModal] = useState(false);
+  const [showCreateProject, setShowCreateProject] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
   // Tabs management
-  if (false) { console.log(projects, setActiveProject); }
   const [tabs, setTabs] = useState<WorkbenchTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
@@ -138,16 +182,68 @@ export const WorkbenchPage = ({
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
 
-  // Auto clear tabs on connection changes to maintain database isolation
-  useEffect(() => {
-    setTabs([]);
-    setActiveTabId(null);
-  }, [activeDataSource?.id]);
-
   // Open active tab
   const activeTab = useMemo(() => {
     return tabs.find(t => t.id === activeTabId) || null;
   }, [tabs, activeTabId]);
+
+  const handleActiveQueryStateChange = useCallback((state: QueryTabStatePatch) => {
+    if (!activeTabId) return;
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.id !== activeTabId) return tab;
+        const nextResultState = state.resultState ?? tab.resultState;
+        const nextSqlDraft = state.sqlDraft ?? tab.sqlDraft;
+        const nextDirty = state.dirty ?? tab.dirty;
+        if (
+          tab.resultState === nextResultState &&
+          tab.sqlDraft === nextSqlDraft &&
+          tab.dirty === nextDirty
+        ) {
+          return tab;
+        }
+        return {
+          ...tab,
+          resultState: nextResultState,
+          sqlDraft: nextSqlDraft,
+          dirty: nextDirty,
+        };
+      }),
+    );
+  }, [activeTabId]);
+
+  // Synchronize focused tab's connection context with active sidebar connection
+  const handleSelectTab = (tabId: string) => {
+    setActiveTabId(tabId);
+    const tab = tabs.find(t => t.id === tabId);
+    if (tab && tab.connectionId && datasources) {
+      const boundDs = datasources.find(d => d.id === tab.connectionId);
+      if (boundDs && boundDs.id !== activeDataSource?.id) {
+        setActiveDataSource(boundDs);
+      }
+    }
+  };
+
+  // Action Trigger Helper
+  const triggerActiveTabAction = (actionType: "execute" | "stop" | "validate" | "export" | "format") => {
+    if (!activeTabId) return;
+    setTabs(prev => prev.map(t => t.id === activeTabId ? {
+      ...t,
+      actionTrigger: {
+        type: actionType,
+        nonce: Date.now()
+      }
+    } : t));
+  };
+
+  // Environment badge indicator styling
+  const getEnvBadgeStyle = () => {
+    if (!activeDataSource) return { bg: "rgba(148, 163, 184, 0.1)", color: "var(--text-muted)", label: "绂荤嚎" };
+    if (activeDataSource.env === "prod") return { bg: "rgba(239, 68, 68, 0.12)", color: "var(--accent-red)", label: "PROD" };
+    if (activeDataSource.env === "test") return { bg: "rgba(245, 158, 11, 0.12)", color: "var(--accent-amber)", label: "TEST" };
+    return { bg: "rgba(16, 185, 129, 0.12)", color: "var(--accent-green)", label: "DEV" };
+  };
+  const envBadge = getEnvBadgeStyle();
 
   // Unified tables grouping algorithm
   const filteredTables = useMemo(() => {
@@ -181,18 +277,33 @@ export const WorkbenchPage = ({
       }));
   }, [filteredTables]);
 
-  // ── Tab Management Handlers ──
-  const handleOpenQueryTab = (sqlDraft?: string, title?: string) => {
+  // 鈹€鈹€ Tab Management Handlers 鈹€鈹€
+  const handleOpenQueryTab = useCallback((sqlDraft?: string, title?: string) => {
     const id = `query:${Date.now()}`;
     const newTab: WorkbenchTab = {
       id,
       type: "query",
       title: title || `查询_${tabs.filter(t => t.type === "query").length + 1}`,
-      sqlDraft: sqlDraft || ""
+      sqlDraft: sqlDraft || "",
+      connectionId: activeDataSource?.id,
+      databaseName: activeDataSource?.database_name
     };
     setTabs(prev => [...prev, newTab]);
     setActiveTabId(id);
-  };
+  }, [activeDataSource?.database_name, activeDataSource?.id, tabs]);
+
+  // Global Keyboard Shortcut listeners
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "t") {
+        e.preventDefault();
+        handleOpenQueryTab();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [handleOpenQueryTab]);
 
   const handleOpenTableTab = (tableName: string, subTab: "data" | "schema" | "er" | "design" = "data") => {
     const id = `table:${tableName}`;
@@ -206,7 +317,9 @@ export const WorkbenchPage = ({
         type: "table",
         title: `表: ${tableName}`,
         tableName,
-        activeSubTab: subTab
+        activeSubTab: subTab,
+        connectionId: activeDataSource?.id,
+        databaseName: activeDataSource?.database_name
       };
       setTabs(prev => [...prev, newTab]);
       setActiveTabId(id);
@@ -215,6 +328,11 @@ export const WorkbenchPage = ({
 
   const handleCloseTab = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const tab = tabs.find(t => t.id === id);
+    if (tab && tab.dirty) {
+      const confirmed = window.confirm(`"${tab.title}" 还有未执行或未保存的修改，确认关闭吗？`);
+      if (!confirmed) return;
+    }
     const nextTabs = tabs.filter(t => t.id !== id);
     setTabs(nextTabs);
     if (activeTabId === id) {
@@ -241,11 +359,11 @@ export const WorkbenchPage = ({
     setAiPrompt(promptText);
     try {
       // Direct call to general AI SQL/Schema logic
-      const prompt = `数据源: ${activeDataSource.name} (${activeDataSource.database_name})\n当前表: ${activeTab?.tableName || "无"}\n当前查询: ${promptText}\n请生成或解释 SQL 架构、优化方案或数据趋势。`;
+      const prompt = `数据源: ${activeDataSource.name} (${activeDataSource.database_name})\n当前表: ${activeTab?.tableName || "无"}\n当前查询: ${promptText}\n请生成或解释 SQL 结构、优化方案或数据趋势。`;
       const res = await api.generateSql(activeDataSource.id, prompt);
-      setAiResponse(res.sql || res.guardrail?.message || "AI 已成功回答。");
-    } catch (err: any) {
-      setAiResponse(`出错了: ${err.message}`);
+      setAiResponse(res.sql || res.guardrail?.message || "AI 已完成回答。");
+    } catch (err: unknown) {
+      setAiResponse(`出错了: ${getErrorMessage(err, "AI request failed")}`);
     } finally {
       setAiLoading(false);
     }
@@ -259,8 +377,8 @@ export const WorkbenchPage = ({
     try {
       const res = await api.generateSql(activeDataSource.id, aiPrompt);
       setAiResponse(res.sql || `生成 SQL:\n${res.sql}\n\n安全校验: ${res.guardrail?.message ?? "通过"}`);
-    } catch (err: any) {
-      setAiResponse(`生成失败: ${err.message}`);
+    } catch (err: unknown) {
+      setAiResponse(`生成失败: ${getErrorMessage(err, "AI request failed")}`);
     } finally {
       setAiLoading(false);
     }
@@ -278,7 +396,7 @@ export const WorkbenchPage = ({
         transition: "grid-template-columns 0.22s cubic-bezier(0.4, 0, 0.2, 1)"
       }}
     >
-      {/* ═══ LEFT OBJECT EXPLORER TREE ═══ */}
+      {/* 鈺愨晲鈺?LEFT OBJECT EXPLORER TREE 鈺愨晲鈺?*/}
       <aside
         style={{
           display: "flex",
@@ -290,18 +408,18 @@ export const WorkbenchPage = ({
         }}
       >
         <div style={{ width: 250, display: "flex", flexDirection: "column", height: "100%" }}>
-          
+
           {/* Sidebar Header with Object Explorer Label */}
           <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border-light)", background: "rgba(0,0,0,0.01)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
               <Code2 size={13} style={{ color: "var(--accent-indigo)" }} />
               对象资源管理器
             </span>
-            <button 
-              className="btn-ghost" 
+            <button
+              className="btn-ghost"
               onClick={() => setSidebarCollapsed(true)}
               style={{ padding: 2 }}
-              title="隐藏侧栏"
+              title="闅愯棌渚ф爮"
             >
               <ChevronRight size={13} style={{ transform: "rotate(180deg)" }} />
             </button>
@@ -343,13 +461,13 @@ export const WorkbenchPage = ({
                           transition: "background 0.15s",
                         }}
                       >
-                        <ChevronRight 
-                          size={12} 
-                          style={{ 
-                            transform: isConnected ? "rotate(90deg)" : "rotate(0deg)", 
+                        <ChevronRight
+                          size={12}
+                          style={{
+                            transform: isConnected ? "rotate(90deg)" : "rotate(0deg)",
                             transition: "transform 0.15s",
-                            opacity: 0.5 
-                          }} 
+                            opacity: 0.5
+                          }}
                         />
                         <Database size={12} style={{ opacity: isConnected ? 1 : 0.6 }} />
                         <span style={{ fontSize: "0.78rem", fontWeight: isConnected ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -379,7 +497,7 @@ export const WorkbenchPage = ({
 
                             {/* Schema Folders */}
                             <div style={{ paddingLeft: 12, marginTop: 2, display: "flex", flexDirection: "column", gap: 1 }}>
-                              
+
                               {/* 1. Tables Folder */}
                               <div style={{ display: "flex", flexDirection: "column" }}>
                                 <button
@@ -471,7 +589,7 @@ export const WorkbenchPage = ({
                                                 }}
                                               >
                                                 <span style={{ fontSize: "0.55rem", transition: "transform 0.15s", transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)" }}>
-                                                  ▼
+                                                  ▾
                                                 </span>
                                                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                                                   {tag}
@@ -522,10 +640,18 @@ export const WorkbenchPage = ({
 
                                                         <div style={{ display: "flex", alignItems: "center", gap: 2, paddingRight: 4 }}>
                                                           <button
+                                                            onClick={() => handleAiContextAction(`分析并解释数据库表 \`${table.table_name}\` (${table.table_comment || "无备注"}) 的设计意图、字段规范与业务含义，并指出它的核心关联表。`)}
+                                                            className="btn-ghost"
+                                                            style={{ padding: 2 }}
+                                                            title="AI 智能解释表结构"
+                                                          >
+                                                            <Sparkles size={10} style={{ color: "var(--accent-indigo)" }} />
+                                                          </button>
+                                                          <button
                                                             onClick={() => handleOpenTableTab(table.table_name, "data")}
                                                             className="btn-ghost"
                                                             style={{ padding: 2 }}
-                                                            title="直接看数 (Data Mode)"
+                                                            title="鐩存帴鐪嬫暟 (Data Mode)"
                                                           >
                                                             <Eye size={10} />
                                                           </button>
@@ -602,12 +728,12 @@ export const WorkbenchPage = ({
                                 >
                                   {funcsFolderExpanded ? <ChevronDown size={10} style={{ opacity: 0.5 }} /> : <ChevronRight size={10} style={{ opacity: 0.5 }} />}
                                   <Code2 size={11} style={{ color: "var(--text-muted)", opacity: 0.7 }} />
-                                  <span style={{ fontWeight: 500 }}>函数</span>
+                                  <span style={{ fontWeight: 500 }}>鍑芥暟</span>
                                   <span style={{ color: "var(--text-muted)", fontSize: "0.68rem" }}>(0)</span>
                                 </button>
                                 {funcsFolderExpanded && (
                                   <div style={{ padding: "4px 24px", fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                                    暂无函数
+                                    鏆傛棤鍑芥暟
                                   </div>
                                 )}
                               </div>
@@ -632,12 +758,12 @@ export const WorkbenchPage = ({
                                 >
                                   {procsFolderExpanded ? <ChevronDown size={10} style={{ opacity: 0.5 }} /> : <ChevronRight size={10} style={{ opacity: 0.5 }} />}
                                   <Terminal size={11} style={{ color: "var(--text-muted)", opacity: 0.7 }} />
-                                  <span style={{ fontWeight: 500 }}>存储过程</span>
+                                  <span style={{ fontWeight: 500 }}>瀛樺偍杩囩▼</span>
                                   <span style={{ color: "var(--text-muted)", fontSize: "0.68rem" }}>(0)</span>
                                 </button>
                                 {procsFolderExpanded && (
                                   <div style={{ padding: "4px 24px", fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                                    暂无存储过程
+                                    鏆傛棤瀛樺偍杩囩▼
                                   </div>
                                 )}
                               </div>
@@ -655,7 +781,7 @@ export const WorkbenchPage = ({
         </div>
       </aside>
 
-      {/* ═══ RIGHT WORKSPACE GRID ═══ */}
+      {/* 鈺愨晲鈺?RIGHT WORKSPACE GRID 鈺愨晲鈺?*/}
       <section
         style={{
           display: "flex",
@@ -666,454 +792,703 @@ export const WorkbenchPage = ({
           position: "relative"
         }}
       >
-        
-        {/* ── Layer 1: Global Toolbar ── */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: "var(--bg-surface)",
-            borderBottom: "1px solid var(--border-light)",
-            padding: "8px 16px",
-            height: 38,
-            flexShrink: 0,
-            userSelect: "none"
-          }}
-        >
-          {/* Left section: Logo | Project Selector | Active Connection */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--accent-indigo)" }}>
-              DataBox Studio
-            </span>
-            <div style={{ width: 1, height: 12, background: "var(--border-light)" }} />
-            
-            {/* Project Indicator (plain & sleek) */}
-            <span style={{ fontSize: "0.76rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-              📁 {activeProject?.name || "默认项目"}
-            </span>
-            
-            <div style={{ width: 1, height: 12, background: "var(--border-light)" }} />
 
-            {/* Connection & DB status */}
-            {activeDataSource ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.76rem" }}>
-                <span 
-                  style={{ 
-                    width: 6, 
-                    height: 6, 
-                    borderRadius: "50%", 
-                    background: activeDataSource.env === "prod" ? "var(--accent-red)" : "var(--accent-green)",
-                    boxShadow: activeDataSource.env === "prod" ? "0 0 6px var(--accent-red)" : "0 0 6px var(--accent-green)"
-                  }} 
-                />
-                <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-                  {activeDataSource.name}
-                </span>
-                <span style={{ color: "var(--text-muted)" }}>/</span>
-                <span className="status-badge status-badge-success" style={{ padding: "1px 6px", fontSize: "0.68rem", borderRadius: 4 }}>
-                  {activeDataSource.database_name}
-                </span>
-                
-                {/* Environment badge */}
-                {activeDataSource.env === "prod" && (
-                  <span style={{ fontSize: "0.68rem", padding: "1px 4px", background: "rgba(220, 38, 38, 0.1)", color: "var(--accent-red)", borderRadius: 3, fontWeight: 700 }}>
-                    PROD
-                  </span>
-                )}
-                {activeDataSource.env === "test" && (
-                  <span style={{ fontSize: "0.68rem", padding: "1px 4px", background: "rgba(217, 119, 6, 0.1)", color: "var(--accent-amber)", borderRadius: 3, fontWeight: 700 }}>
-                    TEST
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
-                无激活连接
-              </span>
-            )}
-          </div>
-
-          {/* Right section: Global operations (New Query, AI Assistant toggler) */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button
-              onClick={() => handleOpenQueryTab()}
-              className="btn-primary"
-              style={{
-                height: 24,
-                padding: "0 8px",
-                fontSize: "0.72rem",
-                borderRadius: 4,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                fontWeight: 600
-              }}
-              title="新建 SQL 编辑器"
-            >
-              <Plus size={11} />
-              <span>新建查询</span>
-            </button>
-
-            <button
-              onClick={() => setAiPanelOpen(!aiPanelOpen)}
-              className="btn-secondary"
-              style={{
-                height: 24,
-                padding: "0 8px",
-                fontSize: "0.72rem",
-                borderRadius: 4,
-                borderColor: aiPanelOpen ? "var(--accent-indigo)" : "var(--border-light)",
-                background: aiPanelOpen ? "var(--bg-active)" : "var(--bg-surface)",
-                color: "var(--accent-indigo)",
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                fontWeight: 600
-              }}
-            >
-              <Sparkles size={11} />
-              <span>AI 助手</span>
-            </button>
-          </div>
-        </div>
-        
-        {/* Toggle Sidebar handle when collapsed */}
-        {sidebarCollapsed && (
-          <button
-            onClick={() => setSidebarCollapsed(false)}
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 50,
-              width: 18,
-              height: 28,
-              borderRadius: "0 6px 6px 0",
-              border: "1px solid var(--border-light)",
-              borderLeft: "none",
-              background: "var(--bg-surface)",
-              color: "var(--text-secondary)",
-              display: "grid",
-              placeItems: "center",
-              cursor: "pointer",
-              zIndex: 99,
-              boxShadow: "2px 0 6px rgba(0,0,0,0.05)"
-            }}
-            title="显示侧栏"
-          >
-            <ChevronRight size={12} />
-          </button>
-        )}
-
-        {/* ── Tabs bar header ── */}
-        {tabs.length > 0 && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "var(--bg-secondary)",
-              borderBottom: "1px solid var(--border-light)",
-              padding: "5px 12px 0",
-              overflowX: "auto",
-              flexShrink: 0
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 3, overflowX: "auto" }}>
-              {tabs.map((tab) => {
-                const isActive = tab.id === activeTabId;
-                return (
-                  <div
-                    key={tab.id}
-                    onClick={() => setActiveTabId(tab.id)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "5px 12px",
-                      borderRadius: "4px 4px 0 0",
-                      background: isActive ? "var(--bg-surface)" : "transparent",
-                      border: "1px solid",
-                      borderColor: isActive ? "var(--border-light)" : "transparent",
-                      borderBottomColor: isActive ? "var(--bg-surface)" : "transparent",
-                      color: isActive ? "var(--accent-indigo)" : "var(--text-secondary)",
-                      cursor: "pointer",
-                      fontSize: "0.76rem",
-                      fontWeight: isActive ? 600 : 500,
-                      minWidth: "fit-content",
-                      transition: "all 0.15s"
-                    }}
-                  >
-                    {tab.type === "query" ? <Terminal size={11} /> : <Table2 size={11} />}
-                    <span>{tab.title}</span>
-                    <button
-                      onClick={(e) => handleCloseTab(tab.id, e)}
-                      className="btn-ghost"
-                      style={{ padding: 1, borderRadius: "50%", display: "grid", placeItems: "center" }}
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
-                );
-              })}
-              
-              <button
-                className="btn-ghost"
-                onClick={() => handleOpenQueryTab()}
-                style={{ padding: "4px 8px", marginLeft: 4 }}
-                title="新建 SQL 编辑器"
-              >
-                <Plus size={12} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Active Tab Viewport Area ── */}
-        <div style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
-          
-          {tabs.length === 0 ? (
-            /* Premium Empty Workspace Dashboard */
+            {/* 鈹€鈹€ Layer 1: Global High-Density Header (36px) 鈹€鈹€ */}
             <div
               style={{
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-                padding: 40,
-                overflowY: "auto",
-                background: "radial-gradient(circle at top, var(--bg-surface) 0%, var(--bg-primary) 100%)",
-                textAlign: "center"
+                justifyContent: "space-between",
+                background: "var(--bg-surface)",
+                borderBottom: "1px solid var(--border-light)",
+                padding: "0 12px",
+                height: 36,
+                flexShrink: 0,
+                userSelect: "none"
               }}
             >
-              <div 
-                className="lab-card animate-fade-in stagger"
-                style={{
-                  maxWidth: 680,
-                  width: "100%",
-                  padding: "48px 40px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 24,
-                  border: "1px solid var(--border-light)",
-                  borderRadius: 16,
-                  background: "var(--bg-surface)",
-                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.05)"
-                }}
-              >
-                {/* Visual Identity */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 14,
-                      background: "rgba(74, 91, 192, 0.08)",
-                      display: "grid",
-                      placeItems: "center"
+              {/* Left section: Logo | Project Selector | Active Connection Dropdown */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--accent-indigo)", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 4 }}>
+                  <HardDrive size={13} style={{ color: "var(--accent-indigo)" }} />
+                  DataBox
+                </span>
+
+                <div style={{ width: 1, height: 12, background: "var(--border-light)" }} />
+
+                {/* Project Selector with Quick Plus */}
+                <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <span style={{ fontSize: "0.74rem", color: "var(--text-muted)", userSelect: "none" }}>馃搧</span>
+                  <select
+                    value={activeProject?.id || ""}
+                    onChange={(e) => {
+                      const selected = projects.find(p => p.id === e.target.value);
+                      if (selected) setActiveProject(selected);
                     }}
-                  >
-                    <Code2 size={28} style={{ color: "var(--accent-indigo)" }} />
-                  </div>
-                  <div>
-                    <h2 className="text-display" style={{ fontSize: "1.45rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-                      DATABOX 数据库探索工作台
-                    </h2>
-                    <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem", maxWidth: 440, margin: "0 auto", lineHeight: 1.5 }}>
-                      本地优先的高保真 MySQL、PostgreSQL 与 SQLite 数据实验室。在左侧对象树中连接库、双击查表，或者使用下方快捷指令开启会话。
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{ height: "1px", background: "var(--border-light)" }} />
-
-                {/* Quick Actions Grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, textAlign: "left" }}>
-                  <button
-                    onClick={() => handleOpenQueryTab()}
-                    className="hover-lift"
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 16,
-                      background: "var(--bg-secondary)",
-                      border: "1px solid var(--border-light)",
-                      borderRadius: 10,
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-secondary)",
+                      fontSize: "0.76rem",
+                      fontWeight: 600,
                       cursor: "pointer",
-                      textAlign: "left"
+                      paddingRight: 2,
+                      outline: "none",
+                      fontFamily: "inherit"
                     }}
                   >
-                    <Terminal size={18} style={{ color: "var(--accent-indigo)" }} />
-                    <div>
-                      <h4 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>
-                        ⚡ 新建 SQL 查询会话
-                      </h4>
-                      <p style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
-                        开启智能自动补全、DDL 审计与执行计划可视化
-                      </p>
-                    </div>
-                  </button>
-
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
                   <button
-                    onClick={() => handleAiContextAction("帮我分析当前数据库架构并生成数据洞察")}
-                    className="hover-lift"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 16,
-                      background: "rgba(74, 91, 192, 0.04)",
-                      border: "1px solid rgba(74, 91, 192, 0.15)",
-                      borderRadius: 10,
-                      cursor: "pointer",
-                      textAlign: "left"
-                    }}
+                    onClick={() => setShowCreateProject(true)}
+                    className="btn-ghost"
+                    style={{ padding: "1px 2px", color: "var(--text-muted)", display: "flex", alignItems: "center" }}
+                    title="创建新项目"
                   >
-                    <Sparkles size={18} style={{ color: "var(--accent-indigo)" }} />
-                    <div>
-                      <h4 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--accent-indigo)", marginBottom: 2 }}>
-                        ✨ 自然语言问数与找表
-                      </h4>
-                      <p style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
-                        使用大模型对物理表进行模糊关联定位并生成报表
-                      </p>
-                    </div>
+                    <Plus size={11} />
                   </button>
                 </div>
 
-                {/* Keyboard Shortcuts Info */}
-                <div 
-                  style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center", 
-                    gap: 16, 
-                    fontSize: "0.75rem", 
-                    color: "var(--text-muted)",
-                    background: "rgba(0,0,0,0.01)",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px dashed var(--border-light)"
+                <div style={{ width: 1, height: 12, background: "var(--border-light)" }} />
+
+                {/* Connection Selector */}
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontSize: "0.74rem", color: envBadge.color }}>●</span>
+                  <select
+                    value={activeDataSource?.id || ""}
+                    onChange={(e) => {
+                      const selected = datasources.find(d => d.id === e.target.value);
+                      if (selected) setActiveDataSource(selected);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-primary)",
+                      fontSize: "0.76rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      paddingRight: 2,
+                      outline: "none",
+                      fontFamily: "inherit",
+                      maxWidth: 160
+                    }}
+                  >
+                    {datasources.length === 0 ? (
+                      <option value="">(无激活连接)</option>
+                    ) : (
+                      datasources.map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))
+                    )}
+                  </select>
+
+                  {activeDataSource && (
+                    <span style={{ fontSize: "0.7rem", padding: "1px 5px", background: "var(--bg-secondary)", border: "1px solid var(--border-light)", color: "var(--text-secondary)", borderRadius: 4, fontFamily: "var(--font-mono)", fontWeight: 600 }}>
+                      {activeDataSource.database_name}
+                    </span>
+                  )}
+                </div>
+
+                {/* Env Indicator */}
+                <span
+                  style={{
+                    fontSize: "0.66rem",
+                    fontWeight: 700,
+                    padding: "1px 6px",
+                    borderRadius: 4,
+                    background: envBadge.bg,
+                    color: envBadge.color,
+                    letterSpacing: "0.02em"
                   }}
                 >
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <Keyboard size={13} />
-                    <span>键盘快捷操作:</span>
-                  </span>
-                  <span>新建查询: <kbd style={{ background: "var(--bg-secondary)", padding: "2px 4px", borderRadius: 3, border: "1px solid var(--border-medium)" }}>Ctrl + T</kbd></span>
-                  <span>执行 SQL: <kbd style={{ background: "var(--bg-secondary)", padding: "2px 4px", borderRadius: 3, border: "1px solid var(--border-medium)" }}>Ctrl + Enter</kbd></span>
-                  <span>双击表: <strong style={{ color: "var(--text-secondary)" }}>直接看数</strong></span>
-                </div>
+                  {envBadge.label}
+                </span>
               </div>
-            </div>
-          ) : (
-            /* Render active tab viewport based on type */
-            <div style={{ height: "100%", width: "100%" }}>
-              {activeTab?.type === "query" && activeDataSource && (
-                /* Independent Query Page console */
-                <ErrorBoundary title="SQL 编辑器加载错误">
-                  <QueryPage
-                    key={activeTab.id}
-                    datasource={activeDataSource}
-                    initialDraft={activeTab.sqlDraft ? { sql: activeTab.sqlDraft, nonce: 1 } : null}
-                  />
-                </ErrorBoundary>
-              )}
 
-              {activeTab?.type === "table" && activeTab.tableName && activeDataSource && (
-                /* Fully integrated modular Table Detail board */
-                <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
-                  
-                  {/* High-density horizontal horizontal sub-tab bar inside Table Tab */}
-                  <div
+              {/* Right section: AI Ask Data, low frequency Dropdown, settings */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button
+                  onClick={() => handleAiContextAction("帮我分析当前数据库架构并生成数据洞察")}
+                  className="btn-secondary"
+                  style={{
+                    height: 22,
+                    padding: "0 8px",
+                    fontSize: "0.72rem",
+                    borderRadius: 4,
+                    color: "var(--accent-indigo)",
+                    borderColor: "rgba(74, 91, 192, 0.2)",
+                    background: "rgba(74, 91, 192, 0.04)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontWeight: 600
+                  }}
+                  title="智能数据库问数 (Context-Aware)"
+                >
+                  <Sparkles size={11} />
+                  <span>AI 问数</span>
+                </button>
+
+                {/* Low frequency More Dropdown */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    className="btn-secondary"
                     style={{
+                      height: 22,
+                      padding: "0 8px",
+                      fontSize: "0.72rem",
+                      borderRadius: 4,
                       display: "flex",
                       alignItems: "center",
-                      background: "var(--bg-surface)",
-                      borderBottom: "1px solid var(--border-light)",
-                      padding: "6px 20px 0",
-                      gap: 8,
-                      flexShrink: 0
+                      gap: 4,
+                      fontWeight: 500,
+                      borderColor: showMoreMenu ? "var(--accent-indigo)" : "var(--border-light)"
                     }}
                   >
-                    {[
-                      { id: "data", label: "数据" },
-                      { id: "schema", label: "字段" },
-                      { id: "er", label: "ER 关系" },
-                      { id: "design", label: "DDL 变更" }
-                    ].map(sub => {
-                      const isSubActive = (activeTab.activeSubTab || "data") === sub.id;
-                      return (
-                        <button
-                          key={sub.id}
-                          onClick={() => handleSwitchSubTab(activeTab.id, sub.id as any)}
-                          style={{
-                            padding: "6px 12px 8px",
-                            border: "none",
-                            background: "transparent",
-                            borderBottom: isSubActive ? "2px solid var(--accent-indigo)" : "2px solid transparent",
-                            color: isSubActive ? "var(--accent-indigo)" : "var(--text-secondary)",
-                            fontWeight: isSubActive ? 600 : 500,
-                            fontSize: "0.76rem",
-                            cursor: "pointer",
-                            transition: "all 0.1s"
-                          }}
-                        >
-                          {sub.label}
-                        </button>
-                      );
-                    })}
+                    <MoreHorizontal size={11} />
+                    <span>更多</span>
+                  </button>
+                  {showMoreMenu && (
+                    <>
+                      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setShowMoreMenu(false)} />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 26,
+                          right: 0,
+                          background: "var(--bg-surface)",
+                          border: "1px solid var(--border-light)",
+                          borderRadius: 6,
+                          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.06), 0 8px 10px -6px rgba(0,0,0,0.06)",
+                          padding: "4px 0",
+                          zIndex: 999,
+                          minWidth: 130,
+                        }}
+                      >
+                        {[
+                          { label: "🔬 环境配置", action: () => setShowEnvironmentsModal(true) },
+                          { label: "备份管理", action: () => setShowBackupsModal(true) },
+                          { label: "性能监控", action: () => setShowDashboardModal(true) },
+                        ].map(item => (
+                          <button
+                            key={item.label}
+                            onClick={() => {
+                              item.action();
+                              setShowMoreMenu(false);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "6px 12px",
+                              border: "none",
+                              background: "transparent",
+                              color: "var(--text-secondary)",
+                              fontSize: "0.74rem",
+                              textAlign: "left",
+                              cursor: "pointer",
+                            }}
+                            className="hover-bg-active"
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
 
-                    {/* Table Name Context Indicator */}
-                    <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, paddingBottom: 6 }}>
-                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>当前对象: <strong style={{ color: "var(--text-secondary)" }}>{activeTab.tableName}</strong></span>
+                <div style={{ width: 1, height: 12, background: "var(--border-light)" }} />
+
+                <button
+                  onClick={() => setShowSettingsModal(true)}
+                  className="btn-ghost"
+                  style={{
+                    height: 22,
+                    padding: "0 6px",
+                    fontSize: "0.72rem",
+                    color: "var(--text-secondary)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4
+                  }}
+                  title="管理连接与数据源"
+                >
+                  <Settings size={12} />
+                  <span>璁剧疆</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 鈹€鈹€ Layer 2: High-Density Secondary Toolbar (36px) 鈹€鈹€ */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                background: "var(--bg-secondary)",
+                borderBottom: "1px solid var(--border-light)",
+                padding: "0 12px",
+                height: 36,
+                flexShrink: 0,
+                userSelect: "none",
+                justifyContent: "space-between"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button
+                  onClick={() => handleOpenQueryTab()}
+                  className="btn-secondary"
+                  style={{ height: 22, padding: "0 8px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-surface)", fontWeight: 600 }}
+                  title="打开全新 SQL 编辑器 (Ctrl+T)"
+                >
+                  <Plus size={11} style={{ color: "var(--accent-indigo)" }} />
+                  <span>新建查询</span>
+                </button>
+
+                <div style={{ width: 1, height: 12, background: "var(--border-light)", margin: "0 2px" }} />
+
+                {/* Run SQL */}
+                <button
+                  onClick={() => triggerActiveTabAction("execute")}
+                  disabled={activeTab?.type !== "query" || activeTab?.resultState === "running"}
+                  className="btn-secondary"
+                  style={{ height: 22, padding: "0 8px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-surface)" }}
+                  title="执行 SQL 查询 (Ctrl+Enter)"
+                >
+                  <Play size={11} style={{ color: "var(--accent-green)" }} />
+                  <span>执行</span>
+                </button>
+
+                {/* Stop SQL */}
+                <button
+                  onClick={() => triggerActiveTabAction("stop")}
+                  disabled={activeTab?.type !== "query" || activeTab?.resultState !== "running"}
+                  className="btn-secondary"
+                  style={{ height: 22, padding: "0 8px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-surface)" }}
+                  title="停止当前 SQL 任务"
+                >
+                  <X size={11} style={{ color: "var(--accent-red)" }} />
+                  <span>停止</span>
+                </button>
+
+                {/* Safety Check SQL */}
+                <button
+                  onClick={() => triggerActiveTabAction("validate")}
+                  disabled={activeTab?.type !== "query" || activeTab?.resultState === "running"}
+                  className="btn-secondary"
+                  style={{ height: 22, padding: "0 8px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-surface)" }}
+                  title="调用 Guardrails 校验 SQL 安全性 (Ctrl+Shift+Enter)"
+                >
+                  <ShieldCheck size={11} style={{ color: "var(--accent-indigo)" }} />
+                  <span>校验</span>
+                </button>
+
+                {/* Format SQL */}
+                <button
+                  onClick={() => triggerActiveTabAction("format")}
+                  disabled={activeTab?.type !== "query" || activeTab?.resultState === "running"}
+                  className="btn-secondary"
+                  style={{ height: 22, padding: "0 8px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-surface)" }}
+                  title="格式化 SQL 关键字为大写"
+                >
+                  <Keyboard size={11} style={{ color: "var(--text-muted)" }} />
+                  <span>格式化</span>
+                </button>
+
+                <div style={{ width: 1, height: 12, background: "var(--border-light)", margin: "0 2px" }} />
+
+                {/* Export Data */}
+                <button
+                  onClick={() => triggerActiveTabAction("export")}
+                  disabled={!activeTab || (activeTab.type !== "query" && activeTab.type !== "table")}
+                  className="btn-secondary"
+                  style={{ height: 22, padding: "0 8px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 4, background: "var(--bg-surface)" }}
+                  title="导出数据为 CSV 格式"
+                >
+                  <Eye size={11} />
+                  <span>导出</span>
+                </button>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button
+                  onClick={() => {
+                    if (activeDataSource) void onRefreshSchemaTables(activeDataSource.id);
+                  }}
+                  disabled={!activeDataSource || loadingObjects}
+                  className="btn-ghost"
+                  style={{ height: 22, padding: "0 6px", fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 4 }}
+                  title="同步元数据缓存"
+                >
+                  <RefreshCw size={11} className={loadingObjects ? "animate-spin" : ""} />
+                  <span>刷新结构</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Toggle Sidebar handle when collapsed */}
+            {sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 78,
+                  width: 18,
+                  height: 28,
+                  borderRadius: "0 6px 6px 0",
+                  border: "1px solid var(--border-light)",
+                  borderLeft: "none",
+                  background: "var(--bg-surface)",
+                  color: "var(--text-secondary)",
+                  display: "grid",
+                  placeItems: "center",
+                  cursor: "pointer",
+                  zIndex: 99,
+                  boxShadow: "2px 0 6px rgba(0,0,0,0.05)"
+                }}
+                title="鏄剧ず渚ф爮"
+              >
+                <ChevronRight size={12} />
+              </button>
+            )}
+
+            {/* 鈹€鈹€ Layer 3: High-Density Tab Bar (32px) 鈹€鈹€ */}
+            {tabs.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  background: "var(--bg-secondary)",
+                  borderBottom: "1px solid var(--border-light)",
+                  padding: "4px 8px 0",
+                  overflowX: "auto",
+                  flexShrink: 0,
+                  height: 32
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 4, overflowX: "auto", height: "100%" }}>
+                  {tabs.map((tab) => {
+                    const isActive = tab.id === activeTabId;
+                    return (
+                      <div
+                        key={tab.id}
+                        onClick={() => handleSelectTab(tab.id)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "0 10px",
+                          borderRadius: "4px 4px 0 0",
+                          background: isActive ? "var(--bg-surface)" : "transparent",
+                          border: "1px solid",
+                          borderColor: isActive ? "var(--border-light)" : "transparent",
+                          borderBottomColor: isActive ? "var(--bg-surface)" : "transparent",
+                          color: isActive ? "var(--accent-indigo)" : "var(--text-secondary)",
+                          cursor: "pointer",
+                          fontSize: "0.74rem",
+                          fontWeight: isActive ? 700 : 500,
+                          minWidth: "fit-content",
+                          transition: "all 0.1s",
+                          height: "100%"
+                        }}
+                      >
+                        {tab.resultState === "running" ? (
+                          <span className="animate-spin" style={{ fontSize: "0.68rem" }}>↻</span>
+                        ) : tab.type === "query" ? (
+                          <Terminal size={11} style={{ opacity: isActive ? 1 : 0.6 }} />
+                        ) : (
+                          <Table2 size={11} style={{ opacity: isActive ? 1 : 0.6 }} />
+                        )}
+
+                        <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {tab.title}{tab.dirty && tab.type === "table" ? "*" : ""}
+                        </span>
+
+                        {tab.dirty && tab.type === "query" && (
+                          <span style={{ color: "var(--accent-amber)", fontSize: "0.65rem" }}>●</span>
+                        )}
+
+                        <button
+                          onClick={(e) => handleCloseTab(tab.id, e)}
+                          className="btn-ghost"
+                          style={{ padding: 1, borderRadius: "50%", display: "grid", placeItems: "center", color: "var(--text-muted)" }}
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    className="btn-ghost"
+                    onClick={() => handleOpenQueryTab()}
+                    style={{ padding: "2px 6px", display: "flex", alignItems: "center" }}
+                    title="新建 SQL 编辑器 (Ctrl+T)"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 鈹€鈹€ Active Tab Viewport Area 鈹€鈹€ */}
+            <div style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
+              {tabs.length === 0 ? (
+                /* Premium Empty Workspace Dashboard */
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                    padding: 30,
+                    overflowY: "auto",
+                    background: "radial-gradient(circle at top, var(--bg-surface) 0%, var(--bg-primary) 100%)",
+                    textAlign: "center"
+                  }}
+                >
+                  <div
+                    className="lab-card animate-fade-in stagger"
+                    style={{
+                      maxWidth: 620,
+                      width: "100%",
+                      padding: "36px 30px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 20,
+                      border: "1px solid var(--border-light)",
+                      borderRadius: 12,
+                      background: "var(--bg-surface)",
+                      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.03)"
+                    }}
+                  >
+                    {/* Visual Identity */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 12,
+                          background: "rgba(74, 91, 192, 0.08)",
+                          display: "grid",
+                          placeItems: "center"
+                        }}
+                      >
+                        <Code2 size={24} style={{ color: "var(--accent-indigo)" }} />
+                      </div>
+                      <div>
+                        <h2 className="text-display" style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+                          DATABOX 智能探索实验室
+                        </h2>
+                        <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", maxWidth: 420, margin: "0 auto", lineHeight: 1.4 }}>
+                          本地优先的 MySQL、PostgreSQL 与 SQLite 数据实验室。在左侧对象树中连接库、双击查表，或者使用下方快捷指令开启会话。
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ height: "1px", background: "var(--border-light)" }} />
+
+                    {/* Quick Actions Grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, textAlign: "left" }}>
+                      <button
+                        onClick={() => handleOpenQueryTab()}
+                        className="hover-lift"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: 12,
+                          background: "var(--bg-secondary)",
+                          border: "1px solid var(--border-light)",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          textAlign: "left"
+                        }}
+                      >
+                        <Terminal size={16} style={{ color: "var(--accent-indigo)" }} />
+                        <div>
+                          <h4 style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>
+                            新建 SQL 查询会话
+                          </h4>
+                          <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.3 }}>
+                            开启智能补全、DDL 审计与执行计划可视化
+                          </p>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => handleAiContextAction("帮我分析当前数据库架构并生成数据洞察")}
+                        className="hover-lift"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: 12,
+                          background: "rgba(74, 91, 192, 0.04)",
+                          border: "1px solid rgba(74, 91, 192, 0.15)",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          textAlign: "left"
+                        }}
+                      >
+                        <Sparkles size={16} style={{ color: "var(--accent-indigo)" }} />
+                        <div>
+                          <h4 style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--accent-indigo)", marginBottom: 2 }}>
+                            智能问数与找表
+                          </h4>
+                          <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.3 }}>
+                            使用大模型对物理表进行模糊关联定位并生成报表
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Keyboard Shortcuts Info */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 12,
+                        fontSize: "0.72rem",
+                        color: "var(--text-muted)",
+                        background: "rgba(0,0,0,0.01)",
+                        padding: "8px",
+                        borderRadius: 6,
+                        border: "1px dashed var(--border-light)"
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <Keyboard size={11} />
+                        <span>快捷操作:</span>
+                      </span>
+                      <span>新建查询: <kbd style={{ background: "var(--bg-secondary)", padding: "1px 3px", borderRadius: 3, border: "1px solid var(--border-medium)" }}>Ctrl + T</kbd></span>
+                      <span>执行 SQL: <kbd style={{ background: "var(--bg-secondary)", padding: "1px 3px", borderRadius: 3, border: "1px solid var(--border-medium)" }}>Ctrl + Enter</kbd></span>
                     </div>
                   </div>
+                </div>
+              ) : (
+                /* Render active tab viewport based on type */
+                <div style={{ height: "100%", width: "100%" }}>
+                  {activeTab?.type === "query" && activeDataSource && (
+                    /* Independent Query Page console */
+                    <ErrorBoundary title="SQL 编辑器加载错误">
+                      <Suspense fallback={<div className="skeleton" style={{ height: "100%", minHeight: 320, borderRadius: 8 }} />}>
+                        <QueryPage
+                          key={activeTab.id}
+                          datasource={activeDataSource}
+                          initialDraft={activeTab.sqlDraft ? { sql: activeTab.sqlDraft, nonce: 1 } : null}
+                          actionTrigger={activeTab.actionTrigger}
+                          onStateChange={handleActiveQueryStateChange}
+                        />
+                      </Suspense>
+                    </ErrorBoundary>
+                  )}
 
-                  {/* Sub tab content containers */}
-                  <div style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+                  {activeTab?.type === "table" && activeTab.tableName && activeDataSource && (
+                    /* Fully integrated modular Table Detail board */
+                    <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
+
+                      {/* High-density horizontal horizontal sub-tab bar inside Table Tab */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          background: "var(--bg-surface)",
+                          borderBottom: "1px solid var(--border-light)",
+                          padding: "6px 20px 0",
+                          gap: 8,
+                          flexShrink: 0
+                        }}
+                      >
+                        {[
+                          { id: "data", label: "数据" },
+                          { id: "schema", label: "字段" },
+                          { id: "er", label: "ER 关系" },
+                          { id: "design", label: "DDL 变更" }
+                        ].map(sub => {
+                          const isSubActive = (activeTab.activeSubTab || "data") === sub.id;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => handleSwitchSubTab(activeTab.id, sub.id as NonNullable<WorkbenchTab["activeSubTab"]>)}
+                              style={{
+                                padding: "6px 12px 8px",
+                                border: "none",
+                                background: "transparent",
+                                borderBottom: isSubActive ? "2px solid var(--accent-indigo)" : "2px solid transparent",
+                                color: isSubActive ? "var(--accent-indigo)" : "var(--text-secondary)",
+                                fontWeight: isSubActive ? 600 : 500,
+                                fontSize: "0.76rem",
+                                cursor: "pointer",
+                                transition: "all 0.1s"
+                              }}
+                            >
+                              {sub.label}
+                            </button>
+                          );
+                        })}
+
+                        {/* Table Name Context Indicator */}
+                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, paddingBottom: 6 }}>
+                          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>当前对象: <strong style={{ color: "var(--text-secondary)" }}>{activeTab.tableName}</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Sub tab content containers */}
+                      <div style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
                     {(activeTab.activeSubTab || "data") === "data" && (
                       <ErrorBoundary title="数据大屏预览组件崩溃">
-                        <DataPage
-                          datasource={activeDataSource}
-                          selectedTableName={activeTab.tableName}
-                          schemaTables={schemaTables}
-                          onSelectTable={(name) => handleOpenTableTab(name, "data")}
-                        />
+                        <Suspense fallback={<div className="skeleton" style={{ height: "100%", minHeight: 320, borderRadius: 8 }} />}>
+                          <DataPage
+                            datasource={activeDataSource}
+                            selectedTableName={activeTab.tableName}
+                            schemaTables={schemaTables}
+                            onSelectTable={(name) => handleOpenTableTab(name, "data")}
+                          />
+                        </Suspense>
                       </ErrorBoundary>
                     )}
 
                     {(activeTab.activeSubTab || "data") === "schema" && (
-                      <ErrorBoundary title="架构属性查看组件崩溃">
-                        <SchemaPage
-                          datasource={activeDataSource}
-                          initialViewTab="fields"
-                          selectedTableName={activeTab.tableName}
-                          onOpenSql={(sql, title) => handleOpenQueryTab(sql, title)}
-                        />
+                      <ErrorBoundary title="结构属性查看组件崩溃">
+                        <Suspense fallback={<div className="skeleton" style={{ height: "100%", minHeight: 320, borderRadius: 8 }} />}>
+                          <SchemaPage
+                            datasource={activeDataSource}
+                            initialViewTab="fields"
+                            selectedTableName={activeTab.tableName}
+                            onOpenSql={(sql, title) => handleOpenQueryTab(sql, title)}
+                          />
+                        </Suspense>
                       </ErrorBoundary>
                     )}
 
                     {(activeTab.activeSubTab || "data") === "er" && (
-                      <ErrorBoundary title="表实体ER关联图崩溃">
-                        <SchemaPage
-                          datasource={activeDataSource}
-                          initialViewTab="er"
-                          selectedTableName={activeTab.tableName}
-                          onOpenSql={(sql, title) => handleOpenQueryTab(sql, title)}
-                        />
+                      <ErrorBoundary title="表实体 ER 关联图崩溃">
+                        <Suspense fallback={<div className="skeleton" style={{ height: "100%", minHeight: 320, borderRadius: 8 }} />}>
+                          <SchemaPage
+                            datasource={activeDataSource}
+                            initialViewTab="er"
+                            selectedTableName={activeTab.tableName}
+                            onOpenSql={(sql, title) => handleOpenQueryTab(sql, title)}
+                          />
+                        </Suspense>
                       </ErrorBoundary>
                     )}
 
                     {(activeTab.activeSubTab || "data") === "design" && (
                       <ErrorBoundary title="DDL结构修改设计组件崩溃">
-                        <SchemaPage
-                          datasource={activeDataSource}
-                          initialViewTab="design"
-                          selectedTableName={activeTab.tableName}
-                          onOpenSql={(sql, title) => handleOpenQueryTab(sql, title)}
-                        />
+                        <Suspense fallback={<div className="skeleton" style={{ height: "100%", minHeight: 320, borderRadius: 8 }} />}>
+                          <SchemaPage
+                            datasource={activeDataSource}
+                            initialViewTab="design"
+                            selectedTableName={activeTab.tableName}
+                            onOpenSql={(sql, title) => handleOpenQueryTab(sql, title)}
+                          />
+                        </Suspense>
                       </ErrorBoundary>
                     )}
                   </div>
@@ -1125,7 +1500,7 @@ export const WorkbenchPage = ({
         </div>
       </section>
 
-      {/* ═══ FLOATING SLIDE-OVER AI CONTEXT ASSISTANT DRAWER ═══ */}
+      {/* 鈺愨晲鈺?FLOATING SLIDE-OVER AI CONTEXT ASSISTANT DRAWER 鈺愨晲鈺?*/}
       {aiPanelOpen && activeDataSource && (
         <aside
           className="animate-slide-left"
@@ -1174,18 +1549,18 @@ export const WorkbenchPage = ({
           {/* AI Context Card */}
           <div style={{ padding: "10px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-light)", fontSize: "0.7rem", color: "var(--text-secondary)" }}>
             <div style={{ marginBottom: 4 }}>
-              <strong>当前库:</strong> <code style={{ background: "#fff", padding: "1px 4px", borderRadius: 3 }}>{activeDataSource.database_name}</code>
+              <strong>当前库</strong> <code style={{ background: "#fff", padding: "1px 4px", borderRadius: 3 }}>{activeDataSource.database_name}</code>
             </div>
             {activeTab?.tableName && (
               <div>
-                <strong>当前聚焦表:</strong> <code style={{ background: "#fff", padding: "1px 4px", borderRadius: 3 }}>{activeTab.tableName}</code>
+                <strong>当前聚焦表</strong> <code style={{ background: "#fff", padding: "1px 4px", borderRadius: 3 }}>{activeTab.tableName}</code>
               </div>
             )}
           </div>
 
           {/* Prompt Conversation Area */}
           <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-            
+
             {/* Quick AI Presets */}
             <div>
               <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
@@ -1195,35 +1570,35 @@ export const WorkbenchPage = ({
                 {activeTab?.tableName ? (
                   <>
                     <button
-                      onClick={() => handleAiContextAction(`用物理外键和字段名，帮我生成表 ${activeTab.tableName} 关联查询其他表的 JOIN SQL，并包含主要字段说明`)}
+                      onClick={() => handleAiContextAction(`用物理外键和字段名，帮我生成表 ${activeTab.tableName} 关联查询其他表的 JOIN SQL，并包含主要字段说明。`)}
                       className="btn-secondary"
                       style={{ padding: "5px 8px", fontSize: "0.72rem", justifyContent: "flex-start", textAlign: "left", width: "100%" }}
                     >
-                      🔍 自动生成多表关联 SQL
+                      自动生成多表关联 SQL
                     </button>
                     <button
-                      onClick={() => handleAiContextAction(`分析并指出表 ${activeTab.tableName} 结构中是否有缺失索引，或者主外键关联的潜在优化风险`)}
+                      onClick={() => handleAiContextAction(`分析并指出表 ${activeTab.tableName} 结构中是否有缺失索引，或者主外键关联的潜在优化风险。`)}
                       className="btn-secondary"
                       style={{ padding: "5px 8px", fontSize: "0.72rem", justifyContent: "flex-start", textAlign: "left", width: "100%" }}
                     >
-                      🛡️ 审核优化当前表设计
+                      审核优化当前表设计
                     </button>
                   </>
                 ) : (
                   <>
                     <button
-                      onClick={() => handleAiContextAction(`列出我当前数据库中最常被用作关联的主键/外键表有哪些，并绘制简略脑图`)}
+                      onClick={() => handleAiContextAction("列出当前数据库中最常被用作关联的主键、外键表，并生成简要关系说明。")}
                       className="btn-secondary"
                       style={{ padding: "5px 8px", fontSize: "0.72rem", justifyContent: "flex-start", textAlign: "left", width: "100%" }}
                     >
-                      🗺️ 智能检索全局 Schema 关系
+                      智能检索全局 Schema 关系
                     </button>
                     <button
-                      onClick={() => handleAiContextAction(`用最简单的 MySQL 或 SQL 查询指令帮我测试数据源的读写延迟，并生成诊断代码`)}
+                      onClick={() => handleAiContextAction("用最简单的 MySQL 或 SQL 查询指令，帮我测试数据源的读写延迟，并生成诊断代码。")}
                       className="btn-secondary"
                       style={{ padding: "5px 8px", fontSize: "0.72rem", justifyContent: "flex-start", textAlign: "left", width: "100%" }}
                     >
-                      ⚡ 数据源读写延迟探针
+                      数据源读写延迟探针
                     </button>
                   </>
                 )}
@@ -1246,7 +1621,7 @@ export const WorkbenchPage = ({
               >
                 <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
                   <ShieldCheck size={11} style={{ color: "var(--accent-green)" }} />
-                  <span>AI 脑力分析与 SQL 生成:</span>
+                  <span>AI 分析与 SQL 生成:</span>
                 </div>
                 <pre
                   style={{
@@ -1262,7 +1637,7 @@ export const WorkbenchPage = ({
                 >
                   {aiResponse}
                 </pre>
-                
+
                 {aiResponse.includes("SELECT") && (
                   <button
                     onClick={() => {
@@ -1281,7 +1656,7 @@ export const WorkbenchPage = ({
 
             {aiLoading && (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "20px 0", color: "var(--text-muted)" }}>
-                <span className="animate-spin" style={{ fontSize: 18 }}>⏳</span>
+                <span className="animate-spin" style={{ fontSize: 18 }}>↻</span>
                 <span style={{ fontSize: "0.74rem" }}>正在进行知识检索与智能推理...</span>
               </div>
             )}
@@ -1302,7 +1677,7 @@ export const WorkbenchPage = ({
           >
             <textarea
               className="input-field"
-              placeholder="问我关于库、表结构、或者生成 SQL..."
+              placeholder="问我关于库、表结构，或者生成 SQL..."
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               style={{ height: 60, fontSize: "0.78rem", resize: "none" }}
@@ -1319,12 +1694,105 @@ export const WorkbenchPage = ({
               disabled={aiLoading || !aiPrompt.trim()}
               style={{ padding: "6px 0", fontSize: "0.76rem", width: "100%", justifyContent: "center" }}
             >
-              🚀 发送指令
+              发送指令
             </button>
           </form>
 
         </aside>
       )}
+
+      {/* 鈺愨晲鈺?1. DATA SOURCES MANAGER (SETTINGS) MODAL 鈺愨晲鈺?*/}
+      {showSettingsModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", zIndex: 1000, display: "grid", placeItems: "center" }}>
+          <div style={{ background: "var(--bg-surface)", width: "80%", height: "85%", borderRadius: 12, border: "1px solid var(--border-light)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 50px rgba(0,0,0,0.15)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "1px solid var(--border-light)", background: "var(--bg-secondary)" }}>
+              <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>连接管理器（数据源设置）</span>
+              <button onClick={() => setShowSettingsModal(false)} className="btn-ghost" style={{ padding: 4 }}><X size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", padding: 20 }}>
+              <DataSourcesPage
+                onSelectDataSource={(ds) => {
+                  setActiveDataSource(ds);
+                  setShowSettingsModal(false);
+                }}
+                activeDataSource={activeDataSource}
+                activeProject={activeProject}
+                onRefreshDatasources={onRefreshDatasources}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 鈺愨晲鈺?2. ENVIRONMENTS CONFIG MODAL 鈺愨晲鈺?*/}
+      {showEnvironmentsModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", zIndex: 1000, display: "grid", placeItems: "center" }}>
+          <div style={{ background: "var(--bg-surface)", width: "80%", height: "85%", borderRadius: 12, border: "1px solid var(--border-light)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 50px rgba(0,0,0,0.15)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "1px solid var(--border-light)", background: "var(--bg-secondary)" }}>
+              <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>环境配置</span>
+              <button onClick={() => setShowEnvironmentsModal(false)} className="btn-ghost" style={{ padding: 4 }}><X size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", padding: 20 }}>
+              <EnvironmentsPage
+                activeProject={activeProject}
+                onRefreshDatasources={onRefreshDatasources}
+                onSelectDataSource={(ds) => {
+                  setActiveDataSource(ds);
+                  setShowEnvironmentsModal(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 鈺愨晲鈺?3. BACKUPS MANAGER MODAL 鈺愨晲鈺?*/}
+      {showBackupsModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", zIndex: 1000, display: "grid", placeItems: "center" }}>
+          <div style={{ background: "var(--bg-surface)", width: "80%", height: "85%", borderRadius: 12, border: "1px solid var(--border-light)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 50px rgba(0,0,0,0.15)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "1px solid var(--border-light)", background: "var(--bg-secondary)" }}>
+              <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>备份与恢复管理器</span>
+              <button onClick={() => setShowBackupsModal(false)} className="btn-ghost" style={{ padding: 4 }}><X size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", padding: 20 }}>
+              <BackupsPage
+                activeProject={activeProject}
+                datasources={datasources}
+                activeDataSource={activeDataSource}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 鈺愨晲鈺?4. PERFORMANCE MONITORING DASHBOARD MODAL 鈺愨晲鈺?*/}
+      {showDashboardModal && activeDataSource && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", zIndex: 1000, display: "grid", placeItems: "center" }}>
+          <div style={{ background: "var(--bg-surface)", width: "80%", height: "85%", borderRadius: 12, border: "1px solid var(--border-light)", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 50px rgba(0,0,0,0.15)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "1px solid var(--border-light)", background: "var(--bg-secondary)" }}>
+              <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--text-primary)" }}>鎬ц兘鐩戞帶闈㈡澘</span>
+              <button onClick={() => setShowDashboardModal(false)} className="btn-ghost" style={{ padding: 4 }}><X size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", padding: 20 }}>
+              <Suspense fallback={<div className="skeleton" style={{ height: 240, borderRadius: 8 }} />}>
+                <DashboardPage datasource={activeDataSource} />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 鈺愨晲鈺?5. CREATE NEW PROJECT DIALOG 鈺愨晲鈺?*/}
+      <PromptDialog
+        open={showCreateProject}
+        title="创建新项目"
+        placeholder="杈撳叆椤圭洰鍚嶇О"
+        onConfirm={(name) => {
+          setShowCreateProject(false);
+          void onCreateProject(name);
+        }}
+        onCancel={() => setShowCreateProject(false)}
+      />
 
     </div>
   );

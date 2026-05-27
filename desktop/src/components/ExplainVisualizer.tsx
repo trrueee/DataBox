@@ -2,7 +2,12 @@ import type { FC } from "react";
 
 interface ExplainVisualizerProps {
   columns: string[];
-  rows: Array<Record<string, any>>;
+  rows: Array<Record<string, unknown>>;
+}
+
+function cellText(value: unknown, fallback = ""): string {
+  if (value === null || value === undefined || value === "") return fallback;
+  return String(value);
 }
 
 export const ExplainVisualizer: FC<ExplainVisualizerProps> = ({ columns, rows }) => {
@@ -97,14 +102,14 @@ export const ExplainVisualizer: FC<ExplainVisualizerProps> = ({ columns, rows })
         ℹ️ MySQL 优化器执行计划 analysis：
       </div>
       {rows.map((row, idx) => {
-        const selectType = row.select_type || "SIMPLE";
-        const tableName = row.table || "-";
-        const joinType = row.type || "ALL";
-        const activeKey = row.key || null;
-        const possibleKeys = row.possible_keys || null;
+        const selectType = cellText(row.select_type, "SIMPLE");
+        const tableName = cellText(row.table, "-");
+        const joinType = cellText(row.type, "ALL");
+        const activeKey = cellText(row.key) || null;
+        const possibleKeys = cellText(row.possible_keys) || null;
         const rowsScanned = Number(row.rows) || 0;
-        const filtered = row.filtered ? `${row.filtered}%` : null;
-        const extra = row.Extra || "";
+        const filtered = row.filtered ? `${String(row.filtered)}%` : null;
+        const extra = cellText(row.Extra);
 
         let cardBorder = "4px solid var(--border-medium)";
         let typeBadgeBg = "var(--bg-active)";

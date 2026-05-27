@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import Editor, { type OnMount } from "@monaco-editor/react";
+import Editor, { type Monaco, type OnMount } from "@monaco-editor/react";
 
 export interface SchemaColumnMeta {
   name: string;
@@ -22,9 +22,33 @@ interface SqlEditorProps {
   schemaTables?: SchemaTableMeta[];
 }
 
+type Disposable = { dispose: () => void };
+type SqlPosition = { lineNumber: number; column: number };
+type SqlWord = { startColumn: number; endColumn: number };
+type SqlModel = {
+  getWordUntilPosition: (position: SqlPosition) => SqlWord;
+  getLineContent: (lineNumber: number) => string;
+  getValue: () => string;
+};
+type CompletionRange = {
+  startLineNumber: number;
+  endLineNumber: number;
+  startColumn: number;
+  endColumn: number;
+};
+type CompletionSuggestion = {
+  label: string;
+  kind: number;
+  insertText: string;
+  detail?: string;
+  documentation?: string;
+  sortText?: string;
+  range: CompletionRange;
+};
+
 export function SqlEditor({ value, onChange, schemaTables = [] }: SqlEditorProps) {
-  const [monacoInstance, setMonacoInstance] = useState<any>(null);
-  const providerRef = useRef<any>(null);
+  const [monacoInstance, setMonacoInstance] = useState<Monaco | null>(null);
+  const providerRef = useRef<Disposable | null>(null);
 
   const handleMount: OnMount = (editor, monaco) => {
     editor.focus();
@@ -74,7 +98,7 @@ export function SqlEditor({ value, onChange, schemaTables = [] }: SqlEditorProps
 
     providerRef.current = monacoInstance.languages.registerCompletionItemProvider("sql", {
       triggerCharacters: [".", " "],
-      provideCompletionItems: (model: any, position: any) => {
+      provideCompletionItems: (model: SqlModel, position: SqlPosition) => {
         const word = model.getWordUntilPosition(position);
         const lineContent = model.getLineContent(position.lineNumber);
         const textUntilCursor = lineContent.substring(0, position.column - 1);
@@ -91,11 +115,11 @@ export function SqlEditor({ value, onChange, schemaTables = [] }: SqlEditorProps
           const cleanAlias = alias.trim().toLowerCase();
           if (!cleanAlias) return null;
 
-          const escapedAlias = cleanAlias.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          const escapedAlias = cleanAlias.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 
           for (const t of schemaTables) {
             const tableLabel = t.label;
-            const escapedTable = tableLabel.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const escapedTable = tableLabel.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 
             // Regex patterns for alias bindings like "FROM table_name [AS] alias"
             const pattern = new RegExp(`\\b(?:FROM|JOIN|UPDATE|INTO|MERGE)\\s+[\`"]?${escapedTable}[\`"]?\\s+(?:AS\\s+)?${escapedAlias}\\b`, "i");
@@ -151,7 +175,7 @@ export function SqlEditor({ value, onChange, schemaTables = [] }: SqlEditorProps
             const activeTablesInQuery: Array<{ table: SchemaTableMeta; alias?: string }> = [];
 
             for (const t of schemaTables) {
-              const escapedTable = t.label.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+              const escapedTable = t.label.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
               const tableInSqlRegex = new RegExp(`\\b${escapedTable}\\b`, "i");
               if (tableInSqlRegex.test(textUntilCursor)) {
                 // Find if there is an alias for this table in the query
@@ -162,7 +186,7 @@ export function SqlEditor({ value, onChange, schemaTables = [] }: SqlEditorProps
               }
             }
 
-            const onSuggestions: any[] = [];
+            const onSuggestions: CompletionSuggestion[] = [];
             for (const other of activeTablesInQuery) {
               if (other.table.label.toLowerCase() === joinedTable.label.toLowerCase()) continue;
 

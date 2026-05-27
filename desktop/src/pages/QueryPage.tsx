@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   Award,
   BarChart3,
   Check,
-  CircleDot,
   Copy,
   Download,
   History,
-  PencilLine,
   Play,
-  Plus,
   RefreshCw,
   RotateCcw,
   Search,
@@ -21,9 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { api } from "../lib/api";
-import type { DataSource, QueryHistory } from "../lib/api";
+import type { DataSource, ERDiagramData, QueryHistory } from "../lib/api";
 import { SqlEditor } from "../components/SqlEditor";
-import { ChartPanel } from "../components/ChartPanel";
 import { DataTable } from "../components/DataTable";
 import { AiQueryInput } from "../components/AiQueryInput";
 import { StatusIndicator } from "../components/StatusIndicator";
@@ -32,7 +28,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { AiBenchmarkDrawer } from "../components/AiBenchmarkDrawer";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useToast } from "../components/Toast";
-import { useQueryExecution } from "../hooks/useQueryExecution";
+import { useQueryExecution, type QueryTabState } from "../hooks/useQueryExecution";
 
 interface QueryPageProps {
   datasource: DataSource;
@@ -41,12 +37,29 @@ interface QueryPageProps {
     title?: string;
     nonce: number;
   } | null;
+  actionTrigger?: {
+    type: "execute" | "stop" | "validate" | "export" | "format";
+    nonce: number;
+  };
+  onStateChange?: (state: {
+    resultState?: "idle" | "running" | "success" | "error" | "cancelled" | "timeout";
+    sqlDraft?: string;
+    dirty?: boolean;
+  }) => void;
 }
 
 type ViewTab = "results" | "history";
 type ResultViewMode = "table" | "chart" | "explain";
 
-export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
+const ChartPanel = lazy(() =>
+  import("../components/ChartPanel").then((module) => ({ default: module.ChartPanel })),
+);
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChange }: QueryPageProps) => {
   const [activeBottomTab, setActiveBottomTab] = useState<ViewTab>("results");
   const [resultViewMode, setResultViewMode] = useState<ResultViewMode>("table");
   const [history, setHistory] = useState<QueryHistory[]>([]);
@@ -72,7 +85,15 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
 
   const [showAiInput, setShowAiInput] = useState(false);
   const [showGuardrailDrawer, setShowGuardrailDrawer] = useState(false);
-  const [editorHeight, setEditorHeight] = useState(320);
+  const handledActionNonceRef = useRef<number | undefined>(undefined);
+  const [editorHeight, setEditorHeight] = useState(() => {
+    const saved = localStorage.getItem("databox_editor_height");
+    return saved ? Number(saved) : 320;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("databox_editor_height", String(editorHeight));
+  }, [editorHeight]);
 
   const handleHeightDragMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -93,7 +114,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       setHistoryLoading(true);
       setHistory(
@@ -108,21 +129,14 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, [datasource.id, historySearch, historyStatus]);
 
   // Initialize custom hook
   const {
-    tabs,
     activeEditorTab,
-    setActiveEditorTabId,
     validating,
-    renamingTabId,
-    renameDraft,
     handleAddTab,
     handleCloseTab,
-    startRenaming,
-    commitRename,
-    setRenameDraft,
     updateActiveTab,
     openSqlDraft,
     handleValidateSql,
@@ -135,9 +149,9 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
   });
 
   const toast = useToast();
-  const [schemaTables, setSchemaTables] = useState<any[]>([]);
+  const [schemaTables, setSchemaTables] = useState<ERDiagramData["nodes"]>([]);
 
-  const fetchSchemaMetadata = async () => {
+  const fetchSchemaMetadata = useCallback(async () => {
     try {
       const data = await api.getERDiagram(datasource.id);
       setSchemaTables(data.nodes || []);
@@ -145,27 +159,164 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
       console.error("Failed to fetch schema metadata for autocomplete:", e);
       setSchemaTables([]);
     }
-  };
+  }, [datasource.id]);
+
+  const initialDraftSql = initialDraft?.sql;
+  const initialDraftTitle = initialDraft?.title;
+  const initialDraftNonce = initialDraft?.nonce;
+  const actionTriggerType = actionTrigger?.type;
+  const actionTriggerNonce = actionTrigger?.nonce;
 
   useEffect(() => {
     setActiveBottomTab("results");
     void fetchSchemaMetadata();
-  }, [datasource.id]);
+  }, [fetchSchemaMetadata]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchHistory();
     }, 220);
     return () => window.clearTimeout(timer);
-  }, [datasource.id, historySearch, historyStatus]);
+  }, [fetchHistory]);
 
   useEffect(() => {
-    if (!initialDraft?.sql) return;
-    openSqlDraft(initialDraft.sql, initialDraft.title);
+    if (!initialDraftSql) return;
+    openSqlDraft(initialDraftSql, initialDraftTitle);
     setActiveBottomTab("results");
-  }, [initialDraft?.nonce]);
+  }, [initialDraftNonce, initialDraftSql, initialDraftTitle, openSqlDraft]);
 
-  // Keyboard shortcuts
+  // Synchronize state with parent Tab Bar
+  useEffect(() => {
+    if (activeEditorTab && onStateChange) {
+      onStateChange({
+        resultState: activeEditorTab.status,
+        sqlDraft: activeEditorTab.sql,
+        dirty: activeEditorTab.sql !== activeEditorTab.savedSql
+      });
+    }
+  }, [activeEditorTab, onStateChange]);
+
+  const handleExportCsv = useCallback(() => {
+    if (!activeEditorTab?.queryResult) return;
+    const { columns, rows } = activeEditorTab.queryResult;
+    const escapeCsv = (val: unknown): string => {
+      if (val === null) return "";
+      const s = String(val);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+    const header = columns.map(escapeCsv).join(",");
+    const body = rows.map((row) => columns.map((c) => escapeCsv(row[c])).join(",")).join("\n");
+    const csv = "\uFEFF" + header + "\n" + body;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `databox_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [activeEditorTab?.queryResult]);
+
+  // Handle parent toolbar trigger nonces
+  useEffect(() => {
+    if (!actionTriggerType || actionTriggerNonce === undefined) return;
+    if (handledActionNonceRef.current === actionTriggerNonce) return;
+    handledActionNonceRef.current = actionTriggerNonce;
+    const executeAction = async () => {
+      if (actionTriggerType === "execute") {
+        await handleExecuteSql(30000);
+      } else if (actionTriggerType === "stop") {
+        if (activeEditorTab) {
+          handleCancelQuery(activeEditorTab.id);
+        }
+      } else if (actionTriggerType === "validate") {
+        await handleValidateSql();
+      } else if (actionTriggerType === "export") {
+        handleExportCsv();
+      } else if (actionTriggerType === "format") {
+        if (activeEditorTab) {
+          const sqlKeywords = [
+            "select", "from", "where", "join", "left", "right", "inner", "on", "group by", "order by", "limit",
+            "insert", "update", "delete", "create", "drop", "alter", "table", "and", "or", "not", "null", "as",
+            "having", "in", "like", "between", "exists", "union", "all", "is", "into", "values", "set"
+          ];
+          let formatted = activeEditorTab.sql;
+          sqlKeywords.forEach(kw => {
+            const regex = new RegExp(`\\b${kw}\\b`, 'gi');
+            formatted = formatted.replace(regex, kw.toUpperCase());
+          });
+          updateActiveTab(() => ({ sql: formatted }));
+        }
+      }
+    };
+    void executeAction();
+  }, [
+    actionTriggerNonce,
+    actionTriggerType,
+    activeEditorTab,
+    handleCancelQuery,
+    handleExecuteSql,
+    handleExportCsv,
+    handleValidateSql,
+    updateActiveTab,
+  ]);
+  const handleAiOptimizeSql = async () => {
+    if (!activeEditorTab?.sql.trim()) return;
+    try {
+      setAiGenerating(true);
+      updateActiveTab(() => ({ queryError: null }));
+      const prompt = `针对以下 SQL 进行性能优化分析，并只返回优化后的标准 SQL 语句，同时说明优化点：\n\n${activeEditorTab.sql}`;
+      const result = await api.generateSql(datasource.id, prompt);
+      if (result.sql) {
+        updateActiveTab(() => ({ sql: result.sql }));
+        toast.toast("SQL 优化完成，已应用到编辑器", "success");
+      } else {
+        toast.toast("AI 未返回优化后的 SQL", "warning");
+      }
+    } catch (e: unknown) {
+      toast.toast(`优化失败: ${getErrorMessage(e, "AI SQL optimization failed")}`, "error");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleAiExplainSql = async () => {
+    if (!activeEditorTab?.sql.trim()) return;
+    try {
+      setAiGenerating(true);
+      updateActiveTab(() => ({ queryError: null }));
+      const prompt = `请用中文解释以下 SQL 的查询意图、关联字段逻辑以及运行过程：\n\n${activeEditorTab.sql}`;
+      const result = await api.generateSql(datasource.id, prompt);
+      if (result.sql || (result.guardrail && result.guardrail.message)) {
+        updateActiveTab(() => ({
+          queryError: `【AI 解释 SQL】\n${result.guardrail?.message || "无安全问题"}\n\n【逻辑流程分析】\n${result.sql || "已完成逻辑解释"}`
+        }));
+        toast.toast("SQL 解释生成成功", "success");
+      }
+    } catch (e: unknown) {
+      toast.toast(`解释失败: ${getErrorMessage(e, "AI SQL explanation failed")}`, "error");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleInjectLimit = () => {
+    if (!activeEditorTab?.sql.trim()) return;
+    let sql = activeEditorTab.sql.trim();
+    if (/limit\s+\d+/i.test(sql)) {
+      toast.toast("SQL 已包含 LIMIT 限制", "info");
+      return;
+    }
+    if (sql.endsWith(";")) {
+      sql = sql.slice(0, -1);
+    }
+    sql += " LIMIT 100;";
+    updateActiveTab(() => ({ sql }));
+    toast.toast("已成功注入 LIMIT 100 保护", "success");
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
@@ -210,36 +361,13 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
     );
   }, [activeEditorTab?.queryResult]);
 
-  const isDirty = (tab: any) => tab.sql !== tab.savedSql;
+  const isDirty = (tab: QueryTabState) => tab.sql !== tab.savedSql;
 
   const handleCopySql = async () => {
     if (!activeEditorTab) return;
     await navigator.clipboard.writeText(activeEditorTab.sql);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
-  };
-
-  const handleExportCsv = () => {
-    if (!activeEditorTab?.queryResult) return;
-    const { columns, rows } = activeEditorTab.queryResult;
-    const escapeCsv = (val: unknown): string => {
-      if (val === null) return "";
-      const s = String(val);
-      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-        return `"${s.replace(/"/g, '""')}"`;
-      }
-      return s;
-    };
-    const header = columns.map(escapeCsv).join(",");
-    const body = rows.map((row) => columns.map((c) => escapeCsv(row[c])).join(",")).join("\n");
-    const csv = "\uFEFF" + header + "\n" + body;
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `databox_export_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const getHistorySql = (item: QueryHistory) =>
@@ -268,8 +396,8 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
       await api.deleteHistory(item.id);
       setHistory((prev) => prev.filter((h) => h.id !== item.id));
       toast.toast("查询历史已删除", "success");
-    } catch (e: any) {
-      toast.toast(e.message ?? "删除查询历史失败", "error");
+    } catch (e: unknown) {
+      toast.toast(getErrorMessage(e, "删除查询历史失败"), "error");
     } finally {
       setHistoryMutating(false);
     }
@@ -282,8 +410,8 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
       await api.clearHistory(datasource.id);
       setHistory([]);
       toast.toast("查询历史已清空", "success");
-    } catch (e: any) {
-      toast.toast(e.message ?? "清空查询历史失败", "error");
+    } catch (e: unknown) {
+      toast.toast(getErrorMessage(e, "清空查询历史失败"), "error");
     } finally {
       setHistoryMutating(false);
     }
@@ -326,8 +454,8 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
         updateActiveTab(() => ({ queryError: result.guardrail.message }));
       }
       setAiQuestion("");
-    } catch (error: any) {
-      updateActiveTab(() => ({ queryError: error.message ?? "AI 生成 SQL 失败" }));
+    } catch (error: unknown) {
+      updateActiveTab(() => ({ queryError: getErrorMessage(error, "AI 生成 SQL 失败") }));
     } finally {
       setAiGenerating(false);
     }
@@ -359,7 +487,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
         }
       `}</style>
 
-      {/* ── Collapsible AI Query Input ── */}
+      {/* 鈹€鈹€ Collapsible AI Query Input 鈹€鈹€ */}
       {showAiInput && (
         <ErrorBoundary title="AI 智能问数面板加载异常">
           <div className="animate-slide-down">
@@ -375,7 +503,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
         </ErrorBoundary>
       )}
 
-      {/* ── LLM Config ── */}
+      {/* 鈹€鈹€ LLM Config 鈹€鈹€ */}
       {showAiConfig && showAiInput && (
         <div className="lab-card animate-slide-down" style={{ padding: "14px 18px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
@@ -384,7 +512,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
               <input
                 className="input-field input-field-sm"
                 type="password"
-                placeholder="留空使用离线模式"
+                placeholder="鐣欑┖浣跨敤绂荤嚎妯″紡"
                 value={aiConfig.apiKey}
                 onChange={(e) => setAiConfig((c) => ({ ...c, apiKey: e.target.value }))}
               />
@@ -436,14 +564,14 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                   onChange={(e) => setAiConfig((c) => ({ ...c, optimizeRag: e.target.checked }))}
                   style={{ width: 14, height: 14, accentColor: "var(--accent-indigo)", cursor: "pointer" }}
                 />
-                启用智能 RAG 表选择器 (过滤无关表结构，节省 Token 成本并提高 AI 准确率)
+                启用智能 RAG 表选择器（过滤无关表结构，节省 Token 成本并提高 AI 准确率）
               </label>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Main Content: SQL Workspace with Collapsible splits ── */}
+      {/* 鈹€鈹€ Main Content: SQL Workspace with Collapsible splits 鈹€鈹€ */}
       <div
         style={{
           display: "flex",
@@ -464,88 +592,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
             overflow: "hidden",
           }}
         >
-          {/* Tab bar */}
-          <div
-            style={{
-              borderBottom: "1px solid var(--border-light)",
-              padding: "6px 10px 0",
-              background: "var(--bg-secondary)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 4, overflowX: "auto", paddingBottom: 6 }}>
-              {tabs.map((tab) => {
-                const dirty = isDirty(tab);
-                const isActive = tab.id === activeEditorTab?.id;
-                const isRenaming = renamingTabId === tab.id;
-                return (
-                  <div
-                    key={tab.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: "6px 10px",
-                      borderRadius: "6px 6px 0 0",
-                      border: "1px solid",
-                      borderColor: isActive ? "var(--border-light)" : "transparent",
-                      borderBottomColor: isActive ? "var(--bg-surface)" : "transparent",
-                      background: isActive ? "var(--bg-surface)" : "transparent",
-                      minWidth: "fit-content",
-                    }}
-                  >
-                    <button
-                      onClick={() => setActiveEditorTabId(tab.id)}
-                      onDoubleClick={() => startRenaming(tab)}
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        color: isActive ? "var(--text-primary)" : "var(--text-muted)",
-                        cursor: "pointer",
-                        fontSize: "0.8rem",
-                        fontWeight: isActive ? 600 : 500,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      {dirty && <CircleDot size={10} style={{ color: "var(--accent-amber)" }} />}
-                      {isRenaming ? (
-                        <input
-                          className="input-field input-field-sm"
-                          value={renameDraft}
-                          autoFocus
-                          onChange={(e) => setRenameDraft(e.target.value)}
-                          onBlur={commitRename}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") commitRename();
-                            if (e.key === "Escape") {
-                              setRenameDraft("");
-                            }
-                          }}
-                          style={{ width: 100 }}
-                        />
-                      ) : (
-                        <span>{tab.title}</span>
-                      )}
-                    </button>
-                    {!isRenaming && (
-                      <button onClick={() => startRenaming(tab)} className="btn-ghost" style={{ padding: 1 }}>
-                        <PencilLine size={11} />
-                      </button>
-                    )}
-                    {tabs.length > 1 && (
-                      <button onClick={() => handleCloseTab(tab.id)} className="btn-ghost" style={{ padding: 1 }}>
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              <button className="btn-ghost" onClick={() => handleAddTab()} style={{ padding: "4px 8px", flexShrink: 0 }} title="新建查询标签 (Ctrl+N)">
-                <Plus size={13} />
-              </button>
-            </div>
-          </div>
+
 
           {/* Toolbar */}
           <div
@@ -564,18 +611,18 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                 {datasource.database_name}
               </span>
               {activeEditorTab && isDirty(activeEditorTab) && (
-                <span style={{ color: "var(--accent-amber)" }}>· 未执行</span>
+                <span style={{ color: "var(--accent-amber)" }}>• 未执行</span>
               )}
               {activeEditorTab?.status === "running" && (
                 <span className="animate-pulse" style={{ color: "var(--accent-indigo)", fontWeight: 600 }}>
-                  · 正在执行中...
+                  • 正在执行中...
                 </span>
               )}
               {activeEditorTab?.status === "timeout" && (
-                <span style={{ color: "var(--accent-red)", fontWeight: 600 }}>· 查询超时 ⚠️</span>
+                <span style={{ color: "var(--accent-red)", fontWeight: 600 }}>• 查询超时</span>
               )}
               {activeEditorTab?.status === "cancelled" && (
-                <span style={{ color: "var(--text-muted)" }}>· 已取消 🛑</span>
+                <span style={{ color: "var(--text-muted)" }}>• 已取消</span>
               )}
             </div>
             <div style={{ display: "flex", gap: 6 }}>
@@ -614,6 +661,40 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                 {copied ? <Check size={13} /> : <Copy size={13} />}
                 {copied ? "已复制" : "复制"}
               </button>
+
+              {/* Inline Editor AI Actions */}
+              <button
+                className="btn-secondary"
+                style={{ padding: "5px 10px", fontSize: "0.8rem", color: "var(--accent-indigo)", borderColor: "rgba(74, 91, 192, 0.2)", background: "rgba(74, 91, 192, 0.02)" }}
+                onClick={handleAiExplainSql}
+                disabled={aiGenerating || !activeEditorTab || activeEditorTab.status === "running"}
+                title="AI 智能解释当前 SQL 意图"
+              >
+                <Sparkles size={12} style={{ color: "var(--accent-indigo)" }} />
+                解释 SQL
+              </button>
+
+              <button
+                className="btn-secondary"
+                style={{ padding: "5px 10px", fontSize: "0.8rem", color: "var(--accent-indigo)", borderColor: "rgba(74, 91, 192, 0.2)", background: "rgba(74, 91, 192, 0.02)" }}
+                onClick={handleAiOptimizeSql}
+                disabled={aiGenerating || !activeEditorTab || activeEditorTab.status === "running"}
+                title="AI 智能优化并重写 SQL"
+              >
+                <ShieldAlert size={12} style={{ color: "var(--accent-indigo)" }} />
+                优化 SQL
+              </button>
+
+              <button
+                className="btn-secondary"
+                style={{ padding: "5px 10px", fontSize: "0.8rem", color: "var(--text-secondary)", borderColor: "var(--border-light)" }}
+                onClick={handleInjectLimit}
+                disabled={!activeEditorTab || activeEditorTab.status === "running"}
+                title="自动在 SQL 尾部追加 LIMIT 100，防止大结果集拖慢执行"
+              >
+                <span>注入 LIMIT</span>
+              </button>
+
               <button
                 className="btn-secondary"
                 style={{ padding: "5px 10px", fontSize: "0.8rem" }}
@@ -622,7 +703,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                 title="校验 SQL 安全性 (Ctrl+Shift+Enter)"
               >
                 <ShieldAlert size={13} />
-                校验
+                鏍￠獙
               </button>
 
               {/* Cancellable Execution Button */}
@@ -912,7 +993,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                             style={{ padding: "3px 8px", fontSize: "0.74rem" }}
                             onClick={() => setResultViewMode("explain")}
                           >
-                            <Activity size={12} /> 执行计划树
+                            <Activity size={12} /> 执行计划
                           </button>
                         )}
                         <button
@@ -954,7 +1035,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)" }}>
-                        <span>⏱️ 耗时拆解:</span>
+                        <span>耗时拆解:</span>
                         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                           <span>连接: <strong style={{ color: "var(--text-primary)" }}>{activeEditorTab.queryResult.connectMs ?? 0}ms</strong></span>
                           <span>安全过滤: <strong style={{ color: "var(--text-primary)" }}>{activeEditorTab.queryResult.guardrailMs ?? 0}ms</strong></span>
@@ -963,7 +1044,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                           <span>序列化: <strong style={{ color: "var(--text-primary)" }}>{activeEditorTab.queryResult.serializeMs ?? 0}ms</strong></span>
                         </div>
                       </div>
-                      
+
                       {(() => {
                         const r = activeEditorTab.queryResult;
                         const c = r.connectMs ?? 0;
@@ -1016,7 +1097,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                       >
                         {activeEditorTab.queryResult.warnings.map((warn, i) => (
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: "10px" }}>⚠️</span>
+                            <span style={{ fontSize: "10px" }}>!</span>
                             <span>{warn}</span>
                           </div>
                         ))}
@@ -1043,10 +1124,12 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                     ) : (
                       <div style={{ padding: 12 }}>
                         <ErrorBoundary title="数据分析图表 (ChartPanel) 渲染崩溃">
-                          <ChartPanel
-                            columns={activeEditorTab.queryResult.columns}
-                            rows={activeEditorTab.queryResult.rows}
-                          />
+                          <Suspense fallback={<div className="skeleton" style={{ height: 260, borderRadius: 8 }} />}>
+                            <ChartPanel
+                              columns={activeEditorTab.queryResult.columns}
+                              rows={activeEditorTab.queryResult.rows}
+                            />
+                          </Suspense>
                         </ErrorBoundary>
                       </div>
                     )}
@@ -1167,7 +1250,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
         </div>
       </div>
 
-      {/* ── Sliding Detailed Guardrail Audit Drawer ── */}
+      {/* 鈹€鈹€ Sliding Detailed Guardrail Audit Drawer 鈹€鈹€ */}
       {showGuardrailDrawer && activeEditorTab?.guardrail && (
         <div
           style={{
@@ -1335,7 +1418,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
                   }}
                 >
                   <Award size={14} />
-                  另存为 Golden SQL (加入 Benchmark)
+                  另存为 Golden SQL（加入 Benchmark）
                 </button>
               </div>
             </div>
@@ -1343,7 +1426,7 @@ export const QueryPage = ({ datasource, initialDraft }: QueryPageProps) => {
         </div>
       )}
 
-      {/* ── Golden SQL Benchmark Drawer ── */}
+      {/* 鈹€鈹€ Golden SQL Benchmark Drawer 鈹€鈹€ */}
       {showBenchmarkDrawer && (
         <AiBenchmarkDrawer
           datasource={datasource}

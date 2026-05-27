@@ -29,8 +29,8 @@ export const DangerConfirmDialog: React.FC<DangerConfirmDialogProps> = ({ detail
     setError("");
     try {
       await details.onConfirm(inputText);
-    } catch (err: any) {
-      setError(err.message || "确认操作失败");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "确认操作失败");
     } finally {
       setLoading(false);
     }
