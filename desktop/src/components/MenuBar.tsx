@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { HardDrive } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -20,11 +20,37 @@ interface MenuBarProps {
   menus: MenuDef[];
 }
 
+function normalizeMenuItems(items: MenuItemDef[]) {
+  const normalized: MenuItemDef[] = [];
+  for (const item of items) {
+    if (item.disabled) continue;
+    if (item.separator) {
+      if (normalized.length > 0 && !normalized[normalized.length - 1].separator) {
+        normalized.push(item);
+      }
+      continue;
+    }
+    normalized.push(item);
+  }
+  while (normalized.length > 0 && normalized[normalized.length - 1].separator) {
+    normalized.pop();
+  }
+  return normalized;
+}
+
 export const MenuBar: React.FC<MenuBarProps> = ({ menus }) => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const visibleMenus = useMemo(
+    () =>
+      menus
+        .map((menu) => ({ ...menu, items: normalizeMenuItems(menu.items) }))
+        .filter((menu) => menu.items.length > 0),
+    [menus],
+  );
 
   const closeMenu = useCallback(() => {
     setOpenMenuId(null);
@@ -62,7 +88,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ menus }) => {
   // Keyboard navigation
   useEffect(() => {
     if (!openMenuId) return;
-    const currentMenu = menus.find((m) => m.id === openMenuId);
+    const currentMenu = visibleMenus.find((m) => m.id === openMenuId);
     if (!currentMenu) return;
 
     const visibleItems = currentMenu.items.filter((item) => !item.separator);
@@ -83,17 +109,17 @@ export const MenuBar: React.FC<MenuBarProps> = ({ menus }) => {
           break;
         case "ArrowRight": {
           e.preventDefault();
-          const idx = menus.findIndex((m) => m.id === openMenuId);
-          const nextIdx = idx >= menus.length - 1 ? 0 : idx + 1;
-          setOpenMenuId(menus[nextIdx].id);
+          const idx = visibleMenus.findIndex((m) => m.id === openMenuId);
+          const nextIdx = idx >= visibleMenus.length - 1 ? 0 : idx + 1;
+          setOpenMenuId(visibleMenus[nextIdx].id);
           setHighlightIndex(0);
           break;
         }
         case "ArrowLeft": {
           e.preventDefault();
-          const idx = menus.findIndex((m) => m.id === openMenuId);
-          const prevIdx = idx <= 0 ? menus.length - 1 : idx - 1;
-          setOpenMenuId(menus[prevIdx].id);
+          const idx = visibleMenus.findIndex((m) => m.id === openMenuId);
+          const prevIdx = idx <= 0 ? visibleMenus.length - 1 : idx - 1;
+          setOpenMenuId(visibleMenus[prevIdx].id);
           setHighlightIndex(0);
           break;
         }
@@ -115,14 +141,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({ menus }) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [openMenuId, menus, highlightIndex, closeMenu]);
+  }, [openMenuId, visibleMenus, highlightIndex, closeMenu]);
 
   // Alt+key to open menu
   useEffect(() => {
     const handleAltKey = (e: KeyboardEvent) => {
       if (!e.altKey || e.ctrlKey || e.metaKey) return;
       const key = e.key.toLowerCase();
-      const matched = menus.find(
+      const matched = visibleMenus.find(
         (m) => m.label.charAt(0).toLowerCase() === key || m.label.startsWith(key),
       );
       if (matched && matched.id !== openMenuId) {
@@ -132,7 +158,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ menus }) => {
     };
     window.addEventListener("keydown", handleAltKey);
     return () => window.removeEventListener("keydown", handleAltKey);
-  }, [menus, openMenuId, openMenu]);
+  }, [visibleMenus, openMenuId, openMenu]);
 
   // Scroll highlighted item into view
   useEffect(() => {
@@ -158,7 +184,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ menus }) => {
     try { getCurrentWindow().close(); } catch { /* non-Tauri env */ }
   }, []);
 
-  const openMenuDef = menus.find((m) => m.id === openMenuId);
+  const openMenuDef = visibleMenus.find((m) => m.id === openMenuId);
   const visibleItems = openMenuDef
     ? openMenuDef.items.filter((item) => !item.separator)
     : [];
@@ -201,7 +227,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ menus }) => {
 
       {/* Menu items */}
       <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
-        {menus.map((menu) => {
+        {visibleMenus.map((menu) => {
           const isOpen = openMenuId === menu.id;
           return (
             <div

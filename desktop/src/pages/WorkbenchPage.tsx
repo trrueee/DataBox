@@ -83,6 +83,20 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+function treeIndent(depth: number) {
+  return 4 + depth * 10;
+}
+
+function downloadTextFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 const MODULE_PREFIXES: [string, string][] = [
   ["account_", "账号模块"],
   ["ai_", "AI 智能模块"],
@@ -209,11 +223,16 @@ export const WorkbenchPage = ({
         ) {
           return tab;
         }
+        const terminalResult =
+          nextResultState &&
+          nextResultState !== tab.resultState &&
+          ["success", "error", "timeout", "cancelled"].includes(nextResultState);
         return {
           ...tab,
           resultState: nextResultState,
           sqlDraft: nextSqlDraft,
           dirty: nextDirty,
+          lastExecutedAt: terminalResult ? Date.now() : tab.lastExecutedAt,
         };
       }),
     );
@@ -388,6 +407,66 @@ export const WorkbenchPage = ({
     }
   };
 
+  const handleSaveCurrentSql = useCallback((saveAs = false) => {
+    const sql = activeTab?.type === "query" ? activeTab.sqlDraft?.trim() ?? "" : "";
+    if (!sql) {
+      showToast("当前没有可保存的 SQL", "info");
+      return;
+    }
+    const baseName = activeTab?.title?.replace(/[\\/:*?"<>|]+/g, "_") || "databox_query";
+    const suffix = saveAs ? `_${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}` : "";
+    downloadTextFile(`${baseName}${suffix}.sql`, `${sql}\n`, "text/sql;charset=utf-8");
+    showToast("SQL 文件已导出", "success");
+  }, [activeTab, showToast]);
+
+  const handleExportConnectionConfig = useCallback(() => {
+    const payload = datasources.map((ds) => ({
+      name: ds.name,
+      db_type: ds.db_type,
+      host: ds.host,
+      port: ds.port,
+      database_name: ds.database_name,
+      username: ds.username,
+      connection_mode: ds.connection_mode,
+      is_read_only: ds.is_read_only,
+      env: ds.env,
+      ssh_enabled: ds.ssh_enabled,
+      ssh_host: ds.ssh_host,
+      ssh_port: ds.ssh_port,
+      ssh_username: ds.ssh_username,
+      ssh_pkey_path: ds.ssh_pkey_path,
+      ssl_enabled: ds.ssl_enabled,
+      ssl_ca_path: ds.ssl_ca_path,
+      ssl_cert_path: ds.ssl_cert_path,
+      ssl_key_path: ds.ssl_key_path,
+      ssl_verify_identity: ds.ssl_verify_identity,
+    }));
+    downloadTextFile(
+      `databox_connections_${new Date().toISOString().slice(0, 10)}.json`,
+      JSON.stringify(payload, null, 2),
+      "application/json;charset=utf-8",
+    );
+    showToast("连接配置已导出，密码不会写入文件", "success");
+  }, [datasources, showToast]);
+
+  const handleImportConnectionConfig = useCallback(() => {
+    setShowSettingsModal(true);
+    showToast("请在连接管理器中添加或导入连接配置", "info");
+  }, [showToast]);
+
+  const handleTestActiveConnection = useCallback(async () => {
+    if (!activeDataSource) {
+      showToast("请先选择一个连接", "info");
+      return;
+    }
+    try {
+      const result = await api.checkDatasourceHealth(activeDataSource.id);
+      showToast(result.message || "连接测试成功", result.ok ? "success" : "warning");
+    } catch (error: unknown) {
+      showToast(getErrorMessage(error, "连接测试失败"), "error");
+    }
+  }, [activeDataSource, showToast]);
+
   // Drag and drop table node to middle editor
   const handleDragStartNode = (e: React.DragEvent, tableName: string) => {
     e.dataTransfer.setData("text/plain", `SELECT * FROM \`${tableName}\` LIMIT 100;`);
@@ -504,15 +583,11 @@ export const WorkbenchPage = ({
         label: "文件",
         items: [
           { label: "新建 SQL 控制台", shortcut: "Ctrl+T", action: () => handleOpenQueryTab() },
-          { label: "打开 SQL 文件", disabled: true },
-          { label: "保存当前 SQL", shortcut: "Ctrl+S", disabled: true },
-          { label: "另存为 SQL 文件", disabled: true },
+          { label: "保存当前 SQL", shortcut: "Ctrl+S", action: () => handleSaveCurrentSql(false) },
+          { label: "另存为 SQL 文件", action: () => handleSaveCurrentSql(true) },
           { separator: true, label: "" },
-          { label: "保存控制台会话", disabled: true },
-          { label: "打开控制台会话", disabled: true },
-          { separator: true, label: "" },
-          { label: "导入连接配置", disabled: true },
-          { label: "导出连接配置", disabled: true },
+          { label: "导入连接配置", action: handleImportConnectionConfig },
+          { label: "导出连接配置", action: handleExportConnectionConfig },
           { separator: true, label: "" },
           { label: "退出", action: handleCloseWindow },
         ],
@@ -528,11 +603,7 @@ export const WorkbenchPage = ({
           { label: "复制", shortcut: "Ctrl+C", action: () => document.execCommand("copy") },
           { label: "粘贴", shortcut: "Ctrl+V", action: () => document.execCommand("paste") },
           { separator: true, label: "" },
-          { label: "查找", shortcut: "Ctrl+F", disabled: true },
-          { label: "替换", shortcut: "Ctrl+H", disabled: true },
-          { separator: true, label: "" },
           { label: "格式化 SQL", action: () => triggerActiveTabAction("format") },
-          { label: "注释 / 取消注释", shortcut: "Ctrl+/", disabled: true },
         ],
       },
       {
@@ -540,10 +611,6 @@ export const WorkbenchPage = ({
         label: "选择",
         items: [
           { label: "全选", shortcut: "Ctrl+A", action: () => document.execCommand("selectAll") },
-          { label: "选择当前行", disabled: true },
-          { label: "选择当前 SQL 语句", disabled: true },
-          { separator: true, label: "" },
-          { label: "取消选择", disabled: true },
         ],
       },
       {
@@ -551,14 +618,8 @@ export const WorkbenchPage = ({
         label: "视图",
         items: [
           { label: "显示 / 隐藏 AI 面板", shortcut: "Alt+A", action: () => setAiPanelCollapsed(prev => !prev) },
-          { label: "显示 / 隐藏资源管理器", disabled: true },
-          { separator: true, label: "" },
-          { label: "紧凑表格模式", disabled: true },
-          { label: "舒适表格模式", disabled: true },
-          { separator: true, label: "" },
-          { label: "放大", shortcut: "Ctrl+=", disabled: true },
-          { label: "缩小", shortcut: "Ctrl+-", disabled: true },
-          { label: "重置缩放", shortcut: "Ctrl+0", disabled: true },
+          { label: "性能监控面板", action: () => setShowDashboardModal(true) },
+          { label: "Docker 环境管理", action: () => setShowEnvironmentsModal(true) },
         ],
       },
       {
@@ -566,9 +627,7 @@ export const WorkbenchPage = ({
         label: "转到",
         items: [
           { label: "快速打开对象", shortcut: "Ctrl+P", action: () => setShowCommandPalette(true) },
-          { label: "转到 SQL 标签页", shortcut: "Ctrl+Tab", disabled: true },
-          { label: "转到最近打开", disabled: true },
-          { label: "转到查询历史", disabled: true },
+          { label: "新建 SQL 控制台", shortcut: "Ctrl+T", action: () => handleOpenQueryTab() },
         ],
       },
       {
@@ -576,13 +635,11 @@ export const WorkbenchPage = ({
         label: "运行",
         items: [
           { label: "执行当前 SQL", shortcut: "Ctrl+Enter", action: () => triggerActiveTabAction("execute") },
-          { label: "执行选中 SQL", shortcut: "Ctrl+Shift+Enter", disabled: true },
           { label: "停止执行", action: () => triggerActiveTabAction("stop") },
           { separator: true, label: "" },
-          { label: "提交事务", disabled: true },
-          { label: "回滚事务", disabled: true },
-          { separator: true, label: "" },
-          { label: "重新运行上次查询", disabled: true },
+          { label: "格式化 SQL", action: () => triggerActiveTabAction("format") },
+          { label: "安全检查", action: () => triggerActiveTabAction("validate") },
+          { label: "导出当前结果", action: () => triggerActiveTabAction("export") },
         ],
       },
       {
@@ -590,17 +647,13 @@ export const WorkbenchPage = ({
         label: "数据库",
         items: [
           { label: "新建连接", action: () => setShowSettingsModal(true) },
-          { label: "测试连接", disabled: !hasConn },
+          { label: "测试连接", action: handleTestActiveConnection },
           { label: "断开连接", disabled: !hasConn, action: () => { if (hasConn) setActiveDataSource(null); } },
           { label: "连接设置", action: () => setShowSettingsModal(true) },
           { separator: true, label: "" },
           { label: "刷新结构", disabled: !hasConn, action: () => { if (activeDataSource) void onRefreshSchemaTables(activeDataSource.id); } },
           { label: "打开 SQL 控制台", shortcut: "Ctrl+T", action: () => handleOpenQueryTab() },
           { label: "打开 ER 图", disabled: !hasConn || schemaTables.length === 0, action: () => { if (schemaTables[0]) handleOpenTableTab(schemaTables[0].table_name, "er"); } },
-          { separator: true, label: "" },
-          { label: "生成 DDL", disabled: !hasConn },
-          { label: "导入数据", disabled: !hasConn },
-          { label: "导出数据", disabled: !hasConn },
           { separator: true, label: "" },
           { label: "备份数据库", disabled: !hasConn, action: () => setShowBackupsModal(true) },
           { label: "恢复数据库", disabled: !hasConn, action: () => setShowBackupsModal(true) },
@@ -611,12 +664,10 @@ export const WorkbenchPage = ({
         label: "AI",
         items: [
           { label: "打开 AI 面板", shortcut: "Alt+A", action: () => setAiPanelCollapsed(false) },
-          { label: "生成 SQL", disabled: true },
-          { label: "解释当前 SQL", disabled: true },
-          { label: "优化当前 SQL", disabled: true },
-          { label: "诊断表结构", disabled: true },
           { separator: true, label: "" },
-          { label: "生成测试数据", disabled: true },
+          { label: "生成 SQL", action: () => handleAiContextAction("根据当前数据库上下文生成一条可执行的 SELECT SQL。") },
+          { label: "解释当前 SQL", action: () => handleAiContextAction("解释当前 SQL 的查询意图、字段逻辑和潜在风险。") },
+          { label: "诊断表结构", action: () => handleAiContextAction("诊断当前数据库结构，指出高价值表、索引和关联线索。") },
         ],
       },
       {
@@ -629,15 +680,11 @@ export const WorkbenchPage = ({
           { label: "性能监控面板", action: () => setShowDashboardModal(true) },
           { label: "Docker 环境管理", action: () => setShowEnvironmentsModal(true) },
           { separator: true, label: "" },
-          { label: "使用文档", disabled: true },
-          { label: "查看日志", disabled: true },
-          { label: "检查更新", disabled: true },
-          { separator: true, label: "" },
           { label: "关于 DataBox", action: () => alert("DataBox v1.0.0\nAI 驱动的本地数据库工作台") },
         ],
       },
     ];
-  }, [activeDataSource, handleOpenQueryTab, handleOpenTableTab, handleAiContextAction, onRefreshSchemaTables, triggerActiveTabAction, schemaTables, setAiPanelCollapsed, setShowCommandPalette, setShowSettingsModal, setShowBackupsModal, setShowDashboardModal, setShowEnvironmentsModal, setShowTourDialog, setActiveDataSource]);
+  }, [activeDataSource, handleExportConnectionConfig, handleImportConnectionConfig, handleOpenQueryTab, handleOpenTableTab, handleAiContextAction, handleSaveCurrentSql, handleTestActiveConnection, onRefreshSchemaTables, triggerActiveTabAction, schemaTables, setAiPanelCollapsed, setShowCommandPalette, setShowSettingsModal, setShowBackupsModal, setShowDashboardModal, setShowEnvironmentsModal, setShowTourDialog, setActiveDataSource]);
 
   return (
     <div
@@ -676,7 +723,7 @@ export const WorkbenchPage = ({
         >
           <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             {/* Explorer Title bar */}
-            <div style={{ padding: "6px 8px", borderBottom: "1px solid var(--border-light)", display: "flex", justifyContent: "space-between", alignItems: "center", userSelect: "none" }}>
+            <div style={{ padding: "5px 6px", display: "flex", justifyContent: "space-between", alignItems: "center", userSelect: "none" }}>
               <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 4 }}>
                 <Code2 size={11} style={{ color: "var(--text-muted)" }} />
                 对象资源管理器
@@ -684,7 +731,7 @@ export const WorkbenchPage = ({
             </div>
 
             {/* Tree Nodes scrolling container */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "4px 4px", display: "flex", flexDirection: "column", gap: 0 }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "2px 4px 6px", display: "flex", flexDirection: "column", gap: 0 }}>
               {loadingTree ? (
                 <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 6 }}>
                   <div className="skeleton" style={{ height: 18, borderRadius: 4 }} />
@@ -706,9 +753,10 @@ export const WorkbenchPage = ({
                           alignItems: "center",
                           gap: 6,
                           width: "100%",
-                          padding: "3px 4px",
+                          minHeight: 23,
+                          padding: `2px 4px 2px ${treeIndent(0)}px`,
                           border: "none",
-                          borderRadius: 6,
+                          borderRadius: 2,
                           background: isConnected ? "var(--bg-active)" : "transparent",
                           color: isConnected ? "var(--accent-indigo)" : "var(--text-secondary)",
                           cursor: "pointer",
@@ -716,28 +764,28 @@ export const WorkbenchPage = ({
                         }}
                       >
                         <ChevronRight
-                          size={11}
+                          size={12}
                           style={{
                             transform: isConnected ? "rotate(90deg)" : "rotate(0deg)",
                             transition: "transform 0.1s",
                             opacity: 0.5
                           }}
                         />
-                        <Database size={11} style={{ opacity: isConnected ? 1 : 0.6 }} />
-                        <span style={{ fontSize: "0.76rem", fontWeight: isConnected ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <Database size={12} style={{ opacity: isConnected ? 1 : 0.6 }} />
+                        <span style={{ fontSize: "0.72rem", fontWeight: isConnected ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {ds.name}
                         </span>
                       </button>
 
                       {isConnected && (
-                        <div style={{ paddingLeft: 12, marginTop: 2, display: "flex", flexDirection: "column", gap: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 6px", color: "var(--text-primary)", fontSize: "0.72rem" }}>
-                            <ChevronDown size={10} style={{ opacity: 0.5 }} />
-                            <HardDrive size={10} style={{ color: "var(--accent-indigo)" }} />
+                        <div style={{ marginTop: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                          <div style={{ minHeight: 22, display: "flex", alignItems: "center", gap: 5, padding: `2px 4px 2px ${treeIndent(1)}px`, color: "var(--text-primary)", fontSize: "0.72rem" }}>
+                            <ChevronDown size={11} style={{ opacity: 0.5 }} />
+                            <HardDrive size={12} style={{ color: "var(--accent-indigo)" }} />
                             <span style={{ fontWeight: 600 }}>{ds.database_name}</span>
                           </div>
 
-                          <div style={{ paddingLeft: 10, display: "flex", flexDirection: "column", gap: 1 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                             {/* Tables Folder */}
                             <div>
                               <button
@@ -747,7 +795,8 @@ export const WorkbenchPage = ({
                                   alignItems: "center",
                                   gap: 5,
                                   width: "100%",
-                                  padding: "3px 6px",
+                                  minHeight: 22,
+                                  padding: `2px 4px 2px ${treeIndent(1)}px`,
                                   border: "none",
                                   background: "transparent",
                                   color: "var(--text-secondary)",
@@ -756,16 +805,16 @@ export const WorkbenchPage = ({
                                   textAlign: "left",
                                 }}
                               >
-                                {tablesFolderExpanded ? <ChevronDown size={9} style={{ opacity: 0.5 }} /> : <ChevronRight size={9} style={{ opacity: 0.5 }} />}
-                                <Table2 size={10} style={{ color: "var(--accent-indigo)", opacity: 0.8 }} />
+                                {tablesFolderExpanded ? <ChevronDown size={11} style={{ opacity: 0.5 }} /> : <ChevronRight size={11} style={{ opacity: 0.5 }} />}
+                                <Table2 size={12} style={{ color: "var(--accent-indigo)", opacity: 0.8 }} />
                                 <span style={{ fontWeight: 500 }}>表</span>
                                 <span style={{ color: "var(--text-muted)", fontSize: "0.64rem" }}>({schemaTables.length})</span>
                               </button>
 
                               {tablesFolderExpanded && (
-                                <div style={{ paddingLeft: 10, display: "flex", flexDirection: "column", gap: 1, marginTop: 3 }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 2 }}>
                                   {/* Filter input */}
-                                  <div style={{ display: "flex", gap: 4, padding: "0 2px", marginBottom: 4 }}>
+                                  <div style={{ display: "flex", gap: 4, padding: `0 2px 0 ${treeIndent(2)}px`, marginBottom: 4 }}>
                                     <div style={{ position: "relative", flex: 1 }}>
                                       <Search size={9} style={{ position: "absolute", left: 5, top: 6, color: "var(--text-muted)" }} />
                                       <input
@@ -773,7 +822,7 @@ export const WorkbenchPage = ({
                                         placeholder="过滤数据表..."
                                         value={treeSearch}
                                         onChange={(e) => setTreeSearch(e.target.value)}
-                                        style={{ height: 20, fontSize: "0.68rem", paddingLeft: 16 }}
+                                        style={{ height: 20, fontSize: "0.68rem", paddingLeft: 16, borderColor: "var(--border-light)" }}
                                       />
                                     </div>
                                     <button
@@ -806,10 +855,11 @@ export const WorkbenchPage = ({
                                               alignItems: "center",
                                               width: "100%",
                                               gap: 4,
-                                              padding: "2px 4px",
+                                              minHeight: 22,
+                                              padding: `2px 4px 2px ${treeIndent(2)}px`,
                                               border: "none",
-                                              background: "rgba(0,0,0,0.015)",
-                                              borderRadius: 4,
+                                              background: "transparent",
+                                              borderRadius: 2,
                                               fontSize: "0.68rem",
                                               fontWeight: 700,
                                               color: "var(--text-secondary)",
@@ -825,7 +875,7 @@ export const WorkbenchPage = ({
                                           </button>
 
                                           {!isCollapsed && (
-                                            <div style={{ display: "flex", flexDirection: "column", gap: 1, paddingLeft: 6, marginTop: 2 }}>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: 1, marginTop: 1 }}>
                                               {tables.map((table) => {
                                                 const isTabActive = activeTab?.type === "table" && activeTab.tableName === table.table_name;
                                                 return (
@@ -844,7 +894,7 @@ export const WorkbenchPage = ({
                                                     style={{
                                                       display: "flex",
                                                       alignItems: "center",
-                                                      borderRadius: 4,
+                                                      borderRadius: 2,
                                                       background: isTabActive ? "var(--bg-active)" : "transparent",
                                                     }}
                                                     className="tree-item-row"
@@ -857,7 +907,8 @@ export const WorkbenchPage = ({
                                                         display: "flex",
                                                         alignItems: "center",
                                                         gap: 4,
-                                                        padding: "3px 4px",
+                                                        minHeight: 22,
+                                                        padding: `2px 4px 2px ${treeIndent(3)}px`,
                                                         border: "none",
                                                         background: "transparent",
                                                         color: isTabActive ? "var(--accent-indigo)" : "var(--text-secondary)",
@@ -867,7 +918,7 @@ export const WorkbenchPage = ({
                                                       }}
                                                       title={`${table.table_name} (${table.table_comment || "无备注"})`}
                                                     >
-                                                      <Table2 size={9} style={{ flexShrink: 0, opacity: isTabActive ? 1 : 0.4 }} />
+                                                      <Table2 size={12} style={{ flexShrink: 0, opacity: isTabActive ? 1 : 0.4 }} />
                                                       <span style={{ fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                         {table.table_name}
                                                       </span>
@@ -912,7 +963,6 @@ export const WorkbenchPage = ({
               display: "flex",
               alignItems: "center",
               background: "var(--bg-secondary)",
-              borderBottom: "1px solid var(--border-light)",
               padding: "4px 8px 0",
               overflowX: "auto",
               flexShrink: 0,
@@ -1097,17 +1147,17 @@ export const WorkbenchPage = ({
                   <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflow: "hidden" }}>
                     {/* Secondary mini tab strip within Table Tab */}
                     <div style={{ display: "flex", alignItems: "center", background: "var(--bg-surface)", borderBottom: "1px solid var(--border-light)", padding: "4px 16px 0", gap: 6, flexShrink: 0 }}>
-                      {[
+                      {([
                         { id: "data", label: "数据预览" },
                         { id: "schema", label: "结构字段" },
                         { id: "er", label: "ER关系图" },
                         { id: "design", label: "AI 变更草稿" }
-                      ].map(sub => {
+                      ] satisfies Array<{ id: NonNullable<WorkbenchTab["activeSubTab"]>; label: string }>).map(sub => {
                         const isSubActive = (activeTab.activeSubTab || "data") === sub.id;
                         return (
                           <button
                             key={sub.id}
-                            onClick={() => handleSwitchSubTab(activeTab.id, sub.id as any)}
+                            onClick={() => handleSwitchSubTab(activeTab.id, sub.id)}
                             style={{
                               padding: "4px 10px 6px",
                               border: "none",
@@ -1196,7 +1246,6 @@ export const WorkbenchPage = ({
             display: "flex",
             flexDirection: "column",
             background: "var(--bg-surface)",
-            borderLeft: "1px solid var(--border-light)",
             overflow: "hidden",
             height: "100%",
             zIndex: 100
@@ -1230,7 +1279,7 @@ export const WorkbenchPage = ({
             /* Expanded rich tools and prompt console */
             <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
               {/* Header bar */}
-              <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border-light)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(74, 91, 192, 0.03)" }}>
+              <div style={{ padding: "7px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 5 }}>
                   <Sparkles size={12} style={{ color: "var(--accent-indigo)" }} />
                   DataBox AI Copilot
@@ -1245,75 +1294,54 @@ export const WorkbenchPage = ({
                 </button>
               </div>
 
-              {/* Context Strip */}
-              <div style={{ padding: "6px 10px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-light)", fontSize: "0.65rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: 1 }}>
-                <div><span style={{ opacity: 0.6 }}>数据库</span> <strong style={{ color: "var(--text-primary)" }}>{activeDataSource?.database_name || "未连接"}</strong></div>
-                {activeTab ? (
-                  <>
-                    <div><span style={{ opacity: 0.6 }}>会话</span> <strong style={{ color: "var(--text-primary)" }}>{activeTab.type === "query" ? `SQL Console (${activeTab.title})` : activeTab.type === "table" ? `表: ${activeTab.tableName}` : activeTab.title}</strong></div>
-                    {activeTab?.tableName && (
-                      <div><span style={{ opacity: 0.6 }}>当前表</span> <code style={{ color: "var(--accent-primary)", fontSize: "0.62rem" }}>{activeTab.tableName}</code></div>
-                    )}
-                    {activeTab?.lastExecutedAt && (
-                      <div><span style={{ opacity: 0.6 }}>最近执行</span> <strong style={{ color: "var(--text-primary)" }}>{activeTab.lastExecutedAt ? Math.round((Date.now() - activeTab.lastExecutedAt) / 1000) + "s 前" : ""}</strong></div>
-                    )}
-                  </>
-                ) : (
-                  <div><span style={{ opacity: 0.6 }}>状态</span> <span style={{ color: "var(--text-muted)" }}>未打开标签页</span></div>
-                )}
-              </div>
+              <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, padding: "2px 10px 10px" }}>
+                <section>
+                  <div style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 5 }}>
+                    上下文
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "62px 1fr", rowGap: 3, columnGap: 8, fontSize: "0.66rem", color: "var(--text-secondary)" }}>
+                    <span style={{ color: "var(--text-muted)" }}>数据库</span>
+                    <strong style={{ color: "var(--text-primary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {activeDataSource?.database_name || "未连接"}
+                    </strong>
+                    <span style={{ color: "var(--text-muted)" }}>当前会话</span>
+                    <strong style={{ color: "var(--text-primary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {activeTab ? activeTab.title : "无"}
+                    </strong>
+                    <span style={{ color: "var(--text-muted)" }}>最近 SQL</span>
+                    <code style={{ color: "var(--text-primary)", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {activeTab?.type === "query" && activeTab.sqlDraft?.trim() ? activeTab.sqlDraft.trim().slice(0, 72) : "无"}
+                    </code>
+                    <span style={{ color: "var(--text-muted)" }}>最近结果</span>
+                    <span style={{ color: "var(--text-primary)" }}>
+                      {activeTab?.resultState && activeTab.resultState !== "idle" ? activeTab.resultState : "无"}
+                    </span>
+                  </div>
+                </section>
 
-              {/* Main panel content */}
-              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-                {/* Quick actions — context-aware */}
-                <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "0.64rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
+                <section>
+                  <div style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 5 }}>
                     快捷动作
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                    {activeTab?.type === "query" && (
-                      <>
-                        <button onClick={() => triggerActiveTabAction("execute")}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>执行</button>
-                        <button onClick={() => triggerActiveTabAction("format")}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>格式化</button>
-                        <button onClick={() => triggerActiveTabAction("validate")}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>安全检查</button>
-                        <button onClick={() => handleAiContextAction("优化当前 SQL 的性能和可读性，返回优化后的标准 SQL。")}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>AI 优化</button>
-                      </>
-                    )}
-                    {activeTab?.type === "table" && (
-                      <>
-                        <button onClick={() => handleAiContextAction(`为表 ${activeTab.tableName} 生成标准 SELECT 查询模板。`)}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>生成查询</button>
-                        <button onClick={() => handleAiContextAction(`诊断表 ${activeTab.tableName} 的索引、外键和结构问题。`)}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>诊断结构</button>
-                        <button onClick={() => handleAiContextAction(`分析表 ${activeTab.tableName} 的 ER 关系拓扑。`)}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>分析关系</button>
-                      </>
-                    )}
-                    {!activeTab && (
-                      <>
-                        <button onClick={() => handleOpenQueryTab()}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>打开控制台</button>
-                        <button onClick={() => handleAiContextAction("列出当前数据库的所有表和视图。")}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>探索数据库</button>
-                        <button onClick={() => handleAiContextAction("分析当前数据库的表命名规范和整体架构。")}
-                          className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24 }}>诊断架构</button>
-                      </>
-                    )}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                    <button onClick={() => handleAiContextAction("根据当前数据库上下文生成一条可执行的 SELECT SQL。")}
+                      className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24, justifyContent: "center" }}>生成 SQL</button>
+                    <button onClick={() => handleAiContextAction("解释当前 SQL 的查询意图、字段逻辑和潜在风险。")}
+                      className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24, justifyContent: "center" }}>解释当前 SQL</button>
+                    <button onClick={() => handleAiContextAction("诊断当前数据库结构，指出高价值表、索引和关联线索。")}
+                      className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24, justifyContent: "center" }}>诊断结构</button>
+                    <button onClick={() => handleAiContextAction(`找出和 ${activeTab?.tableName || "当前查询"} 相关的表，并给出 JOIN 线索。`)}
+                      className="btn-secondary" style={{ fontSize: "0.66rem", padding: "2px 7px", height: 24, justifyContent: "center" }}>找相关表</button>
                   </div>
-                </div>
+                </section>
 
-                {/* Response / suggestions area */}
-                <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
+                <section style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                   {aiResponse ? (
-                    <div style={{ padding: 6, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", fontSize: "0.7rem", lineHeight: 1.4 }}>
-                      <div style={{ fontWeight: 600, color: "var(--accent-primary)", marginBottom: 3, fontSize: "0.64rem" }}>
+                    <div style={{ padding: 7, background: "var(--bg-secondary)", fontSize: "0.68rem", lineHeight: 1.45 }}>
+                      <div style={{ fontWeight: 700, color: "var(--accent-indigo)", marginBottom: 4, fontSize: "0.64rem" }}>
                         Copilot 结果
                       </div>
-                      <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: "0.66rem", color: "var(--text-primary)", background: "#fff", padding: 4, overflowX: "auto", border: "1px solid var(--border-light)", margin: 0 }}>
+                      <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: "0.66rem", color: "var(--text-primary)", background: "#fff", padding: 4, overflowX: "auto", margin: 0 }}>
                         {aiResponse}
                       </pre>
                       {aiResponse.includes("SELECT") && (
@@ -1333,33 +1361,35 @@ export const WorkbenchPage = ({
                       <span className="animate-spin" style={{ fontSize: 12 }}>↻</span> AI 推理中...
                     </div>
                   ) : (
-                    <div style={{ fontSize: "0.64rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                      <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--text-secondary)" }}>可以试试:</div>
-                      {activeTab?.type === "query" ? (
-                        <>
-                          <div style={{ marginBottom: 2 }}>· 优化当前 SQL 语句</div>
-                          <div style={{ marginBottom: 2 }}>· 加 @limit 限制返回行数</div>
-                          <div style={{ marginBottom: 2 }}>· 加 @export 导出查询结果</div>
-                          <div>· 解释 SQL 执行逻辑</div>
-                        </>
-                      ) : activeTab?.type === "table" ? (
-                        <>
-                          <div style={{ marginBottom: 2 }}>· 统计 {activeTab.tableName} 中各字段分布</div>
-                          <div style={{ marginBottom: 2 }}>· 找出和 {activeTab.tableName} 关联的表</div>
-                          <div style={{ marginBottom: 2 }}>· 为 {activeTab.tableName} 生成测试数据</div>
-                          <div>· 诊断 {activeTab.tableName} 的索引和外键</div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ marginBottom: 2 }}>· 统计各表数据量</div>
-                          <div style={{ marginBottom: 2 }}>· 找出数据库中的核心关系表</div>
-                          <div style={{ marginBottom: 2 }}>· 生成当前库的 ER 图</div>
-                          <div>· 分析表命名规范</div>
-                        </>
-                      )}
+                    <div style={{ fontSize: "0.66rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 5, color: "var(--text-muted)" }}>建议</div>
+                      {[
+                        "统计 login_sessions 各状态数量",
+                        "给当前查询加 @export 导出动作",
+                        "解释当前库里的账号模块",
+                        activeTab?.tableName ? `找出 ${activeTab.tableName} 的相关表` : "找出数据库中的核心关系表",
+                      ].map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => setAiPrompt(suggestion)}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            padding: "2px 0",
+                            border: "none",
+                            background: "transparent",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            fontSize: "0.66rem",
+                          }}
+                        >
+                          - {suggestion}
+                        </button>
+                      ))}
                     </div>
                   )}
-                </div>
+                </section>
               </div>
 
               {/* Input form */}
@@ -1488,7 +1518,7 @@ export const WorkbenchPage = ({
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {activeTab?.lastExecutedAt && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.64rem", opacity: 0.7 }}>
-              {activeTab.lastExecutedAt ? `${Date.now() - activeTab.lastExecutedAt}ms` : ""}
+              已执行
             </span>
           )}
           <button

@@ -1,17 +1,26 @@
-import { useRef, useEffect, useState, useCallback } from "react";
-import { Play, Copy, Download, RefreshCw, X, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  BarChart3,
+  Copy,
+  Download,
+  FileText,
+  Play,
+  RefreshCw,
+  Save,
+  Sparkles,
+  Wand2,
+  X,
+} from "lucide-react";
 import { DataTable } from "./DataTable";
 import type { QueryResult } from "../lib/api";
-
-// ═══════════════════════════════════════
-// Console Block Types
-// ═══════════════════════════════════════
 
 export type ConsoleBlock =
   | { id: string; type: "input"; sql: string; createdAt: number }
   | { id: string; type: "running"; sql: string; startedAt: number }
-  | { id: string; type: "result"; sql: string; result: QueryResult }
-  | { id: string; type: "error"; sql: string; message: string };
+  | { id: string; type: "result"; sql: string; result: QueryResult; createdAt: number }
+  | { id: string; type: "error"; sql: string; message: string; createdAt: number }
+  | { id: string; type: "export"; sql: string; format: string; message: string; createdAt: number }
+  | { id: string; type: "explain"; sql: string; title: string; message: string; createdAt: number };
 
 interface ConsoleTranscriptProps {
   blocks: ConsoleBlock[];
@@ -19,13 +28,57 @@ interface ConsoleTranscriptProps {
   onSqlChange: (sql: string) => void;
   onExecute: () => void;
   onFormat: () => void;
-  onExplain: () => void;
+  onExplain: (sql?: string) => void;
   onInjectLimit: () => void;
+  onAddExportDirective: () => void;
+  onAiOptimize: (sql?: string) => void;
+  onAiExplain: (sql?: string) => void;
+  onAiFixError: (sql: string, message: string) => void;
+  onGenerateChart: (sql: string) => void;
+  onReExecute: (sql: string) => void;
+  onSaveQuery: (sql: string) => void;
   onCancel: () => void;
   onClear?: () => void;
   isRunning: boolean;
   databaseName?: string;
   engineLabel?: string;
+}
+
+function copyText(text: string) {
+  void navigator.clipboard.writeText(text);
+}
+
+function csvFromResult(result: QueryResult) {
+  const escapeCsv = (value: unknown): string => {
+    if (value === null || value === undefined) return "";
+    const text = String(value);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  };
+
+  const header = result.columns.map(escapeCsv).join(",");
+  const body = result.rows
+    .map((row) => result.columns.map((column) => escapeCsv(row[column])).join(","))
+    .join("\n");
+  return `\uFEFF${header}\n${body}`;
+}
+
+function downloadText(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatTime(ts: number) {
+  return new Date(ts).toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
 }
 
 export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
@@ -36,6 +89,13 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
   onFormat,
   onExplain,
   onInjectLimit,
+  onAddExportDirective,
+  onAiOptimize,
+  onAiExplain,
+  onAiFixError,
+  onGenerateChart,
+  onReExecute,
+  onSaveQuery,
   onCancel,
   onClear,
   isRunning,
@@ -44,243 +104,250 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
+  const [now, setNow] = useState(0);
   const isAtBottomRef = useRef(true);
 
-  const prompt = engineLabel === "postgresql" ? "postgres>" : engineLabel === "sqlite" ? "sqlite>" : "mysql>";
+  const prompt = useMemo(() => {
+    if (engineLabel === "postgresql") return "postgres>";
+    if (engineLabel === "sqlite") return "sqlite>";
+    return "mysql>";
+  }, [engineLabel]);
 
-  // Track whether user is at the bottom
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const el = scrollRef.current;
-    isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-  }, []);
+  const meta = `${databaseName || "未连接"} · ${engineLabel || "mysql"}`;
+  const inputRows = Math.min(12, Math.max(1, currentSql.split("\n").length));
 
-  // Smart auto-scroll: only scroll if user was at the bottom
+  useEffect(() => {
+    if (!blocks.some((block) => block.type === "running")) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 200);
+    return () => window.clearInterval(timer);
+  }, [blocks]);
+
   useEffect(() => {
     if (!scrollRef.current || !isAtBottomRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [blocks, currentSql]);
 
-  // Ctrl+Enter to execute
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
+  const handleScroll = () => {
+    const node = scrollRef.current;
+    if (!node) return;
+    isAtBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48;
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
       if (!isRunning && currentSql.trim()) onExecute();
     }
   };
 
-  const renderBlockToolbar = (block: ConsoleBlock) => {
-    if (hoveredBlockId !== block.id) return null;
-    return (
-      <div style={{ display: "flex", gap: 2, flexShrink: 0, paddingLeft: 8 }}>
-        {block.type === "input" && (
-          <>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => navigator.clipboard.writeText(block.sql)}><Copy size={9} /> 复制</button>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => { onSqlChange(block.sql); setTimeout(() => inputRef.current?.focus(), 50); }}>
-              <RefreshCw size={9} /> 重新执行
+  const renderInputToolbar = (sql: string) => (
+    <div className="console-block-toolbar" aria-label="SQL history actions">
+      <button onClick={() => copyText(sql)} title="复制 SQL">
+        <Copy size={11} />
+        复制 SQL
+      </button>
+      <button onClick={() => onReExecute(sql)} title="重新执行">
+        <RefreshCw size={11} />
+        重新执行
+      </button>
+      <button onClick={() => onExplain(sql)} title="Explain">
+        <FileText size={11} />
+        Explain
+      </button>
+      <button onClick={() => onAiOptimize(sql)} title="AI 优化">
+        <Wand2 size={11} />
+        AI 优化
+      </button>
+      <button onClick={() => onSaveQuery(sql)} title="保存查询">
+        <Save size={11} />
+        保存查询
+      </button>
+    </div>
+  );
+
+  const renderResultToolbar = (block: Extract<ConsoleBlock, { type: "result" }>) => (
+    <div className="console-block-toolbar" aria-label="Result actions">
+      <button
+        onClick={() => copyText(JSON.stringify(block.result.rows, null, 2))}
+        title="复制结果 JSON"
+      >
+        <Copy size={11} />
+        复制
+      </button>
+      <button
+        onClick={() =>
+          downloadText(
+            `databox_export_${new Date().toISOString().slice(0, 10)}.csv`,
+            csvFromResult(block.result),
+            "text/csv;charset=utf-8",
+          )
+        }
+        title="导出 CSV"
+      >
+        <Download size={11} />
+        导出
+      </button>
+      <button onClick={() => onGenerateChart(block.sql)} title="生成图表">
+        <BarChart3 size={11} />
+        生成图表
+      </button>
+      <button onClick={() => onAiExplain(block.sql)} title="AI 解读">
+        <Sparkles size={11} />
+        AI 解读
+      </button>
+      <button onClick={() => onSaveQuery(block.sql)} title="保存查询">
+        <Save size={11} />
+        保存查询
+      </button>
+      <button onClick={() => onReExecute(block.sql)} title="重新执行">
+        <RefreshCw size={11} />
+        重新执行
+      </button>
+    </div>
+  );
+
+  const renderErrorToolbar = (block: Extract<ConsoleBlock, { type: "error" }>) => (
+    <div className="console-block-toolbar" aria-label="Error actions">
+      <button onClick={() => copyText(block.message)} title="复制错误">
+        <Copy size={11} />
+        复制错误
+      </button>
+      <button onClick={() => onAiFixError(block.sql, block.message)} title="AI 修复">
+        <Wand2 size={11} />
+        AI 修复
+      </button>
+      <button onClick={() => onReExecute(block.sql)} title="重新执行">
+        <RefreshCw size={11} />
+        重新执行
+      </button>
+    </div>
+  );
+
+  const renderBlock = (block: ConsoleBlock) => {
+    switch (block.type) {
+      case "input":
+        return (
+          <div key={block.id} className="console-block console-block-input">
+            <span className="prompt-label">{prompt}</span>
+            <pre className="console-sql">{block.sql}</pre>
+            {renderInputToolbar(block.sql)}
+          </div>
+        );
+
+      case "running": {
+        const elapsed = (((now || block.startedAt) - block.startedAt) / 1000).toFixed(1);
+        return (
+          <div key={block.id} className="console-block console-block-running">
+            <span>执行中... {elapsed}s</span>
+            <button className="console-stop-button" onClick={onCancel}>
+              <X size={11} />
+              停止
             </button>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => { onSqlChange(block.sql); onExplain(); }}>
-              Explain
-            </button>
-          </>
-        )}
-        {block.type === "result" && (
-          <>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => {
-                const json = JSON.stringify((block.result.rows as Record<string,unknown>[]).map((r) => {
-                  const o: Record<string,unknown> = {};
-                  block.result.columns.forEach((c) => o[c] = r[c] ?? null);
-                  return o;
-                }), null, 2);
-                navigator.clipboard.writeText(json);
-              }}><Copy size={9} /> JSON</button>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => {
-                const cols = block.result.columns;
-                const rows = block.result.rows as Record<string,unknown>[];
-                const csv = "﻿" + cols.join(",") + "\n" + rows.map(r => cols.map(c => {
-                  const v = r[c]; if (v === null) return ""; const s = String(v);
-                  return s.includes(",") ? `"${s.replace(/"/g, '""')}"` : s;
-                }).join(",")).join("\n");
-                const blob = new Blob([csv], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url; a.download = "export.csv"; a.click();
-                URL.revokeObjectURL(url);
-              }}><Download size={9} /> CSV</button>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => { onSqlChange(block.sql); setTimeout(() => { onExecute(); }, 50); }}>
-              <RotateCcw size={9} /> 重新执行
-            </button>
-          </>
-        )}
-        {block.type === "error" && (
-          <>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => navigator.clipboard.writeText(block.message)}><Copy size={9} /> 复制错误</button>
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.62rem" }}
-              onClick={() => { onSqlChange(block.sql); setTimeout(() => { onExecute(); }, 50); }}>
-              <RotateCcw size={9} /> 重新执行
-            </button>
-          </>
-        )}
-      </div>
-    );
+          </div>
+        );
+      }
+
+      case "result":
+        return (
+          <div key={block.id} className="console-block console-block-result">
+            <div className="console-result-meta">
+              <span>
+                {block.result.rowCount} 行 · {block.result.latencyMs}ms · {formatTime(block.createdAt)}
+              </span>
+              {renderResultToolbar(block)}
+            </div>
+            <DataTable
+              columns={block.result.columns}
+              rows={block.result.rows}
+              maxHeight="360px"
+            />
+          </div>
+        );
+
+      case "error":
+        return (
+          <div key={block.id} className="console-block console-block-error">
+            <div className="console-error-line">
+              <strong>ERROR</strong>
+              <span>{block.message}</span>
+            </div>
+            {renderErrorToolbar(block)}
+          </div>
+        );
+
+      case "export":
+        return (
+          <div key={block.id} className="console-block console-block-note">
+            <span className="console-note-label">@export {block.format}</span>
+            <span>{block.message}</span>
+          </div>
+        );
+
+      case "explain":
+        return (
+          <div key={block.id} className="console-block console-block-note">
+            <span className="console-note-label">{block.title}</span>
+            <pre className="console-note-body">{block.message}</pre>
+          </div>
+        );
+    }
   };
 
-  const promptGreen = "#2E7D32";
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff", fontFamily: "var(--font-mono)" }}>
-      {/* Connection bar — also houses the inline toolbar */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "2px 10px",
-        fontSize: "0.64rem", color: "var(--text-muted)", background: "var(--bg-secondary)",
-        userSelect: "none", flexShrink: 0, fontFamily: "var(--font-body)", gap: 8,
-      }}>
-        <span style={{ whiteSpace: "nowrap" }}>
-          <strong style={{ color: "var(--text-secondary)" }}>{databaseName || "(未连接)"}</strong>
-          {engineLabel && <span style={{ opacity: 0.5 }}> · {engineLabel}</span>}
-        </span>
-
-        {/* Inline toolbar — in the header, not below prompt */}
-        <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-          {isRunning ? (
-            <button onClick={onCancel} style={{
-              display: "inline-flex", alignItems: "center", gap: 2,
-              padding: "1px 6px", fontSize: "0.6rem", fontWeight: 600,
-              color: "var(--accent-red)", background: "var(--accent-red-light)",
-              border: "1px solid var(--accent-red)", borderRadius: 2,
-              cursor: "pointer", fontFamily: "var(--font-body)",
-            }}><X size={9} /> 停止</button>
-          ) : (
-            <>
-              <button onClick={onExecute} disabled={!currentSql.trim()} style={{
-                display: "inline-flex", alignItems: "center", gap: 2,
-                padding: "1px 8px", fontSize: "0.6rem", fontWeight: 600,
-                color: "#fff", background: currentSql.trim() ? "var(--accent-primary)" : "var(--border-medium)",
-                border: "none", borderRadius: 2, cursor: currentSql.trim() ? "pointer" : "default",
-                fontFamily: "var(--font-body)",
-              }}><Play size={9} /> 执行</button>
-              <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.58rem" }}
-                onClick={onFormat} disabled={!currentSql.trim()}>格式化</button>
-              <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.58rem" }}
-                onClick={onExplain} disabled={!currentSql.trim()}>Explain</button>
-              <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.58rem" }}
-                onClick={onInjectLimit} disabled={!currentSql.trim()}>加 LIMIT</button>
-            </>
-          )}
+    <div className="console-transcript">
+      <div className="console-scroll" ref={scrollRef} onScroll={handleScroll}>
+        <div className="console-meta">
+          <span>{meta}</span>
           {onClear && blocks.length > 0 && (
-            <button className="btn-ghost" style={{ padding: "1px 4px", fontSize: "0.58rem", marginLeft: 4 }}
-              onClick={onClear}>清屏</button>
+            <button onClick={onClear} title="清屏">
+              清屏
+            </button>
           )}
         </div>
-      </div>
 
-      {/* Scrollable transcript — prompt is the last element in this flow */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "6px 0" }}
-      >
-        {/* Past blocks */}
-        {blocks.map((block) => (
-          <div
-            key={block.id}
-            onMouseEnter={() => setHoveredBlockId(block.id)}
-            onMouseLeave={() => setHoveredBlockId(null)}
-            style={{ padding: "0 12px" }}
-          >
-            {block.type === "input" && (
-              <div style={{ padding: "2px 0", display: "flex", alignItems: "flex-start", gap: 6 }}>
-                <span style={{ color: promptGreen, fontWeight: 600, fontSize: "0.72rem", userSelect: "none", whiteSpace: "nowrap", marginTop: 1 }}>
-                  {prompt}
-                </span>
-                <pre style={{
-                  margin: 0, flex: 1, whiteSpace: "pre-wrap", wordBreak: "break-all",
-                  fontSize: "0.72rem", color: "var(--text-primary)", lineHeight: 1.5,
-                  fontFamily: "var(--font-mono)",
-                }}>
-                  {block.sql}
-                </pre>
-                {renderBlockToolbar(block)}
-              </div>
+        {blocks.map(renderBlock)}
+
+        <div className="console-prompt active">
+          <span className="prompt-label">{prompt}</span>
+          <textarea
+            ref={inputRef}
+            className="console-input"
+            value={currentSql}
+            onChange={(event) => onSqlChange(event.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={inputRows}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoComplete="off"
+          />
+          <div className="console-inline-toolbar" aria-label="Current SQL actions">
+            {isRunning ? (
+              <button className="danger" onClick={onCancel}>
+                <X size={11} />
+                停止
+              </button>
+            ) : (
+              <button className="primary" onClick={onExecute} disabled={!currentSql.trim()}>
+                <Play size={11} />
+                执行
+              </button>
             )}
-
-            {block.type === "running" && (
-              <div style={{ padding: "2px 0 2px 20px", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ color: "var(--accent-primary)", fontSize: "0.66rem", fontFamily: "var(--font-body)" }}>
-                  执行中...
-                </span>
-                <button onClick={onCancel} style={{
-                  background: "none", color: "var(--accent-red)", border: "1px solid var(--accent-red)",
-                  borderRadius: 2, padding: "0 5px", fontSize: "0.6rem", cursor: "pointer",
-                  fontFamily: "var(--font-body)",
-                }}>
-                  取消
-                </button>
-              </div>
-            )}
-
-            {block.type === "result" && (
-              <div style={{ padding: "0 0 4px", borderBottom: "1px solid var(--border-light)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1px 0" }}>
-                  <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
-                    {block.result.rowCount} 行 · {block.result.latencyMs}ms
-                  </span>
-                  {renderBlockToolbar(block)}
-                </div>
-                <DataTable
-                  columns={block.result.columns}
-                  rows={block.result.rows as Record<string,unknown>[]}
-                  maxHeight="360px"
-                />
-              </div>
-            )}
-
-            {block.type === "error" && (
-              <div style={{
-                padding: "2px 0 4px", borderBottom: "1px solid var(--border-light)",
-                color: "var(--accent-red)", fontSize: "0.66rem", fontFamily: "var(--font-body)",
-              }}>
-                <span style={{ fontWeight: 600 }}>ERROR </span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.64rem" }}>{block.message}</span>
-                {renderBlockToolbar(block)}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Active prompt — last element in scroll flow */}
-        <div style={{ padding: blocks.length === 0 ? "12px 12px" : "8px 12px 4px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-            <span style={{
-              color: promptGreen, fontWeight: 600, fontSize: "0.72rem",
-              userSelect: "none", whiteSpace: "nowrap", marginTop: 3, lineHeight: 1.5,
-            }}>
-              {prompt}
-            </span>
-            <textarea
-              ref={inputRef}
-              value={currentSql}
-              onChange={(e) => onSqlChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder=""
-              rows={Math.max(2, currentSql.split("\n").length)}
-              style={{
-                flex: 1, border: "none", outline: "none", resize: "none",
-                fontFamily: "var(--font-mono)", fontSize: "0.72rem",
-                color: "var(--text-primary)", lineHeight: 1.5,
-                background: "transparent", padding: 0,
-                caretColor: "var(--accent-primary)",
-              }}
-            />
+            <button onClick={onFormat} disabled={!currentSql.trim() || isRunning}>
+              格式化
+            </button>
+            <button onClick={() => onExplain()} disabled={!currentSql.trim() || isRunning}>
+              Explain
+            </button>
+            <button onClick={onInjectLimit} disabled={!currentSql.trim() || isRunning}>
+              加 LIMIT
+            </button>
+            <button onClick={onAddExportDirective} disabled={!currentSql.trim() || isRunning}>
+              @export
+            </button>
+            <button onClick={() => onAiOptimize()} disabled={!currentSql.trim() || isRunning}>
+              <Wand2 size={11} />
+              AI 优化
+            </button>
           </div>
         </div>
       </div>
