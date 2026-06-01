@@ -10,7 +10,7 @@ import {
   planHasErrors,
   planWarnings,
   type ActionProcessor,
-} from "./queryActions";
+} from "./query-actions";
 
 // ── Scenario 1: @limit 100 ──
 describe("@limit", () => {
@@ -181,6 +181,9 @@ describe("repeatable actions", () => {
         order: 50,
         repeatable: true,
         conflictsWith: [],
+        description: "Test mask directive",
+        usage: "@mask",
+        examples: ["@mask"],
       },
       parse(rest) {
         return { column: rest.trim() };

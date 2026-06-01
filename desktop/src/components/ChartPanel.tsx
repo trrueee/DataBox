@@ -7,15 +7,18 @@ type ChartType = "bar" | "line" | "pie";
 interface ChartPanelProps {
   columns: string[];
   rows: Record<string, unknown>[];
+  initialType?: string;
+  initialX?: string;
+  initialY?: string;
 }
 
 // Light lab palette for charts
 const CHART_COLORS = ["#2D3B8C", "#0D7377", "#B45309", "#2E7D32", "#4A5BC0", "#14A3A8", "#D97706", "#5C5D60"];
 
-export function ChartPanel({ columns, rows }: ChartPanelProps) {
-  const [chartType, setChartType] = useState<ChartType>("bar");
-  const [labelCol, setLabelCol] = useState("");
-  const [valueCol, setValueCol] = useState("");
+export function ChartPanel({ columns, rows, initialType, initialX, initialY }: ChartPanelProps) {
+  const [chartType, setChartType] = useState<ChartType>((initialType as ChartType) || "bar");
+  const [labelCol, setLabelCol] = useState(initialX || "");
+  const [valueCol, setValueCol] = useState(initialY || "");
 
   const numericCols = useMemo(
     () => columns.filter((c) => rows.some((r) => typeof r[c] === "number")),

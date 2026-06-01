@@ -82,6 +82,58 @@ DataBox/
 
 ---
 
+## 🔌 SQL Action Engine (DSL 注解式快捷操作引擎)
+
+DataBox 创新性地引入了 **SQL 注解式快捷操作与编排引擎 (SQL Action Engine)**。它并非普通的“在 SQL 输入框旁堆叠按钮”，而是独立开发了一套**前端轻量级 DSL（以 `@` 为指令注解） + 编译执行计划 + 插件化 Processor 生命周期 + 后端安全执行网关** 的高性能编排架构。
+
+### 🔄 多阶段生命周期管线 (Pipeline Lifecycle)
+
+当用户输入带有 `@` 注解指令的 SQL 时，系统会在前端启动多生命周期管线：
+
+```text
+用户输入 SQL + @指令
+        │
+        ▼
+   [parseAll] ────── 扫描全部 @ 注解指令，提取参数
+        │
+        ▼
+   [buildPlan] ───── 封装并构建 QueryExecutionPlan
+        │
+        ▼
+   [validate] ────── 校验语法规则，判定指令互斥与参数冲突
+        │
+        ▼
+   [compile] ─────── 编译阶段改写 SQL (如 LIMIT 追加, EXPLAIN 改写)
+        │
+        ▼
+ [beforeExecute] ─── 执行前注入全局上下文参数 (如 Timeout 设置)
+        │
+        ▼
+ [aroundExecute] ─── 执行中事件流拦截
+        │
+        ▼
+   [executeSQL] ──── 调后端安全执行网关 (PolicyEngine & Guardrail)
+        │
+        ▼
+ [afterExecute] ──── 成功执行后结果后处理 (如可视化图表渲染、文件本地导出)
+```
+
+### 🛠️ 插件化 Processor 架构
+
+Action Engine 采用统一的插件化 Processor 注册表架构。所有的注解动作都被高度内聚地抽象为微插件：
+*   **`@limit [rows]`** (编译期)：自动为 SQL 编译出最安全可靠的 `LIMIT` 分页，防止拉取海量数据拖垮网络。
+*   **`@timeout [seconds]`** (准备期)：为客户端注入查询最大超时阈值，秒级超时保护，防止长查询挂死数据库物理连接。
+*   **`@explain`** (编译期)：自动改写为执行计划评估模式，方便开发排查慢查询与索引命中的性能瓶颈。
+*   **`@export [csv/json/xlsx]`** (后处理期)：查询成功后前端自动本地序列化，即时触发浏览器下载保存，实现指令级自动数据归档。
+*   **`@chart [bar/line/pie] x=列名 y=列名`** (表现期)：成功查询后自动将数据转换为 ECharts 图表，同数据表格并列渲染，可视化体验极佳。
+
+### 💎 UI 体验与表现层增强
+
+*   **智能指令补全 (Directive Intellisense)**：当用户在命令行交互终端输入 `@` 时，系统会弹出微晶浮光感的指令提示框，提供指令参数格式、作用说明以及丰富的代码用例。
+*   **可解释执行计划预览卡 (Plan Preview Card)**：指令键入后，控制台下方实时绘制精美的执行计划详情面板，展现 **“原始 SQL” 与 “实际执行编译 SQL” 的 Diff 对比**、参数变量注入效果以及计划验证的警告/报错诊断信息。
+
+---
+
 ## ⚡ 快速启动指南
 
 ### 1. 环境依赖准备
@@ -151,6 +203,36 @@ DataBox features a high-performance three-tier design:
 *   `databox-mysql-ssl-test/` - A sandbox database with SSL verification utilities.
 *   `start.py` - Standard bootstrap script to check environments, install dependencies, and run services.
 *   `run_desktop.py` - Hardware-accelerated native webview frame loader.
+
+---
+
+## 🔌 SQL Action Engine (DSL Annotation Shortcut Engine)
+
+DataBox introduces an innovative **SQL Annotation Shortcut & Orchestration Engine (SQL Action Engine)**. Rather than simply packing action buttons near the input field, we developed a highly modular system consisting of a **lightweight frontend DSL (using `@` comment directives) + Execution Plan compiler + Plugin-based Processor lifecycle + Backend safety gateway**.
+
+### 🔄 Multi-Phase Lifecycle Pipeline
+
+When a user writes a SQL query with `@` annotations, the Action Engine triggers a multi-phase lifecycle:
+1.  **`parseAll`**: Scans the text for `@` directive comments, extracting arguments and separating the raw executable query (`pureSql`).
+2.  **`validate`**: Runs semantic checks and flags parameter conflicts or mutual exclusivity (e.g. `@explain` and `@export` cannot run together).
+3.  **`compile`**: Rewrites query compile targets (e.g. `@limit` dynamically appends pagination, `@explain` prepends the clause).
+4.  **`beforeExecute`**: Injects runtime arguments (e.g. `@timeout` configuring clientside socket limitations).
+5.  **`aroundExecute`**: Intercepts active execution buffers.
+6.  **`afterExecute`**: Triggers post-execution processors (e.g. `@chart` rendering the visual dashboard, `@export` executing file compilations).
+
+### 🛠️ Plugin-Based Processor Architecture
+
+The Action Engine implements a extensible Registry pattern. Each annotation behavior is isolated as a micro-plugin Processor:
+*   **`@limit [rows]`** (Compile Phase): Dynamically injects clean `LIMIT` pagination to prevent large select statements from saturating client memory.
+*   **`@timeout [seconds]`** (Prepare Phase): Configure execution socket limits in seconds, shielding resources against infinite slow-query hanging.
+*   **`@explain`** (Compile Phase): Converts query to plan-analysis mode, helping verify indexes and performance bottlenecks.
+*   **`@export [csv/json/xlsx]`** (Post-execution Phase): Serializes query result sets and initiates automatic file downloads locally in the browser.
+*   **`@chart [bar/line/pie] x=col y=col`** (Presentation Phase): Renders ECharts visualizations inline right alongside standard data tables.
+
+### 💎 Console & Intellisense Experience
+
+*   **Directive Autocomplete**: Typing `@` in the interactive console displays a beautiful glassmorphic floating menu illustrating usage patterns, argument schemas, and descriptions.
+*   **Explainable Plan Preview**: Consoles display a live plan summary compiling **"Original SQL" vs "Compiled Execution SQL" Diff analysis** alongside warning diagnostics.
 
 ---
 

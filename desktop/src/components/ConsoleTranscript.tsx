@@ -12,12 +12,22 @@ import {
   X,
 } from "lucide-react";
 import { DataTable } from "./DataTable";
+import { ChartPanel } from "./ChartPanel";
+import { QueryActionPlanPreview } from "./QueryActionPlanPreview";
+import { actionRegistry } from "../lib/query-actions";
 import type { QueryResult } from "../lib/api";
 
 export type ConsoleBlock =
   | { id: string; type: "input"; sql: string; createdAt: number }
   | { id: string; type: "running"; sql: string; startedAt: number }
-  | { id: string; type: "result"; sql: string; result: QueryResult; createdAt: number }
+  | {
+      id: string;
+      type: "result";
+      sql: string;
+      result: QueryResult;
+      chartConfig?: { enabled: boolean; type: string; x: string; y: string } | null;
+      createdAt: number;
+    }
   | { id: string; type: "error"; sql: string; message: string; createdAt: number }
   | { id: string; type: "export"; sql: string; format: string; message: string; createdAt: number }
   | { id: string; type: "explain"; sql: string; title: string; message: string; createdAt: number };
@@ -115,6 +125,50 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
 
   const meta = `${databaseName || "未连接"} · ${engineLabel || "mysql"}`;
   const inputRows = Math.min(12, Math.max(1, currentSql.split("\n").length));
+
+  // 1. DSL Autocomplete Matching and Filtering
+  const currentMatch = useMemo(() => {
+    if (!currentSql) return null;
+    const lines = currentSql.split("\n");
+    const lastLine = lines[lines.length - 1] ?? "";
+    const match = lastLine.match(/@(\w*)$/);
+    return match ? match[1].toLowerCase() : null;
+  }, [currentSql]);
+
+  const ALL_DIRECTIVES = useMemo(() => [
+    { name: "@limit", usage: "@limit 100", desc: "限制返回行数 (例如: @limit 100)" },
+    { name: "@timeout", usage: "@timeout 30", desc: "超时控制秒数 (例如: @timeout 30)" },
+    { name: "@explain", usage: "@explain", desc: "分析 SQL 执行计划" },
+    { name: "@export", usage: "@export csv", desc: "自动导出查询结果 (支持 csv/json)" },
+    { name: "@chart", usage: "@chart bar x=字段 y=字段", desc: "分析并自动生成图表可视化" },
+  ], []);
+
+  const filteredDirectives = useMemo(() => {
+    if (currentMatch === null) return [];
+    return ALL_DIRECTIVES.filter((d) => d.name.slice(1).startsWith(currentMatch));
+  }, [currentMatch, ALL_DIRECTIVES]);
+
+  const handleSelectDirective = (usage: string) => {
+    const lines = currentSql.split("\n");
+    if (lines.length > 0) {
+      const lastIdx = lines.length - 1;
+      lines[lastIdx] = lines[lastIdx].replace(/@\w*$/, usage);
+      onSqlChange(lines.join("\n"));
+    } else {
+      onSqlChange(usage);
+    }
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  // 2. DSL Live Compilation Plan Preview
+  const previewPlan = useMemo(() => {
+    if (!currentSql.trim()) return null;
+    try {
+      return actionRegistry.previewPlan(currentSql);
+    } catch (e) {
+      return null;
+    }
+  }, [currentSql]);
 
   useEffect(() => {
     if (!blocks.some((block) => block.type === "running")) return;
@@ -256,6 +310,29 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
               </span>
               {renderResultToolbar(block)}
             </div>
+
+            {block.chartConfig?.enabled && (
+              <div style={{
+                marginBottom: 16,
+                padding: 12,
+                background: "rgba(30, 30, 34, 0.4)",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                borderRadius: 8,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                  <Sparkles size={12} style={{ color: "#4A5BC0" }} />
+                  <strong>@chart 自动分析可视化</strong>
+                </div>
+                <ChartPanel
+                  columns={block.result.columns}
+                  rows={block.result.rows}
+                  initialType={block.chartConfig.type}
+                  initialX={block.chartConfig.x}
+                  initialY={block.chartConfig.y}
+                />
+              </div>
+            )}
+
             <DataTable
               columns={block.result.columns}
               rows={block.result.rows}
@@ -307,7 +384,67 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
 
         {blocks.map(renderBlock)}
 
-        <div className="console-prompt active">
+        {/* 1. Render Live DSL Execution Plan compilation preview */}
+        <QueryActionPlanPreview plan={previewPlan} />
+
+        <div className="console-prompt active" style={{ position: "relative" }}>
+          {/* 2. Directive Autocomplete suggestion intellisense menu */}
+          {filteredDirectives.length > 0 && (
+            <div className="console-autocomplete-dropdown" style={{
+              position: "absolute",
+              bottom: "calc(100% + 8px)",
+              left: 16,
+              background: "rgba(22, 22, 26, 0.95)",
+              backdropFilter: "blur(16px)",
+              border: "1px solid rgba(45, 59, 140, 0.4)",
+              borderRadius: 6,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+              display: "flex",
+              flexDirection: "column",
+              zIndex: 1000,
+              width: 340,
+              maxHeight: 200,
+              overflowY: "auto",
+              padding: 4
+            }}>
+              <div style={{
+                fontSize: "0.7rem",
+                color: "rgba(255,255,255,0.4)",
+                padding: "4px 8px 6px 8px",
+                borderBottom: "1px solid rgba(255,255,255,0.05)"
+              }}>
+                SQL DSL 注解指令智能补全 (Directive Intellisense)
+              </div>
+              {filteredDirectives.map((dir, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSelectDirective(dir.usage)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    padding: "6px 8px",
+                    background: "none",
+                    border: "none",
+                    borderRadius: 4,
+                    width: "100%",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    transition: "background 0.15s ease",
+                    gap: 2
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(45, 59, 140, 0.25)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "#A5B4FC", fontWeight: 600 }}>
+                    <span>{dir.name}</span>
+                    <span style={{ fontSize: "0.68rem", opacity: 0.6, fontWeight: 400, fontFamily: "Courier New" }}>{dir.usage}</span>
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)" }}>{dir.desc}</div>
+                </button>
+              ))}
+            </div>
+          )}
           <span className="prompt-label">{prompt}</span>
           <textarea
             ref={inputRef}

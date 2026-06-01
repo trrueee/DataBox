@@ -5,7 +5,8 @@ import { AiBenchmarkDrawer } from "../components/AiBenchmarkDrawer";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useToast } from "../components/Toast";
 import { useQueryExecution } from "../hooks/useQueryExecution";
-import { actionRegistry, planHasErrors, planWarnings } from "../lib/queryActions";
+import { actionRegistry, planHasErrors, planWarnings } from "../lib/query-actions";
+import type { QueryExecutionPlan } from "../lib/query-actions/types";
 import { ConsoleTranscript, type ConsoleBlock } from "../components/ConsoleTranscript";
 
 interface QueryPageProps {
@@ -29,7 +30,7 @@ interface QueryPageProps {
 interface PendingConsoleRun {
   runningBlockId: string;
   sourceSql: string;
-  exportFormat?: string;
+  plan: QueryExecutionPlan;
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -204,7 +205,7 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
       pendingRunRef.current = {
         runningBlockId: runningBlock.id,
         sourceSql: sql,
-        exportFormat: plan.context.exportConfig?.format,
+        plan,
       };
 
       setConsoleBlocks((prev) => [...prev, inputBlock, runningBlock]);
@@ -221,22 +222,49 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
 
     const createdAt = Date.now();
     if (activeEditorTab.status === "success" && activeEditorTab.queryResult) {
+      // 1. Run post-execution 'afterExecute' phases on our plan
+      actionRegistry.applyPhase(pending.plan, "afterExecute");
+
+      const exportCfg = pending.plan.context.exportConfig;
+      const chartCfg = pending.plan.context.chartConfig;
+      const result = activeEditorTab.queryResult!;
+
+      // 2. Automate file export triggers
+      if (exportCfg?.enabled) {
+        const format = exportCfg.format.toLowerCase();
+        const filename = exportCfg.path || `databox_export_${Date.now()}.${format}`;
+        if (format === "csv") {
+          const escapeCsv = (value: unknown): string => {
+            if (value === null || value === undefined) return "";
+            const text = String(value);
+            return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+          };
+          const header = result.columns.map(escapeCsv).join(",");
+          const body = result.rows.map((row) => result.columns.map((column) => escapeCsv(row[column])).join(",")).join("\n");
+          downloadText(filename, `\uFEFF${header}\n${body}`, "text/csv;charset=utf-8");
+        } else if (format === "json") {
+          downloadText(filename, JSON.stringify(result.rows, null, 2), "application/json;charset=utf-8");
+        }
+      }
+
       setConsoleBlocks((prev) => {
         const next: ConsoleBlock[] = prev.filter((block) => block.id !== pending.runningBlockId);
         next.push({
           id: makeConsoleId("res"),
           type: "result",
           sql: pending.sourceSql,
-          result: activeEditorTab.queryResult!,
+          result: result,
+          chartConfig: chartCfg, // Attach chart configurations to the block!
           createdAt,
         });
-        if (pending.exportFormat) {
+
+        if (exportCfg?.enabled) {
           next.push({
             id: makeConsoleId("export"),
             type: "export",
             sql: pending.sourceSql,
-            format: pending.exportFormat,
-            message: "结果已生成，可以在结果块工具条中导出。",
+            format: exportCfg.format,
+            message: `查询执行完毕！数据已自动按指令配置打包生成并触发浏览器本地下载。`,
             createdAt,
           });
         }
