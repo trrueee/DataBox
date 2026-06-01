@@ -10,7 +10,7 @@ from sqlglot import exp
 
 from engine.ai import generate_sql, validate_sql_schema
 from engine.agent.prompts import RESULT_EXPLANATION_SECTIONS
-from engine.agent.types import AgentRunRequest, QueryPlan, SQLCandidate, ToolObservation
+from engine.agent.types import AgentRunRequest, QueryPlan, ReviseResult, SQLCandidate, ToolObservation
 from engine.errors import DataBoxError
 from engine.executor import execute_query
 from engine.guardrail import GuardrailResult, guardrail_check
@@ -20,6 +20,7 @@ from engine.trust_gate import TrustGate
 
 
 ToolBody = Callable[[], dict[str, Any]]
+STAR_EXPANSION_LIMIT = 12
 
 
 def build_schema_context_tool(db: Session, req: AgentRunRequest) -> ToolObservation:
@@ -82,25 +83,51 @@ def build_query_plan_tool(
     return _observe("build_query_plan", tool_input, body)
 
 
-def generate_sql_tool(db: Session, req: AgentRunRequest) -> ToolObservation:
+def generate_sql_tool(
+    db: Session,
+    req: AgentRunRequest,
+    schema_context: dict[str, Any] | None = None,
+    query_plan: dict[str, Any] | None = None,
+) -> ToolObservation:
+    schema_context = schema_context or {}
+    query_plan = query_plan or {}
     tool_input = {
         "datasource_id": req.datasource_id,
         "question": req.question,
         "optimize_rag": req.optimize_rag,
         "model_name": req.model_name,
         "has_api_key": bool(req.api_key),
+        "plan_goal": query_plan.get("analysis_goal"),
+        "plan_candidate_tables": query_plan.get("candidate_tables", []),
+        "schema_context_size": schema_context.get("schema_context_size", 0),
     }
 
     def body() -> dict[str, Any]:
-        result = generate_sql(
-            db,
-            req.datasource_id,
-            req.question,
-            llm_config=_llm_config(req),
-            optimize_rag=req.optimize_rag,
-        )
+        plan_sql = _render_sql_from_query_plan(db, req.datasource_id, query_plan)
+        if plan_sql:
+            result = {
+                "sql": plan_sql,
+                "model": "databox-query-plan-renderer",
+                "mode": "plan_guided",
+                "latencyMs": 0,
+                "schemaValidationWarnings": [],
+                "queryPlan": query_plan.get("raw_plan") or query_plan,
+                "selectedTables": query_plan.get("candidate_tables", []),
+                "selectedColumns": schema_context.get("candidate_columns", []),
+                "schemaContextSize": schema_context.get("schema_context_size"),
+            }
+            generation_source = "query_plan_rendered"
+        else:
+            result = generate_sql(
+                db,
+                req.datasource_id,
+                _question_with_plan(req.question, query_plan) if req.api_key else req.question,
+                llm_config=_llm_config(req),
+                optimize_rag=req.optimize_rag,
+            )
+            generation_source = "generate_sql_fallback"
         raw_sql = str(result.get("sql", "") or "").strip()
-        sql, rewrite_notes = _prepare_generated_sql(db, req.datasource_id, raw_sql)
+        sql, rewrite_notes, rewrite_metadata = _prepare_generated_sql(db, req.datasource_id, raw_sql)
         candidate = SQLCandidate(
             sql=sql,
             raw_sql=raw_sql if sql != raw_sql else None,
@@ -110,10 +137,13 @@ def generate_sql_tool(db: Session, req: AgentRunRequest) -> ToolObservation:
             schema_validation_warnings=[str(item) for item in _list_value(result.get("schemaValidationWarnings"))],
             rewrite_notes=rewrite_notes,
             metadata={
+                "generation_source": generation_source,
+                "agent_query_plan": query_plan,
                 "query_plan": result.get("queryPlan"),
                 "selected_tables": result.get("selectedTables", []),
                 "selected_columns": result.get("selectedColumns", []),
                 "schema_context_size": result.get("schemaContextSize"),
+                "rewrite": rewrite_metadata,
             },
         )
         return candidate.model_dump()
@@ -202,16 +232,24 @@ def revise_sql_tool(
     sql: str | None,
     error: str,
     safety: dict[str, Any] | None = None,
+    db: Session | None = None,
+    datasource_id: str | None = None,
 ) -> ToolObservation:
     tool_input = {"sql_preview": _preview_sql(sql or ""), "error": error[:500]}
 
     def body() -> dict[str, Any]:
         suggestion = _revise_suggestion_from_context(sql or "", error, safety or {})
-        return {
-            "revise_suggestion": suggestion,
-            "blocked_sql": sql,
-            "reason": error,
-        }
+        fix = _try_fix_sql(db, datasource_id, sql or "", safety or {})
+        result = ReviseResult(
+            can_fix=fix["can_fix"],
+            fixed_sql=fix["fixed_sql"],
+            reason=error,
+            changes=fix["changes"],
+            remaining_risks=fix["remaining_risks"],
+            revise_suggestion=suggestion,
+            blocked_sql=sql,
+        )
+        return result.model_dump()
 
     return _observe("revise_sql", tool_input, body)
 
@@ -439,15 +477,122 @@ def _fallback_query_plan(
     return plan.model_dump()
 
 
-def _prepare_generated_sql(db: Session, datasource_id: str, sql: str) -> tuple[str, list[str]]:
+def _render_sql_from_query_plan(
+    db: Session,
+    datasource_id: str,
+    query_plan: dict[str, Any] | None,
+) -> str | None:
+    if not query_plan:
+        return None
+
+    raw_plan = query_plan.get("raw_plan") if isinstance(query_plan.get("raw_plan"), dict) else query_plan
+    schema = _schema_columns(db, datasource_id)
+    if not schema:
+        return None
+
+    tables = [
+        str(table)
+        for table in _list_value(raw_plan.get("tables"))
+        if str(table).lower() in schema
+    ]
+    if not tables:
+        tables = [
+            str(table)
+            for table in _list_value(query_plan.get("candidate_tables"))
+            if str(table).lower() in schema
+        ]
+    if not tables:
+        return None
+
+    base_table = tables[0]
+    metrics = [item for item in _list_value(raw_plan.get("metrics")) if isinstance(item, dict)]
+    dimensions = [item for item in _list_value(raw_plan.get("dimensions")) if isinstance(item, dict)]
+    filters = [item for item in _list_value(raw_plan.get("filters")) if isinstance(item, dict)]
+    joins = [item for item in _list_value(raw_plan.get("joins")) if isinstance(item, dict)]
+    intent = str(raw_plan.get("intent") or query_plan.get("analysis_goal") or "").strip()
+    if intent == "answer_question" and not metrics and not dimensions and not filters:
+        return None
+
+    projections: list[str] = []
+    group_by: list[str] = []
+    for dimension in dimensions:
+        column = str(dimension.get("column") or "").strip()
+        if not column:
+            continue
+        expression = _dimension_expression(column, dimension.get("transform"))
+        alias = _safe_alias(str(dimension.get("name") or "dimension"))
+        projections.append(f"{expression} AS {alias}")
+        group_by.append(expression)
+
+    for metric in metrics:
+        expression = str(metric.get("expression") or "").strip()
+        if not expression:
+            continue
+        alias = _safe_alias(str(metric.get("name") or "metric"))
+        projections.append(f"{expression} AS {alias}")
+
+    if not projections:
+        projections = [f"{base_table}.{column}" for column in schema[base_table.lower()][:STAR_EXPANSION_LIMIT]]
+
+    sql_parts = [f"SELECT {', '.join(projections)}", f"FROM {base_table}"]
+    joined_tables = {base_table.lower()}
+    for join in joins:
+        right_table = str(join.get("right_table") or "").strip()
+        condition = str(join.get("condition") or "").strip()
+        if not right_table or right_table.lower() not in schema or right_table.lower() in joined_tables or not condition:
+            continue
+        condition_refs = _condition_table_refs(condition)
+        if condition_refs and not condition_refs.issubset(joined_tables | {right_table.lower()}):
+            continue
+        sql_parts.append(f"JOIN {right_table} ON {condition}")
+        joined_tables.add(right_table.lower())
+
+    where_clauses = [_filter_expression(item) for item in filters]
+    where_clauses = [item for item in where_clauses if item]
+    if where_clauses:
+        sql_parts.append(f"WHERE {' AND '.join(where_clauses)}")
+
+    if metrics and group_by:
+        sql_parts.append(f"GROUP BY {', '.join(group_by)}")
+
+    order_by = str(raw_plan.get("order_by") or "").strip()
+    if order_by:
+        sql_parts.append(f"ORDER BY {order_by}")
+
+    limit = _coerce_limit(raw_plan.get("limit") or query_plan.get("limit") or 100)
+    sql_parts.append(f"LIMIT {limit}")
+    return " ".join(sql_parts)
+
+
+def _question_with_plan(question: str, query_plan: dict[str, Any]) -> str:
+    if not query_plan:
+        return question
+    plan_summary = {
+        "analysis_goal": query_plan.get("analysis_goal"),
+        "candidate_tables": query_plan.get("candidate_tables", []),
+        "metrics": query_plan.get("metrics", []),
+        "dimensions": query_plan.get("dimensions", []),
+        "filters": query_plan.get("filters", []),
+        "time_range": query_plan.get("time_range"),
+    }
+    return (
+        f"{question}\n\n"
+        "Use this previously validated Query Plan as the source of truth for SQL generation. "
+        f"Query Plan: {plan_summary}"
+    )
+
+
+def _prepare_generated_sql(db: Session, datasource_id: str, sql: str) -> tuple[str, list[str], dict[str, Any]]:
     cleaned = sql.strip().rstrip(";")
     if not cleaned:
-        return cleaned, []
+        return cleaned, [], {}
 
     notes: list[str] = []
-    rewritten, rewrote_star = _rewrite_select_star(db, datasource_id, cleaned)
+    rewritten, rewrote_star, star_metadata = _rewrite_select_star(db, datasource_id, cleaned)
     if rewrote_star:
         notes.append("select_star_rewritten_to_explicit_columns")
+        for table_name in star_metadata.get("truncated_tables", []):
+            notes.append(f"select_star_expanded_first_{STAR_EXPANSION_LIMIT}_columns:{table_name}")
 
     guardrail = guardrail_check(rewritten, dialect=_datasource_dialect(db, datasource_id))
     safe_sql = str(guardrail.get("safeSql") or "").strip()
@@ -455,24 +600,25 @@ def _prepare_generated_sql(db: Session, datasource_id: str, sql: str) -> tuple[s
         rewritten = safe_sql
         notes.append("limit_added_by_guardrail")
 
-    return rewritten, notes
+    return rewritten, notes, star_metadata
 
 
-def _rewrite_select_star(db: Session, datasource_id: str, sql: str) -> tuple[str, bool]:
+def _rewrite_select_star(db: Session, datasource_id: str, sql: str) -> tuple[str, bool, dict[str, Any]]:
     try:
         dialect = _sqlglot_dialect(_datasource_dialect(db, datasource_id))
         parsed = sqlglot.parse_one(sql, read=dialect)
     except Exception:
-        return sql, False
+        return sql, False, {}
 
     if not isinstance(parsed, (exp.Select, exp.Union)):
-        return sql, False
+        return sql, False, {}
 
     schema = _schema_columns(db, datasource_id)
     if not schema:
-        return sql, False
+        return sql, False, {}
 
     rewrote = False
+    truncated_tables: set[str] = set()
     for select in list(parsed.find_all(exp.Select)):
         expressions: list[exp.Expression] = []
         for projection in select.expressions:
@@ -481,19 +627,29 @@ def _rewrite_select_star(db: Session, datasource_id: str, sql: str) -> tuple[str
                 expressions.append(projection)
                 continue
 
-            expanded = _expanded_star_columns(select, schema, star_table)
+            expanded, truncated = _expanded_star_columns(select, schema, star_table)
             if not expanded:
                 expressions.append(projection)
                 continue
 
             rewrote = True
+            truncated_tables.update(truncated)
             expressions.extend(expanded)
         if rewrote:
             select.set("expressions", expressions)
 
     if not rewrote:
-        return sql, False
-    return parsed.sql(dialect=dialect), True
+        return sql, False, {}
+    metadata = {
+        "select_star_column_limit": STAR_EXPANSION_LIMIT,
+        "truncated_tables": sorted(truncated_tables),
+    }
+    if truncated_tables:
+        metadata["message"] = (
+            f"SELECT * was rewritten to explicit columns and limited to the first "
+            f"{STAR_EXPANSION_LIMIT} columns per table; review the SQL if additional fields are required."
+        )
+    return parsed.sql(dialect=dialect), True, metadata
 
 
 def _star_projection_table(projection: exp.Expression) -> str | None:
@@ -511,7 +667,7 @@ def _expanded_star_columns(
     select: exp.Select,
     schema: dict[str, list[str]],
     star_table: str,
-) -> list[exp.Expression]:
+) -> tuple[list[exp.Expression], list[str]]:
     table_nodes = list(select.find_all(exp.Table))
     alias_to_table: dict[str, str] = {}
     for table in table_nodes:
@@ -523,17 +679,21 @@ def _expanded_star_columns(
     if star_table:
         table_name = alias_to_table.get(star_table.lower())
         if not table_name or table_name not in schema:
-            return []
-        return [exp.column(column, table=star_table) for column in schema[table_name][:12]]
+            return [], []
+        truncated = [table_name] if len(schema[table_name]) > STAR_EXPANSION_LIMIT else []
+        return [exp.column(column, table=star_table) for column in schema[table_name][:STAR_EXPANSION_LIMIT]], truncated
 
     expanded: list[exp.Expression] = []
+    truncated: list[str] = []
     for table in table_nodes:
         table_name = table.name.lower()
         if table_name not in schema:
             continue
         qualifier = str(getattr(table, "alias_or_name", "") or table.name)
-        expanded.extend(exp.column(column, table=qualifier) for column in schema[table_name][:12])
-    return expanded
+        if len(schema[table_name]) > STAR_EXPANSION_LIMIT:
+            truncated.append(table_name)
+        expanded.extend(exp.column(column, table=qualifier) for column in schema[table_name][:STAR_EXPANSION_LIMIT])
+    return expanded, truncated
 
 
 def _schema_columns(db: Session, datasource_id: str) -> dict[str, list[str]]:
@@ -625,6 +785,110 @@ def _revise_suggestion_from_context(sql: str, error: str, safety: dict[str, Any]
     if "*" in sql:
         return "Replace SELECT * with explicit columns and add a LIMIT."
     return "Regenerate the SQL using only existing schema tables and columns, explicit projections, and a safe LIMIT."
+
+
+def _try_fix_sql(
+    db: Session | None,
+    datasource_id: str | None,
+    sql: str,
+    safety: dict[str, Any],
+) -> dict[str, Any]:
+    if not db or not datasource_id or not sql.strip():
+        return {
+            "can_fix": False,
+            "fixed_sql": None,
+            "changes": [],
+            "remaining_risks": ["No local schema context was available for deterministic repair."],
+        }
+
+    guardrail = safety.get("guardrail") if isinstance(safety.get("guardrail"), dict) else {}
+    rules = {str(item.get("rule", "")) for item in _list_value(guardrail.get("checks")) if isinstance(item, dict)}
+    if "select_star" not in rules and "SELECT *" not in sql.upper():
+        return {
+            "can_fix": False,
+            "fixed_sql": None,
+            "changes": [],
+            "remaining_risks": ["The failure is not a deterministic SELECT * repair case."],
+        }
+
+    fixed_sql, notes, metadata = _prepare_generated_sql(db, datasource_id, sql)
+    validation = validate_sql_tool(db, datasource_id, fixed_sql)
+    if validation.output and validation.output.get("can_execute"):
+        risks = []
+        if metadata.get("message"):
+            risks.append(str(metadata["message"]))
+        return {
+            "can_fix": True,
+            "fixed_sql": fixed_sql,
+            "changes": notes,
+            "remaining_risks": risks,
+        }
+
+    return {
+        "can_fix": False,
+        "fixed_sql": fixed_sql if fixed_sql != sql else None,
+        "changes": notes,
+        "remaining_risks": [
+            "A deterministic repair was attempted, but the repaired SQL still did not pass validation.",
+            validation.error or str((validation.output or {}).get("revise_suggestion") or ""),
+        ],
+    }
+
+
+def _dimension_expression(column: str, transform: Any) -> str:
+    transform_name = str(transform or "").strip().upper()
+    if transform_name == "DATE":
+        return f"DATE({column})"
+    return column
+
+
+def _filter_expression(item: dict[str, Any]) -> str:
+    column = str(item.get("column") or "").strip()
+    operator = str(item.get("operator") or "=").strip().upper()
+    value = item.get("value")
+    if not column:
+        return ""
+    allowed = {"=", "!=", "<>", ">", ">=", "<", "<=", "LIKE", "IN"}
+    if operator not in allowed:
+        operator = "="
+    if operator == "IN" and isinstance(value, list):
+        rendered = ", ".join(_quote_filter_value(v) for v in value[:20])
+        return f"{column} IN ({rendered})"
+    return f"{column} {operator} {_quote_filter_value(value)}"
+
+
+def _condition_table_refs(condition: str) -> set[str]:
+    return {match.group(1).lower() for match in re.finditer(r"\b([A-Za-z_][\w]*)\s*\.", condition)}
+
+
+def _quote_filter_value(value: Any) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = str(value).strip()
+    if re.fullmatch(r"-?\d+(?:\.\d+)?", text):
+        return text
+    if (text.startswith("'") and text.endswith("'")) or (text.startswith('"') and text.endswith('"')):
+        return text
+    return "'" + text.replace("'", "''") + "'"
+
+
+def _safe_alias(value: str) -> str:
+    alias = re.sub(r"\W+", "_", value.strip())
+    alias = alias.strip("_") or "value"
+    if alias[0].isdigit():
+        alias = f"c_{alias}"
+    return alias
+
+
+def _coerce_limit(value: Any) -> int:
+    try:
+        return max(1, min(int(value), 1000))
+    except (TypeError, ValueError):
+        return 100
 
 
 def _infer_time_range(question: str) -> dict[str, Any] | None:

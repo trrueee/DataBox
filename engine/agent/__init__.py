@@ -5,6 +5,7 @@ from engine.agent.types import (
     AgentRunResponse,
     AgentStep,
     QueryPlan,
+    ReviseResult,
     SQLCandidate,
     ToolObservation,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "AgentStep",
     "DataBoxAgentRuntime",
     "QueryPlan",
+    "ReviseResult",
     "SQLCandidate",
     "ToolObservation",
 ]

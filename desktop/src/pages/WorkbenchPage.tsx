@@ -84,6 +84,11 @@ function AgentRunPanel({ result, onOpenSql }: { result: AgentRunResponse; onOpen
   const rows = execution.rows || [];
   const chart = result.chart_suggestion;
   const statusClass = result.success ? "status-badge-success" : "status-badge-error";
+  const safetyMessages = Array.isArray(safety.messages) ? safety.messages.map(compactValue) : [];
+  const rewriteNotes = Array.isArray(safety.rewrite_notes) ? safety.rewrite_notes.map(compactValue) : [];
+  const generationMetadata = safety.generation_metadata as { rewrite?: Record<string, unknown> } | undefined;
+  const rewrite = generationMetadata?.rewrite || {};
+  const truncatedTables = Array.isArray(rewrite.truncated_tables) ? rewrite.truncated_tables.map(compactValue) : [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.68rem", lineHeight: 1.45 }}>
@@ -128,6 +133,22 @@ function AgentRunPanel({ result, onOpenSql }: { result: AgentRunResponse; onOpen
           <span>Guardrail</span><span>{compactValue((safety.guardrail as { result?: unknown } | undefined)?.result)}</span>
           <span>Confirm</span><span>{compactValue(safety.requires_confirmation)}</span>
         </div>
+        {rewriteNotes.length > 0 && (
+          <div style={{ marginTop: 5, color: "var(--text-muted)" }}>
+            Rewrite: {rewriteNotes.join(" | ")}
+          </div>
+        )}
+        {rewrite.select_star_column_limit !== undefined && (
+          <div style={{ marginTop: 3, color: "var(--accent-amber)" }}>
+            SELECT * limit: first {compactValue(rewrite.select_star_column_limit)} columns per table
+            {truncatedTables.length > 0 ? ` (${truncatedTables.join(", ")})` : ""}
+          </div>
+        )}
+        {safetyMessages.length > 0 && (
+          <div style={{ marginTop: 3, color: "var(--text-muted)" }}>
+            Messages: {safetyMessages.join(" | ")}
+          </div>
+        )}
       </section>
 
       {columns.length > 0 && rows.length > 0 && (

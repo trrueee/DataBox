@@ -16,7 +16,7 @@ class AgentRunRequest(BaseModel):
     model_name: str | None = None
     optimize_rag: bool = True
     execute: bool = True
-    max_steps: int = Field(default=6, ge=1, le=20)
+    max_steps: int = Field(default=8, ge=1, le=20)
 
 
 class AgentStep(BaseModel):
@@ -58,6 +58,16 @@ class ToolObservation(BaseModel):
     output: dict[str, Any] | None = None
     error: str | None = None
     latency_ms: int
+
+
+class ReviseResult(BaseModel):
+    can_fix: bool
+    fixed_sql: str | None = None
+    reason: str
+    changes: list[str] = Field(default_factory=list)
+    remaining_risks: list[str] = Field(default_factory=list)
+    revise_suggestion: str
+    blocked_sql: str | None = None
 
 
 class AgentError(BaseModel):
