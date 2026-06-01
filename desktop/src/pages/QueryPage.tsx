@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
-import type { DataSource } from "../lib/api";
+import type { DataSource, GeneratedSqlResult } from "../lib/api";
 import { AiBenchmarkDrawer } from "../components/AiBenchmarkDrawer";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useToast } from "../components/Toast";
@@ -125,6 +125,22 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
     confirmRequest,
     resolveConfirm,
   } = useQueryExecution(datasource);
+
+  const appendAiSqlSafetyBlock = useCallback((title: string, result: GeneratedSqlResult) => {
+    if (!result.sql) return;
+    setConsoleBlocks((prev) => [
+      ...prev,
+      {
+        id: makeConsoleId("ai-sql"),
+        type: "aiSql",
+        sql: result.sql,
+        title,
+        trustGate: result.trustGate,
+        queryPlan: result.queryPlan,
+        createdAt: Date.now(),
+      },
+    ]);
+  }, []);
 
   useEffect(() => {
     if (!initialDraft?.sql) return;
@@ -338,7 +354,13 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
         const result = await api.generateSql(datasource.id, prompt);
         if (result.sql) {
           updateActiveTab(() => ({ sql: result.sql, queryError: null }));
-          toast.toast("AI 优化完成，已写入当前输入行", "success");
+          appendAiSqlSafetyBlock("AI SQL 校验", result);
+          toast.toast(
+            result.trustGate?.requiresConfirmation
+              ? "AI SQL 已写入，存在风险提示，需要确认后执行"
+              : "AI 优化完成，已写入当前输入行",
+            result.trustGate?.requiresConfirmation ? "warning" : "success",
+          );
         } else {
           toast.toast("AI 未返回优化 SQL", "warning");
         }
@@ -348,7 +370,7 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
         setAiGenerating(false);
       }
     },
-    [activeEditorTab, datasource.id, toast, updateActiveTab],
+    [activeEditorTab, appendAiSqlSafetyBlock, datasource.id, toast, updateActiveTab],
   );
 
   const handleAiExplainSql = useCallback(
@@ -388,7 +410,13 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
         const result = await api.generateSql(datasource.id, prompt);
         if (result.sql) {
           updateActiveTab(() => ({ sql: result.sql }));
-          toast.toast("AI 修复建议已写入当前输入行", "success");
+          appendAiSqlSafetyBlock("AI 修复校验", result);
+          toast.toast(
+            result.trustGate?.requiresConfirmation
+              ? "AI 修复 SQL 已写入，存在风险提示，需要确认后执行"
+              : "AI 修复建议已写入当前输入行",
+            result.trustGate?.requiresConfirmation ? "warning" : "success",
+          );
         }
       } catch (error: unknown) {
         toast.toast(`修复失败: ${getErrorMessage(error, "AI error fix failed")}`, "error");
@@ -396,7 +424,7 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
         setAiGenerating(false);
       }
     },
-    [datasource.id, toast, updateActiveTab],
+    [appendAiSqlSafetyBlock, datasource.id, toast, updateActiveTab],
   );
 
   const handleGenerateChart = useCallback(

@@ -15,7 +15,7 @@ import { DataTable } from "./DataTable";
 import { ChartPanel } from "./ChartPanel";
 import { QueryActionPlanPreview } from "./QueryActionPlanPreview";
 import { actionRegistry } from "../lib/query-actions";
-import type { QueryResult } from "../lib/api";
+import type { QueryPlan, QueryResult, TrustGateResult } from "../lib/api";
 
 export type ConsoleBlock =
   | { id: string; type: "input"; sql: string; createdAt: number }
@@ -30,7 +30,16 @@ export type ConsoleBlock =
     }
   | { id: string; type: "error"; sql: string; message: string; createdAt: number }
   | { id: string; type: "export"; sql: string; format: string; message: string; createdAt: number }
-  | { id: string; type: "explain"; sql: string; title: string; message: string; createdAt: number };
+  | { id: string; type: "explain"; sql: string; title: string; message: string; createdAt: number }
+  | {
+      id: string;
+      type: "aiSql";
+      sql: string;
+      title: string;
+      trustGate?: TrustGateResult;
+      queryPlan?: QueryPlan;
+      createdAt: number;
+    };
 
 interface ConsoleTranscriptProps {
   blocks: ConsoleBlock[];
@@ -89,6 +98,18 @@ function formatTime(ts: number) {
     second: "2-digit",
     hour12: false,
   });
+}
+
+function riskLabel(risk?: TrustGateResult["riskLevel"]) {
+  if (risk === "danger") return "危险";
+  if (risk === "warning") return "警告";
+  return "安全";
+}
+
+function riskClass(risk?: TrustGateResult["riskLevel"]) {
+  if (risk === "danger") return "status-badge-error";
+  if (risk === "warning") return "status-badge-warning";
+  return "status-badge-success";
 }
 
 export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
@@ -277,6 +298,53 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
     </div>
   );
 
+  const renderAiSqlBlock = (block: Extract<ConsoleBlock, { type: "aiSql" }>) => {
+    const gate = block.trustGate;
+    const plan = block.queryPlan;
+    const warnings = [
+      ...(gate?.schemaWarnings ?? []),
+      ...(plan?.warnings ?? []),
+    ];
+    const metricSummary = plan?.metrics?.map((metric) => `${metric.name}: ${metric.expression}`).join(", ") || "无";
+    const dimensionSummary = plan?.dimensions?.map((dimension) => {
+      const transform = dimension.transform ? `${dimension.transform} ` : "";
+      return `${dimension.name}: ${transform}${dimension.column}`;
+    }).join(", ") || "无";
+
+    return (
+      <div key={block.id} className="console-block console-block-note">
+        <span className="console-note-label">{block.title}</span>
+        <div className="console-ai-safety">
+          <div className="console-ai-safety-row">
+            <span className={`status-badge ${riskClass(gate?.riskLevel)}`}>{riskLabel(gate?.riskLevel)}</span>
+            <span className={`status-badge ${gate?.requiresConfirmation ? "status-badge-warning" : "status-badge-neutral"}`}>
+              {gate?.requiresConfirmation ? "需要确认" : "无需确认"}
+            </span>
+            <span>{formatTime(block.createdAt)}</span>
+          </div>
+          {gate?.messages?.length ? (
+            <ul>
+              {gate.messages.map((message) => <li key={message}>{message}</li>)}
+            </ul>
+          ) : null}
+          {warnings.length ? (
+            <ul>
+              {warnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          ) : null}
+          {plan && (
+            <div className="console-ai-plan">
+              <div>Plan: {plan.intent} · tables: {plan.tables.join(", ") || "无"}</div>
+              <div>Metrics: {metricSummary}</div>
+              <div>Dimensions: {dimensionSummary}</div>
+            </div>
+          )}
+          <pre className="console-note-body">{block.sql}</pre>
+        </div>
+      </div>
+    );
+  };
+
   const renderBlock = (block: ConsoleBlock) => {
     switch (block.type) {
       case "input":
@@ -367,6 +435,9 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
             <pre className="console-note-body">{block.message}</pre>
           </div>
         );
+
+      case "aiSql":
+        return renderAiSqlBlock(block);
     }
   };
 

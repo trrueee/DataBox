@@ -1,7 +1,6 @@
 import React from "react";
 import {
   AlertTriangle,
-  ArrowRight,
   BarChart3,
   Clock,
   Download,
@@ -144,7 +143,7 @@ export const QueryActionPlanPreview: React.FC<QueryActionPlanPreviewProps> = ({ 
             <BarChart3 size={12} style={{ color: "#60A5FA" }} />
             <span style={{ color: "rgba(255,255,255,0.4)" }}>渲染图表:</span>
             <span style={{ color: "#60A5FA", fontWeight: 500 }}>
-              {plan.context.chartConfig.type.toUpperCase()}(x={plan.context.chartConfig.x || "自动", y={plan.context.chartConfig.y || "自动"})
+              {`${plan.context.chartConfig.type.toUpperCase()}(x=${plan.context.chartConfig.x || "自动"}, y=${plan.context.chartConfig.y || "自动"})`}
             </span>
           </div>
         )}

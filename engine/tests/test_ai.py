@@ -166,3 +166,22 @@ def test_validate_sql_schema_hallucinations(db_session, demo_datasource) -> None
     warnings = validate_sql_schema("SELECT u.username, o.non_existent_col FROM users u JOIN orders o ON u.id = o.user_id", db_session, demo_datasource.id)
     assert len(warnings) > 0
     assert any("non_existent_col" in w for w in warnings)
+
+
+def test_generate_sql_returns_schema_linking_metadata(db_session, demo_datasource) -> None:
+    from engine.schema_sync import sync_schema
+
+    sync_schema(db_session, demo_datasource.id)
+    result = generate_sql(db_session, demo_datasource.id, "按客户统计 GMV", optimize_rag=True)
+
+    assert result["originalSchemaTableCount"] == 20
+    assert result["selectedSchemaTableCount"] < result["originalSchemaTableCount"]
+    assert "orders" in result["selectedTables"]
+    assert "users" in result["selectedTables"]
+    assert "orders.total_amount" in result["selectedColumns"]
+    assert result["schemaContextSize"] > 0
+    assert result["schemaLinkingReasons"]
+    assert result["queryPlan"]["intent"] == "aggregate_order_amount"
+    assert "orders" in result["queryPlan"]["tables"]
+    assert result["trustGate"]["riskLevel"] in ("safe", "warning", "danger")
+    assert result["trustGate"]["schemaWarnings"] == result["schemaValidationWarnings"]

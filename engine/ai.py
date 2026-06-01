@@ -11,8 +11,9 @@ from sqlglot import exp
 from sqlalchemy.orm import Session
 
 from engine.errors import AIServiceError
-from engine.guardrail import guardrail_check
 from engine.models import LLMLog, SchemaColumn, SchemaTable
+from engine.semantic import QueryPlanBuilder, SchemaContextBuilder, SchemaLinker
+from engine.trust_gate import TrustGate
 
 # Built-in heuristic translations to support instant, no-key offline demos
 DEMO_TRANSLATIONS = {
@@ -260,37 +261,26 @@ def select_relevant_tables(tables: list[SchemaTable], question: str) -> list[Sch
     return linked[:8]
 
 
+def _build_schema_context_with_metadata(
+    db: Session,
+    datasource_id: str,
+    question: str | None = None,
+    optimize_rag: bool = False,
+) -> tuple[str, dict[str, object]]:
+    linker = SchemaLinker(db)
+    if optimize_rag and question:
+        linking_result = linker.link(datasource_id=datasource_id, question=question)
+    else:
+        linking_result = linker.full_context(datasource_id=datasource_id, question=question)
+
+    schema_context = SchemaContextBuilder(db).build(linking_result)
+    return schema_context, linking_result.response_metadata(schema_context)
+
+
 def generate_schema_context(db: Session, datasource_id: str, question: str | None = None, optimize_rag: bool = False) -> str:
     """Builds a dense textual context containing table structures, comments, and relationships for LLM consumption"""
-    tables = db.query(SchemaTable).filter(SchemaTable.data_source_id == datasource_id).all()
-    if not tables:
-        return "No schema metadata found. Please sync the data source first."
-
-    if optimize_rag and question:
-        tables = select_relevant_tables(tables, question)
-
-    context_lines = []
-    
-    # Load all tables and comments
-    for t in tables:
-        comment_str = f" -- {t.table_comment}" if t.table_comment else ""
-        context_lines.append(f"CREATE TABLE {t.table_name} ({comment_str}")
-        
-        # Load columns
-        for c in t.columns:
-            pk_str = " PRIMARY KEY" if c.is_primary_key else ""
-            comment_col = f" COMMENT '{c.column_comment}'" if c.column_comment else ""
-            fk_str = ""
-            if c.is_foreign_key and c.foreign_table_id:
-                tgt = db.query(SchemaTable).filter(SchemaTable.id == c.foreign_table_id).first()
-                if tgt:
-                    fk_str = f" REFERENCES {tgt.table_name}(id)"
-            
-            context_lines.append(f"  {c.column_name} {c.column_type}{pk_str}{fk_str},{comment_col}")
-            
-        context_lines.append(");\n")
-        
-    return "\n".join(context_lines)
+    schema_context, _metadata = _build_schema_context_with_metadata(db, datasource_id, question, optimize_rag)
+    return schema_context
 
 
 PROMPT_VERSION = "v1.1"
@@ -393,11 +383,16 @@ def generate_sql(
     api_base = llm_config.get("api_base", "https://api.openai.com/v1").strip()
     model_name = llm_config.get("model", "gpt-4o-mini").strip()
     
-    schema_context = generate_schema_context(db, datasource_id, question, optimize_rag)
-    from engine.models import DataSource
-    ds = db.query(DataSource).filter(DataSource.id == datasource_id).first()
-    dialect = ds.db_type or "mysql" if ds else "mysql"
-    
+    schema_context, schema_metadata = _build_schema_context_with_metadata(db, datasource_id, question, optimize_rag)
+    selected_tables_raw = schema_metadata.get("selectedTables", [])
+    selected_tables = selected_tables_raw if isinstance(selected_tables_raw, list) else []
+    query_plan = QueryPlanBuilder(db).build(
+        datasource_id=datasource_id,
+        question=question,
+        schema_context=schema_context,
+        llm_config=llm_config,
+        selected_tables=[str(table) for table in selected_tables],
+    )
     # Ensure standard prompt hash is saved
     prompt_raw = f"Context:\n{schema_context}\n\nQuestion: {question}"
     prompt_hash = hashlib.sha256(prompt_raw.encode("utf-8")).hexdigest()
@@ -408,11 +403,9 @@ def generate_sql(
         generated_query = search_demo_sql(question)
         latency_ms = int((time.time() - start_time) * 1000)
         
-        # Guardrail check generated query
-        guard_res = guardrail_check(generated_query, dialect=dialect)
-        
-        # Perform schema reference validation
-        schema_warnings = validate_sql_schema(generated_query, db, datasource_id)
+        trust_gate = TrustGate(db, validate_sql_schema).evaluate(datasource_id, generated_query)
+        guard_res = trust_gate["guardrail"]
+        schema_warnings = trust_gate["schemaWarnings"]
         
         # Log the call with premium versioning & audit parameters
         log_entry = LLMLog(
@@ -436,8 +429,11 @@ def generate_sql(
             "model": "databox-local-heuristic",
             "latencyMs": latency_ms,
             "guardrail": guard_res,
+            "trustGate": trust_gate,
             "mode": "offline",
-            "schemaValidationWarnings": schema_warnings
+            "schemaValidationWarnings": schema_warnings,
+            "queryPlan": query_plan.to_dict(),
+            **schema_metadata,
         }
 
     # 3. Connect to Online LLM via httpx
@@ -485,11 +481,9 @@ def generate_sql(
         # Standard cleaning
         generated_query = generated_query.replace(";", "").strip()
         
-        # Enforce Guardrail validation on output SQL
-        guard_res = guardrail_check(generated_query, dialect=dialect)
-        
-        # Perform schema reference validation
-        schema_warnings = validate_sql_schema(generated_query, db, datasource_id)
+        trust_gate = TrustGate(db, validate_sql_schema).evaluate(datasource_id, generated_query)
+        guard_res = trust_gate["guardrail"]
+        schema_warnings = trust_gate["schemaWarnings"]
         
         # Log to db with versioning & audit parameters
         log_entry = LLMLog(
@@ -513,8 +507,11 @@ def generate_sql(
             "model": model_name,
             "latencyMs": latency_ms,
             "guardrail": guard_res,
+            "trustGate": trust_gate,
             "mode": "online",
-            "schemaValidationWarnings": schema_warnings
+            "schemaValidationWarnings": schema_warnings,
+            "queryPlan": query_plan.to_dict(),
+            **schema_metadata,
         }
         
     except Exception as e:

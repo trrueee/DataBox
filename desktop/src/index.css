@@ -834,6 +834,38 @@ label.field-label {
   font-weight: 700;
 }
 
+.console-ai-safety {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.console-ai-safety-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+}
+
+.console-ai-safety ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text-secondary);
+}
+
+.console-ai-plan {
+  padding: 4px 6px;
+  border-left: 2px solid var(--accent-primary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
 .win-control-btn:hover {
   background: var(--bg-hover);
 }

@@ -1,0 +1,104 @@
+from unittest.mock import MagicMock
+
+from engine.schema_sync import sync_schema
+from engine.semantic import QueryDimension, QueryMetric, QueryPlan, QueryPlanBuilder
+
+
+def test_query_plan_daily_order_count(db_session, demo_datasource) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    plan = QueryPlanBuilder(db_session).build(
+        datasource_id=demo_datasource.id,
+        question="统计每天订单量",
+        mode="offline",
+    )
+
+    assert "orders" in plan.tables
+    assert any(metric.name == "order_count" and metric.expression == "COUNT(*)" for metric in plan.metrics)
+    assert any(
+        dimension.name == "order_date"
+        and dimension.column == "orders.created_at"
+        and dimension.transform == "DATE"
+        for dimension in plan.dimensions
+    )
+    assert plan.warnings == []
+
+
+def test_query_plan_top_selling_products(db_session, demo_datasource) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    plan = QueryPlanBuilder(db_session).build(
+        datasource_id=demo_datasource.id,
+        question="销量最高的商品",
+        mode="offline",
+    )
+
+    assert plan.intent == "rank_products_by_sales_volume"
+    assert "products" in plan.tables
+    assert "order_items" in plan.tables
+    assert any(metric.name == "total_sold" and metric.source_column == "order_items.quantity" for metric in plan.metrics)
+    assert any(dimension.column == "products.name" for dimension in plan.dimensions)
+    assert any("order_items.product_id = products.id" == join.condition for join in plan.joins)
+
+
+def test_query_plan_validation_collects_missing_schema_warnings(db_session, demo_datasource) -> None:
+    sync_schema(db_session, demo_datasource.id)
+    plan = QueryPlan(
+        intent="bad_plan",
+        tables=["ghost_table", "orders"],
+        metrics=[QueryMetric(name="bad_metric", expression="SUM(orders.fake_amount)", source_column="orders.fake_amount")],
+        dimensions=[QueryDimension(name="ghost_dim", column="ghost_table.created_at", transform="DATE")],
+        limit=100,
+    )
+
+    validated = QueryPlanBuilder(db_session).validate(demo_datasource.id, plan)
+
+    assert any("ghost_table" in warning for warning in validated.warnings)
+    assert any("orders.fake_amount" in warning for warning in validated.warnings)
+
+
+def test_query_plan_validation_checks_unqualified_columns_in_table_scope(db_session, demo_datasource) -> None:
+    sync_schema(db_session, demo_datasource.id)
+    plan = QueryPlan(
+        intent="bad_unqualified_column",
+        tables=["orders"],
+        metrics=[QueryMetric(name="bad_metric", expression="COUNT(*)", source_column="not_a_real_column")],
+        limit=100,
+    )
+
+    validated = QueryPlanBuilder(db_session).validate(demo_datasource.id, plan)
+
+    assert any("not_a_real_column" in warning for warning in validated.warnings)
+
+
+def test_query_plan_online_json_is_validated(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "content": (
+                        '{"intent":"llm_plan","tables":["orders"],'
+                        '"metrics":[{"name":"bad","expression":"SUM(orders.nope)",'
+                        '"source_column":"orders.nope"}],'
+                        '"dimensions":[],"filters":[],"joins":[],"order_by":null,"limit":50}'
+                    )
+                }
+            }
+        ]
+    }
+    monkeypatch.setattr("engine.semantic.query_plan.httpx.post", lambda *args, **kwargs: mock_resp)
+
+    plan = QueryPlanBuilder(db_session).build(
+        datasource_id=demo_datasource.id,
+        question="bad online plan",
+        schema_context="CREATE TABLE orders (...);",
+        llm_config={"api_key": "sk-test", "api_base": "https://test/v1", "model": "gpt-test"},
+        mode="online",
+    )
+
+    assert plan.mode == "online"
+    assert plan.intent == "llm_plan"
+    assert any("orders.nope" in warning for warning in plan.warnings)

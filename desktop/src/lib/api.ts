@@ -224,6 +224,62 @@ export interface GuardrailCheckResult {
   message: string;
 }
 
+export interface QueryPlan {
+  intent: string;
+  tables: string[];
+  metrics: Array<{
+    name: string;
+    expression: string;
+    source_column: string;
+  }>;
+  dimensions: Array<{
+    name: string;
+    column: string;
+    transform: string | null;
+  }>;
+  filters: Array<{
+    column: string;
+    operator: string;
+    value: string;
+  }>;
+  joins: Array<{
+    left_table: string;
+    right_table: string;
+    condition: string;
+  }>;
+  order_by: string | null;
+  limit: number;
+  warnings?: string[];
+  mode?: string;
+}
+
+export interface TrustGateResult {
+  sql: string;
+  schemaWarnings: string[];
+  guardrail: GuardrailCheckResult;
+  riskLevel: "safe" | "warning" | "danger";
+  requiresConfirmation: boolean;
+  messages: string[];
+  canExecute?: boolean;
+}
+
+export interface GeneratedSqlResult {
+  sql: string;
+  model: string;
+  latencyMs: number;
+  guardrail: GuardrailCheckResult;
+  trustGate?: TrustGateResult;
+  mode: "offline" | "online";
+  schemaValidationWarnings: string[];
+  queryPlan?: QueryPlan;
+  selectedTables?: string[];
+  selectedColumns?: string[];
+  schemaLinkingReasons?: unknown[];
+  schemaContextSize?: number;
+  originalSchemaTableCount?: number;
+  selectedSchemaTableCount?: number;
+}
+
 export interface QueryResult {
   success: boolean;
   columns: string[];
@@ -464,7 +520,7 @@ export const api = {
     ),
 
   generateSql: (datasourceId: string, question: string, config?: { apiKey?: string; apiBase?: string; model?: string; optimizeRag?: boolean }, signal?: AbortSignal) =>
-    request<any>("/query/generate", {
+    request<GeneratedSqlResult>("/query/generate", {
       method: "POST",
       body: JSON.stringify({
         datasource_id: datasourceId,
