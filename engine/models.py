@@ -562,3 +562,91 @@ class WorkspaceTableScope(Base):  # type: ignore[misc,valid-type]
     enabled = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+
+# ─────────────────────────────────────────────
+# Agent Eval models
+# ─────────────────────────────────────────────
+
+class AgentGoldenTask(Base):  # type: ignore[misc,valid-type]
+    __tablename__ = "agent_golden_tasks"
+    __table_args__ = (
+        Index("ix_agent_golden_tasks_datasource", "datasource_id"),
+        Index("ix_agent_golden_tasks_project", "project_id"),
+        Index("ix_agent_golden_tasks_intent", "expected_intent"),
+        Index("ix_agent_golden_tasks_source", "source"),
+        Index("ix_agent_golden_tasks_source_case", "source_case_id"),
+    )
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    datasource_id = Column(String, ForeignKey("data_sources.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    question = Column(String, nullable=False)
+    workspace_context_json = Column(Text, nullable=False, default="{}")
+    expected_intent = Column(String, nullable=True)
+    expected_tools_json = Column(Text, nullable=False, default="[]")
+    forbidden_tools_json = Column(Text, nullable=False, default="[]")
+    expected_artifact_types_json = Column(Text, nullable=False, default="[]")
+    expected_final_contains_json = Column(Text, nullable=False, default="[]")
+    expected_approval_state = Column(String, nullable=True)
+    expected_sql_required = Column(Boolean, nullable=False, default=False)
+    tags_json = Column(Text, nullable=False, default="[]")
+    source = Column(String, nullable=False, default="internal")
+    source_case_id = Column(String, nullable=True)
+    difficulty = Column(String, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+
+class AgentEvalRun(Base):  # type: ignore[misc,valid-type]
+    __tablename__ = "agent_eval_runs"
+    __table_args__ = (
+        Index("ix_agent_eval_runs_datasource", "datasource_id"),
+        Index("ix_agent_eval_runs_project", "project_id"),
+        Index("ix_agent_eval_runs_status", "status"),
+    )
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    datasource_id = Column(String, ForeignKey("data_sources.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(String, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    source_filter_json = Column(Text, nullable=False, default="{}")
+    status = Column(String, nullable=False, default="running")
+    total_cases = Column(Integer, nullable=False, default=0)
+    passed_cases = Column(Integer, nullable=False, default=0)
+    failed_cases = Column(Integer, nullable=False, default=0)
+    pass_rate = Column(Float, nullable=True)
+    avg_latency_ms = Column(Float, nullable=True)
+    summary_json = Column(Text, nullable=False, default="{}")
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    case_results = relationship("AgentEvalCaseResult", back_populates="eval_run", cascade="all, delete-orphan")
+
+
+class AgentEvalCaseResult(Base):  # type: ignore[misc,valid-type]
+    __tablename__ = "agent_eval_case_results"
+    __table_args__ = (
+        Index("ix_agent_eval_case_results_run", "eval_run_id"),
+        Index("ix_agent_eval_case_results_task", "task_id"),
+        Index("ix_agent_eval_case_results_status", "status"),
+    )
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    eval_run_id = Column(String, ForeignKey("agent_eval_runs.id", ondelete="CASCADE"), nullable=False)
+    task_id = Column(String, ForeignKey("agent_golden_tasks.id", ondelete="CASCADE"), nullable=False)
+    run_id = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="pending")
+    score = Column(Float, nullable=False, default=0.0)
+    latency_ms = Column(Integer, nullable=True)
+    actual_intent = Column(String, nullable=True)
+    actual_tools_json = Column(Text, nullable=False, default="[]")
+    actual_artifact_types_json = Column(Text, nullable=False, default="[]")
+    actual_approval_state = Column(String, nullable=True)
+    actual_sql_json = Column(Text, nullable=False, default="[]")
+    failure_reasons_json = Column(Text, nullable=False, default="[]")
+    response_json = Column(Text, nullable=False, default="{}")
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+
+    eval_run = relationship("AgentEvalRun", back_populates="case_results")
