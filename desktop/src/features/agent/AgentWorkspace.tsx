@@ -4,15 +4,17 @@ import { AgentComposer } from "./AgentComposer";
 import { AgentNarrativeStream } from "./AgentNarrativeStream";
 import { ApprovalCard } from "./ApprovalCard";
 import { TraceDrawer } from "./TraceDrawer";
-import type { AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentStep, AgentVisibleEvent, FollowUpSuggestion } from "./types";
+import type { AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentStep, AgentVisibleEvent, AgentWorkspaceContext, FollowUpSuggestion } from "./types";
 
 interface AgentWorkspaceProps {
   result?: AgentRunResponse | null;
   draft?: AgentRunDraftState | null;
   disabled?: boolean;
   replaying?: boolean;
+  workspaceContext?: AgentWorkspaceContext | null;
   onOpenSql?: (sql: string) => void;
-  onAsk?: (question: string) => void;
+  onApplySql?: (sql: string) => void;
+  onAsk?: (question: string, workspaceContext?: AgentWorkspaceContext | null) => void;
   onSuggestion?: (suggestion: FollowUpSuggestion, result: AgentRunResponse) => void;
   onRuntimeEvent?: (event: AgentRuntimeEvent) => void;
   onResumeComplete?: (response: AgentRunResponse) => void;
@@ -23,7 +25,9 @@ export function AgentWorkspace({
   draft,
   disabled,
   replaying,
+  workspaceContext,
   onOpenSql,
+  onApplySql,
   onAsk,
   onSuggestion,
   onRuntimeEvent,
@@ -64,6 +68,8 @@ export function AgentWorkspace({
         onResumeComplete={onResumeComplete}
       />
 
+      <WorkspaceContextIndicator context={workspaceContext} />
+
       <AgentNarrativeStream
         events={events}
         messageBlocks={messageBlocks}
@@ -81,15 +87,52 @@ export function AgentWorkspace({
         activeArtifactId={activeArtifactId}
         onActiveArtifactChange={setSelectedArtifactId}
         onOpenSql={onOpenSql}
+        onApplySql={onApplySql}
       />
       {onAsk && result && !isWaitingApproval ? (
         <AgentComposer
           disabled={disabled}
           placeholder="Ask a follow-up about this result"
+          workspaceContext={workspaceContext}
           onSubmit={onAsk}
         />
       ) : null}
       <TraceDrawer steps={steps} traceEvents={traceEvents} />
+    </div>
+  );
+}
+
+function WorkspaceContextIndicator({ context }: { context?: AgentWorkspaceContext | null }) {
+  if (!context) return null;
+  const hasSql = Boolean(context.selected_sql || context.active_sql);
+  const hasResult = Boolean(context.last_query_result_preview);
+  const selectedTable = context.selected_table_names?.[0] || "";
+  const selectedArtifact = context.selected_artifact_id || "";
+  return (
+    <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, padding: 7, background: "var(--bg-secondary)" }}>
+      <ContextChip label="Current SQL" value={hasSql ? "ready" : "none"} active={hasSql} />
+      <ContextChip label="Last result" value={hasResult ? "ready" : "none"} active={hasResult} />
+      <ContextChip label="Selected table" value={selectedTable || "none"} active={Boolean(selectedTable)} />
+      <ContextChip label="Selected artifact" value={selectedArtifact ? "ready" : "none"} active={Boolean(selectedArtifact)} />
+    </section>
+  );
+}
+
+function ContextChip({ label, value, active }: { label: string; value: string; active: boolean }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ color: "var(--text-muted)", fontSize: "0.58rem", fontWeight: 700 }}>{label}</div>
+      <div
+        style={{
+          color: active ? "var(--text-primary)" : "var(--text-muted)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+        title={value}
+      >
+        {value}
+      </div>
     </div>
   );
 }

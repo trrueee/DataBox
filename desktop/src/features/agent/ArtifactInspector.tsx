@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ChartArtifactView } from "./artifacts/ChartArtifactView";
 import { ErrorArtifactView } from "./artifacts/ErrorArtifactView";
 import { InsightArtifactView } from "./artifacts/InsightArtifactView";
@@ -13,27 +13,22 @@ interface ArtifactInspectorProps {
   activeArtifactId?: string;
   onActiveArtifactChange?: (artifactId: string) => void;
   onOpenSql?: (sql: string) => void;
+  onApplySql?: (sql: string) => void;
 }
 
-export function ArtifactInspector({ artifacts, activeArtifactId, onActiveArtifactChange, onOpenSql }: ArtifactInspectorProps) {
-  const dockArtifacts = artifacts.filter((artifact) => artifact.presentation.mode !== "hidden");
+export function ArtifactInspector({ artifacts, activeArtifactId, onActiveArtifactChange, onOpenSql, onApplySql }: ArtifactInspectorProps) {
+  const dockArtifacts = useMemo(() => artifacts.filter((artifact) => artifact.presentation.mode !== "hidden"), [artifacts]);
   const [localActiveId, setLocalActiveId] = useState(dockArtifacts[0]?.id || "");
   const selectedId = activeArtifactId ?? localActiveId;
   const active = dockArtifacts.find((artifact) => artifact.id === selectedId) || dockArtifacts[0];
-  const dockArtifactIds = dockArtifacts.map((artifact) => artifact.id).join("|");
 
-  useEffect(() => {
-    if (!dockArtifacts.length) return;
-    if (selectedId && dockArtifacts.some((artifact) => artifact.id === selectedId)) return;
-    selectArtifact(dockArtifacts[0].id);
-  }, [dockArtifactIds, selectedId]);
-
-  if (!dockArtifacts.length || !active) return null;
-
-  function selectArtifact(artifactId: string) {
+  const selectArtifact = useCallback((artifactId: string) => {
     setLocalActiveId(artifactId);
     onActiveArtifactChange?.(artifactId);
-  }
+  }, [onActiveArtifactChange]);
+
+  if (!dockArtifacts.length || !active) return null;
+  const actionableSql = extractActionableSql(active);
 
   return (
     <section style={{ padding: 8, background: "var(--bg-secondary)" }}>
@@ -61,10 +56,57 @@ export function ArtifactInspector({ artifacts, activeArtifactId, onActiveArtifac
         ))}
       </div>
       <div style={{ marginTop: 8 }}>
+        {actionableSql ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
+            {onApplySql ? (
+              <button
+                className="btn-primary"
+                onClick={() => onApplySql(actionableSql)}
+                style={{ fontSize: "0.62rem", padding: "2px 7px" }}
+              >
+                Apply to SQL Editor
+              </button>
+            ) : null}
+            {onOpenSql ? (
+              <button
+                className="btn-secondary"
+                onClick={() => onOpenSql(actionableSql)}
+                style={{ fontSize: "0.62rem", padding: "2px 7px" }}
+              >
+                Open in SQL Editor
+              </button>
+            ) : null}
+            <button
+              className="btn-secondary"
+              onClick={() => void navigator.clipboard?.writeText(actionableSql)}
+              style={{ fontSize: "0.62rem", padding: "2px 7px" }}
+            >
+              Copy SQL
+            </button>
+          </div>
+        ) : null}
         <ArtifactView artifact={active} onOpenSql={onOpenSql} />
       </div>
     </section>
   );
+}
+
+function extractActionableSql(artifact: AgentArtifact): string {
+  const payload = artifact.payload || {};
+  for (const key of ["proposed_sql", "sql", "safe_sql"]) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  const suggestions = payload.suggestions;
+  if (Array.isArray(suggestions)) {
+    for (const suggestion of suggestions) {
+      if (suggestion && typeof suggestion === "object" && "proposed_sql" in suggestion) {
+        const sql = (suggestion as { proposed_sql?: unknown }).proposed_sql;
+        if (typeof sql === "string" && sql.trim()) return sql.trim();
+      }
+    }
+  }
+  return "";
 }
 
 function exportArtifact(artifact: AgentArtifact) {

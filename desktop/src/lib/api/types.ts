@@ -346,7 +346,7 @@ export interface AgentChartSuggestion {
 export interface AgentArtifact {
   id: string;
   semantic_id?: string | null;
-  type: "query_plan" | "sql" | "safety" | "table" | "chart" | "insight" | "recommendation" | "error";
+  type: "agent_plan" | "query_plan" | "sql" | "sql_suggestion" | "safety" | "table" | "chart" | "insight" | "recommendation" | "error";
   title: string;
   payload: Record<string, unknown>;
   presentation: {
@@ -409,6 +409,59 @@ export interface AgentFollowUpContext {
   previous_question?: string | null;
   previous_answer?: string | null;
   artifacts?: AgentContextArtifact[];
+}
+
+export interface AgentWorkspaceContext {
+  project_id?: string | null;
+  datasource_id: string;
+  active_sql?: string | null;
+  selected_sql?: string | null;
+  last_query_result_preview?: Record<string, unknown> | null;
+  last_error?: string | null;
+  selected_table_ids?: string[];
+  selected_table_names?: string[];
+  selected_column_refs?: string[];
+  selected_artifact_id?: string | null;
+  recent_agent_run_id?: string | null;
+  open_sql_tabs?: Array<Record<string, unknown>>;
+  editor_annotations?: Array<Record<string, unknown>>;
+  semantic_context?: Record<string, unknown>;
+}
+
+export interface AgentIntentPlan {
+  intent:
+    | "analysis"
+    | "explain_sql"
+    | "fix_sql"
+    | "optimize_sql"
+    | "rewrite_sql"
+    | "explain_result"
+    | "continue_from_artifact"
+    | "explain_schema"
+    | "unknown";
+  confidence?: "low" | "medium" | "high";
+  rationale?: string | null;
+  requires_context?: string[];
+}
+
+export interface AgentPlanStep {
+  id: string;
+  tool_name: string;
+  title?: string | null;
+  args?: Record<string, unknown>;
+  depends_on?: string[];
+  required?: boolean;
+}
+
+export interface AgentPlanDraft {
+  version: string;
+  intent: AgentIntentPlan;
+  steps: AgentPlanStep[];
+  should_execute_sql?: boolean;
+  context_summary?: string | null;
+  safety_notes?: string[];
+  model?: string | null;
+  raw_response?: Record<string, unknown> | null;
 }
 
 export interface AgentAnswer {
@@ -521,6 +574,7 @@ export interface AgentRunConfig {
   sessionId?: string;
   parentRunId?: string;
   followUpContext?: AgentFollowUpContext;
+  workspaceContext?: AgentWorkspaceContext;
 }
 
 export type AgentRuntimeEventType =

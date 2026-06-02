@@ -1,12 +1,14 @@
 import { useState } from "react";
+import type { AgentWorkspaceContext } from "./types";
 
 interface AgentComposerProps {
   disabled?: boolean;
   placeholder?: string;
-  onSubmit: (question: string) => void;
+  workspaceContext?: AgentWorkspaceContext | null;
+  onSubmit: (question: string, workspaceContext?: AgentWorkspaceContext | null) => void;
 }
 
-export function AgentComposer({ disabled, placeholder = "Ask a data question", onSubmit }: AgentComposerProps) {
+export function AgentComposer({ disabled, placeholder = "Ask a data question", workspaceContext, onSubmit }: AgentComposerProps) {
   const [question, setQuestion] = useState("");
 
   return (
@@ -15,7 +17,7 @@ export function AgentComposer({ disabled, placeholder = "Ask a data question", o
         event.preventDefault();
         const trimmed = question.trim();
         if (!trimmed) return;
-        onSubmit(trimmed);
+        onSubmit(trimmed, workspaceContext);
         setQuestion("");
       }}
       style={{ display: "flex", gap: 6 }}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
-import type { DataSource, GeneratedSqlResult } from "../lib/api";
+import type { DataSource, GeneratedSqlResult, QueryResult } from "../lib/api";
 import { AiBenchmarkDrawer } from "../components/AiBenchmarkDrawer";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useToast } from "../components/Toast";
@@ -24,6 +24,8 @@ interface QueryPageProps {
     resultState?: "idle" | "running" | "success" | "error" | "cancelled" | "timeout";
     sqlDraft?: string;
     dirty?: boolean;
+    lastQueryResultPreview?: QueryResult | null;
+    lastError?: string | null;
   }) => void;
 }
 
@@ -153,6 +155,8 @@ export const QueryPage = ({ datasource, initialDraft, actionTrigger, onStateChan
       resultState: activeEditorTab.status,
       sqlDraft: activeEditorTab.sql,
       dirty: activeEditorTab.sql !== activeEditorTab.savedSql,
+      lastQueryResultPreview: activeEditorTab.queryResult ?? null,
+      lastError: activeEditorTab.queryError ?? null,
     });
   }, [activeEditorTab, onStateChange]);
 

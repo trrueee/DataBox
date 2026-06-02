@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { MenuBar, type MenuDef } from "../components/MenuBar";
 import { api, createAgentRunDraft, reduceAgentRuntimeEvent } from "../lib/api";
-import type { AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, DataSource, FollowUpSuggestion, Project, SchemaTable } from "../lib/api";
+import type { AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentSessionRunSummary, DataSource, FollowUpSuggestion, Project, QueryResult, SchemaTable } from "../lib/api";
 import { EnvironmentsPage } from "./EnvironmentsPage";
 import { BackupsPage } from "./BackupsPage";
 import { DataSourcesPage } from "./DataSourcesPage";
@@ -30,6 +30,7 @@ import { DemoTourGuide } from "../components/DemoTourGuide";
 import { useToast } from "../components/Toast";
 import { buildAgentFollowUpContext } from "../features/agent/context";
 import { AgentWorkspace } from "../features/agent/AgentWorkspace";
+import { buildAgentWorkspaceContext } from "../features/agent/workspaceContext";
 import { SemanticSettingsPanel } from "../features/semantic/SemanticSettingsPanel";
 
 // Tab structure for the workspace
@@ -45,6 +46,8 @@ export interface WorkbenchTab {
   activeSubTab?: "data" | "schema" | "er" | "design";
   sqlDraft?: string;
   resultState?: "idle" | "running" | "success" | "error" | "timeout" | "cancelled";
+  lastQueryResultPreview?: QueryResult | null;
+  lastError?: string | null;
   lastExecutedAt?: number;
   actionTrigger?: {
     type: "execute" | "stop" | "validate" | "export" | "format";
@@ -67,7 +70,7 @@ interface WorkbenchPageProps {
   onCreateProject: (name: string) => Promise<void>;
 }
 
-type QueryTabStatePatch = Pick<WorkbenchTab, "resultState" | "sqlDraft" | "dirty">;
+type QueryTabStatePatch = Pick<WorkbenchTab, "resultState" | "sqlDraft" | "dirty" | "lastQueryResultPreview" | "lastError">;
 
 function compactValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "-";
@@ -423,7 +426,7 @@ function SessionHistoryPanel({
   replayingRunId,
   onReplay,
 }: {
-  runs: any[];
+  runs: AgentSessionRunSummary[];
   activeRunId: string | null;
   replayingRunId: string | null;
   onReplay: (runId: string) => void;
@@ -548,7 +551,7 @@ export const WorkbenchPage = ({
   const [aiMode, setAiMode] = useState<"sql" | "agent">("agent");
   const [aiLoading, setAiLoading] = useState(false);
   const [replayingRunId, setReplayingRunId] = useState<string | null>(null);
-  const [sessionRuns, setSessionRuns] = useState<any[]>([]);
+  const [sessionRuns, setSessionRuns] = useState<AgentSessionRunSummary[]>([]);
 
   // ── Load session runs when agent response changes ──
   useEffect(() => {
@@ -614,6 +617,25 @@ export const WorkbenchPage = ({
     return tabs.find(t => t.id === activeTabId) || null;
   }, [tabs, activeTabId]);
 
+  const selectedSchemaTable = useMemo(() => {
+    if (activeTab?.type !== "table" || !activeTab.tableName) return null;
+    return schemaTables.find((table) => table.table_name === activeTab.tableName) || activeTab.tableName;
+  }, [activeTab, schemaTables]);
+
+  const agentWorkspaceContext = useMemo(() => buildAgentWorkspaceContext({
+    currentProject: activeProject,
+    currentDatasource: activeDataSource,
+    activeSql: activeTab?.type === "query" ? activeTab.sqlDraft || "" : "",
+    selectedSql: activeTab?.type === "query" ? activeTab.sqlDraft || "" : "",
+    lastQueryResult: activeTab?.type === "query" ? activeTab.lastQueryResultPreview || null : null,
+    lastError: activeTab?.type === "query" ? activeTab.lastError || null : null,
+    selectedTable: selectedSchemaTable,
+    selectedColumns: [],
+    selectedArtifact: agentResponse?.artifacts?.[0] || null,
+    recentAgentRun: agentResponse,
+    openSqlTabs: tabs,
+  }), [activeProject, activeDataSource, activeTab, agentResponse, selectedSchemaTable, tabs]);
+
   const handleActiveQueryStateChange = useCallback((state: QueryTabStatePatch) => {
     if (!activeTabId) return;
     setTabs((prev) =>
@@ -622,10 +644,14 @@ export const WorkbenchPage = ({
         const nextResultState = state.resultState ?? tab.resultState;
         const nextSqlDraft = state.sqlDraft ?? tab.sqlDraft;
         const nextDirty = state.dirty ?? tab.dirty;
+        const nextLastQueryResultPreview = state.lastQueryResultPreview ?? tab.lastQueryResultPreview;
+        const nextLastError = state.lastError ?? tab.lastError;
         if (
           tab.resultState === nextResultState &&
           tab.sqlDraft === nextSqlDraft &&
-          tab.dirty === nextDirty
+          tab.dirty === nextDirty &&
+          tab.lastQueryResultPreview === nextLastQueryResultPreview &&
+          tab.lastError === nextLastError
         ) {
           return tab;
         }
@@ -638,6 +664,8 @@ export const WorkbenchPage = ({
           resultState: nextResultState,
           sqlDraft: nextSqlDraft,
           dirty: nextDirty,
+          lastQueryResultPreview: nextLastQueryResultPreview,
+          lastError: nextLastError,
           lastExecutedAt: terminalResult ? Date.now() : tab.lastExecutedAt,
         };
       }),
@@ -720,6 +748,22 @@ export const WorkbenchPage = ({
     setTabs(prev => [...prev, newTab]);
     setActiveTabId(id);
   }, [activeDataSource?.database_name, activeDataSource?.id, tabs]);
+
+  const handleApplySqlToEditor = useCallback((sql: string) => {
+    const trimmed = sql.trim();
+    if (!trimmed) return;
+    if (activeTab?.type === "query" && activeTabId) {
+      setTabs((prev) => prev.map((tab) => (
+        tab.id === activeTabId
+          ? { ...tab, sqlDraft: trimmed, dirty: true }
+          : tab
+      )));
+      showToast("SQL suggestion applied to the current editor.", "success");
+      return;
+    }
+    handleOpenQueryTab(trimmed, "Agent SQL");
+    showToast("SQL suggestion opened in a new editor.", "success");
+  }, [activeTab, activeTabId, handleOpenQueryTab, showToast]);
 
   const handleOpenTableTab = (tableName: string, subTab: "data" | "schema" | "er" | "design" = "data") => {
     const id = `table:${tableName}`;
@@ -807,6 +851,16 @@ export const WorkbenchPage = ({
       optimizeRag: true,
       execute: true,
     };
+    const workspaceContext = followUpFrom && agentWorkspaceContext
+      ? {
+          ...agentWorkspaceContext,
+          recent_agent_run_id: followUpFrom.run_id,
+          selected_artifact_id: followUpFrom.artifacts?.[0]?.id ?? agentWorkspaceContext.selected_artifact_id ?? null,
+        }
+      : agentWorkspaceContext;
+    if (workspaceContext) {
+      config.workspaceContext = workspaceContext;
+    }
     if (followUpFrom) {
       config.sessionId = followUpFrom.session_id;
       config.parentRunId = followUpFrom.run_id;
@@ -858,7 +912,7 @@ export const WorkbenchPage = ({
     } finally {
       setAiLoading(false);
     }
-  }, [activeDataSource]);
+  }, [activeDataSource, agentWorkspaceContext]);
 
   const handleAgentRuntimeEvent = useCallback((event: AgentRuntimeEvent) => {
     const fallbackQuestion = agentResponse?.question || aiPrompt || "Agent resume";
@@ -1622,7 +1676,9 @@ export const WorkbenchPage = ({
                     draft={agentDraft}
                     disabled={aiLoading}
                     replaying={!agentResponse?.run_id ? false : agentResponse.run_id !== agentDraft?.response?.run_id}
+                    workspaceContext={agentWorkspaceContext}
                     onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
+                    onApplySql={handleApplySqlToEditor}
                     onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
                     onSuggestion={handleAgentSuggestion}
                     onRuntimeEvent={handleAgentRuntimeEvent}
@@ -1931,7 +1987,9 @@ export const WorkbenchPage = ({
                         draft={agentDraft}
                         disabled={aiLoading}
                         replaying={!agentResponse?.run_id ? false : agentResponse.run_id !== agentDraft?.response?.run_id}
+                        workspaceContext={agentWorkspaceContext}
                         onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
+                        onApplySql={handleApplySqlToEditor}
                         onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
                         onSuggestion={handleAgentSuggestion}
                         onRuntimeEvent={handleAgentRuntimeEvent}

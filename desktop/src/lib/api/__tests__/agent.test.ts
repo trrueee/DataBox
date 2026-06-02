@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createAgentRunDraft,
+  agentApi,
   reduceAgentRuntimeEvent,
   resolveAgentApproval,
   streamResumeAgentRun,
@@ -67,6 +68,27 @@ describe("agent runtime reducer", () => {
 });
 
 describe("agent approval api", () => {
+  it("sends workspace_context with agent run payloads", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(completedResponse), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await agentApi.runAgentQuery("ds-1", "Explain this SQL", {
+      workspaceContext: {
+        datasource_id: "ds-1",
+        active_sql: "SELECT id FROM users LIMIT 10",
+        selected_table_names: ["users"],
+      },
+    });
+
+    const [, options] = fetchMock.mock.calls[0];
+    const body = JSON.parse(String(options?.body));
+    expect(body.workspace_context).toEqual({
+      datasource_id: "ds-1",
+      active_sql: "SELECT id FROM users LIMIT 10",
+      selected_table_names: ["users"],
+    });
+  });
+
   it("posts approval decisions to the run-scoped endpoint", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ...approval, status: "approved" }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);

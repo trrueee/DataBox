@@ -131,6 +131,7 @@ function buildAgentRunPayload(datasourceId: string, question: string, config?: A
     api_key: config?.apiKey,
     api_base: config?.apiBase,
     model_name: config?.model,
+    workspace_context: config?.workspaceContext,
     optimize_rag: config?.optimizeRag ?? true,
     execute: config?.execute ?? true,
   };
