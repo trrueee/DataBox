@@ -18,6 +18,7 @@ from engine.agent.tools import (
     validate_sql_tool,
 )
 from engine.agent.types import ToolObservation
+from engine.agent.workspace_tools import WORKSPACE_TOOL_NAMES, build_workspace_tools
 
 
 DEFAULT_AGENT_TOOL_NAMES = [
@@ -32,6 +33,7 @@ DEFAULT_AGENT_TOOL_NAMES = [
     "chart.suggest",
     "followup.suggest",
     "answer.synthesize",
+    *WORKSPACE_TOOL_NAMES,
 ]
 
 
@@ -43,7 +45,7 @@ def build_default_tool_registry() -> ToolRegistry:
 
 
 def _default_tools() -> list[FunctionAgentTool]:
-    return [
+    tools = [
         _tool("followup.load_context", "Load and normalize follow-up context.", _load_followup_context),
         _tool("schema.build_context", "Build semantic schema context for the request.", _build_schema_context),
         _tool("query_plan.build", "Build a fixed query plan from semantic context.", _build_query_plan),
@@ -63,6 +65,8 @@ def _default_tools() -> list[FunctionAgentTool]:
         _tool("followup.suggest", "Suggest evidence-aware follow-up questions.", _suggest_followups),
         _tool("answer.synthesize", "Synthesize the final evidence-grounded answer.", _answer_synthesizer),
     ]
+    tools.extend(build_workspace_tools())
+    return tools
 
 
 def _tool(
