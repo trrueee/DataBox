@@ -760,3 +760,281 @@ def test_persistence_recent_run_recovery(db_session, demo_datasource, monkeypatc
     assert recent is not None
     assert recent.run_id == res.run_id
     assert recent.question == "recent run test"
+
+
+# ── Replay tests ──
+
+
+def test_list_run_artifacts_returns_ordered_artifacts(db_session, demo_datasource, monkeypatch) -> None:
+    from engine.agent import AgentRunRequest, DataBoxAgentRuntime
+    from engine.agent.persistence import list_run_artifacts
+    from engine.schema_sync import sync_schema
+
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "SELECT id, username FROM users LIMIT 3",
+            "model": "test", "mode": "offline", "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    monkeypatch.setattr("engine.agent.tools._render_sql_from_query_plan", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+
+    req = AgentRunRequest(
+        datasource_id=demo_datasource.id,
+        question="ordered artifacts",
+        execute=True,
+        session_id="replay-artifacts",
+    )
+
+    res = DataBoxAgentRuntime(db_session).run(req)
+    assert res.success is True
+
+    artifacts = list_run_artifacts(db_session, res.run_id)
+    assert len(artifacts) >= 4
+    sequences = [a.get("sequence") for a in artifacts if a.get("sequence") is not None]
+    assert sequences == sorted(sequences)
+
+    expected_semantic = {"query_plan", "sql_candidate", "safety_report", "result_table"}
+    found_semantic = {a["semantic_id"] for a in artifacts}
+    assert expected_semantic.issubset(found_semantic)
+
+
+def test_list_run_events_returns_ordered_runtime_events(db_session, demo_datasource, monkeypatch) -> None:
+    from engine.agent import AgentRunRequest, DataBoxAgentRuntime
+    from engine.agent.persistence import list_run_events
+    from engine.schema_sync import sync_schema
+
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "SELECT id FROM users LIMIT 1",
+            "model": "test", "mode": "offline", "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    monkeypatch.setattr("engine.agent.tools._render_sql_from_query_plan", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+
+    req = AgentRunRequest(
+        datasource_id=demo_datasource.id,
+        question="ordered events",
+        execute=True,
+        session_id="replay-events",
+    )
+
+    res = DataBoxAgentRuntime(db_session).run(req)
+    assert res.success is True
+
+    events = list_run_events(db_session, res.run_id)
+    assert len(events) > 0
+    assert events[0]["type"] == "agent.run.started"
+    assert events[-1]["type"] == "agent.run.completed"
+
+    seqs = [e["sequence"] for e in events]
+    assert seqs == sorted(seqs)
+
+    types = [e["type"] for e in events]
+    assert "agent.step.started" in types
+    assert "agent.step.completed" in types
+    assert "agent.artifact.created" in types
+    assert "agent.answer.completed" in types
+
+
+def test_list_run_trace_returns_redacted_trace_events(db_session, demo_datasource, monkeypatch) -> None:
+    from engine.agent import AgentRunRequest, DataBoxAgentRuntime
+    from engine.agent.persistence import list_run_trace_events
+    from engine.schema_sync import sync_schema
+
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "SELECT id FROM users LIMIT 1",
+            "model": "test", "mode": "offline", "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    monkeypatch.setattr("engine.agent.tools._render_sql_from_query_plan", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+
+    req = AgentRunRequest(
+        datasource_id=demo_datasource.id,
+        question="redacted trace",
+        execute=True,
+        api_key="secret-key-12345",
+        session_id="replay-trace",
+    )
+
+    res = DataBoxAgentRuntime(db_session).run(req)
+    assert res.success is True
+
+    trace_events = list_run_trace_events(db_session, res.run_id)
+    assert len(trace_events) > 0
+
+    SENSITIVE = {"api_key", "password", "token", "secret", "ciphertext", "nonce", "private_key"}
+
+    def _has_sensitive_key(obj: object, seen: set | None = None) -> set[str]:
+        found: set[str] = set()
+        if seen is None:
+            seen = set()
+        obj_id = id(obj)
+        if obj_id in seen:
+            return found
+        seen.add(obj_id)
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                ks = str(k)
+                for s in SENSITIVE:
+                    if s == ks:
+                        found.add(s)
+                found.update(_has_sensitive_key(v, seen))
+        elif isinstance(obj, list):
+            for item in obj:
+                found.update(_has_sensitive_key(item, seen))
+        return found
+
+    for event in trace_events:
+        found_keys = _has_sensitive_key(event)
+        assert not found_keys, f"Sensitive keys {found_keys} found in trace event"
+
+
+def test_replay_does_not_execute_sql(db_session, demo_datasource, monkeypatch) -> None:
+    from engine.agent import AgentRunRequest, DataBoxAgentRuntime
+    from engine.agent.persistence import get_run, list_run_artifacts
+    from engine.schema_sync import sync_schema
+
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "SELECT id, username FROM users LIMIT 3",
+            "model": "test", "mode": "offline", "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    execute_called = False
+
+    def fail_execute(*_args, **_kwargs):
+        nonlocal execute_called
+        execute_called = True
+        raise RuntimeError("must not execute during replay")
+
+    monkeypatch.setattr("engine.agent.tools._render_sql_from_query_plan", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+
+    req = AgentRunRequest(
+        datasource_id=demo_datasource.id,
+        question="replay no execute",
+        execute=True,
+        session_id="replay-noexec",
+    )
+
+    res = DataBoxAgentRuntime(db_session).run(req)
+    run_id = res.run_id
+
+    monkeypatch.setattr("engine.agent.tools.execute_query", fail_execute)
+
+    restored = get_run(db_session, run_id)
+    assert restored is not None
+    assert restored.run_id == run_id
+    assert restored.success == res.success
+    assert "SELECT" in (restored.sql or "")
+
+    artifacts = list_run_artifacts(db_session, run_id)
+    assert any(a["type"] == "table" for a in artifacts)
+
+    assert not execute_called, "get_run must not trigger SQL execution"
+
+
+def test_restored_run_can_start_followup(db_session, demo_datasource, monkeypatch) -> None:
+    from engine.agent import AgentRunRequest, DataBoxAgentRuntime
+    from engine.agent.persistence import get_run
+    from engine.schema_sync import sync_schema
+
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "SELECT id, username FROM users LIMIT 3",
+            "model": "test", "mode": "offline", "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    monkeypatch.setattr("engine.agent.tools._render_sql_from_query_plan", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+
+    first_req = AgentRunRequest(
+        datasource_id=demo_datasource.id,
+        question="replay followup parent",
+        execute=True,
+        session_id="replay-followup",
+    )
+    first_res = DataBoxAgentRuntime(db_session).run(first_req)
+    assert first_res.success is True
+
+    restored = get_run(db_session, first_res.run_id)
+    assert restored is not None
+    assert restored.session_id == "replay-followup"
+
+    followup_req = AgentRunRequest(
+        datasource_id=demo_datasource.id,
+        question="drill down from replay",
+        execute=True,
+        parent_run_id=restored.run_id,
+    )
+    followup_res = DataBoxAgentRuntime(db_session).run(followup_req)
+    assert followup_res.success is True
+    assert followup_res.session_id == "replay-followup"
+    assert followup_res.parent_run_id == restored.run_id
+    assert followup_res.referenced_artifact_ids
+    assert followup_res.steps[0].name == "load_follow_up_context"
+
+
+def test_missing_run_artifacts_returns_empty(db_session) -> None:
+    from engine.agent.persistence import list_run_artifacts
+    artifacts = list_run_artifacts(db_session, "nonexistent-run-id")
+    assert artifacts == []
+
+
+def test_session_runs_sorted_and_include_status(db_session, demo_datasource, monkeypatch) -> None:
+    from engine.agent import AgentRunRequest, DataBoxAgentRuntime
+    from engine.agent.persistence import list_session_runs
+    from engine.schema_sync import sync_schema
+
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "SELECT id FROM users LIMIT 1",
+            "model": "test", "mode": "offline", "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    monkeypatch.setattr("engine.agent.tools._render_sql_from_query_plan", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+
+    session_id = "sorted-session-runs"
+    for i in range(3):
+        req = AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question=f"question {i + 1}",
+            execute=True,
+            session_id=session_id,
+        )
+        DataBoxAgentRuntime(db_session).run(req)
+
+    runs = list_session_runs(db_session, session_id)
+    assert len(runs) == 3
+    for r in runs:
+        assert "run_id" in r
+        assert "status" in r
+        assert "question" in r
+        assert "artifact_count" in r
+        assert r["status"] in ("success", "failed", "running")
+
+    timestamps = [r["created_at"] for r in runs if r["created_at"]]
+    assert timestamps == sorted(timestamps, reverse=True), "runs should be sorted newest first"

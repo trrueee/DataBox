@@ -9,12 +9,13 @@ interface AgentWorkspaceProps {
   result?: AgentRunResponse | null;
   draft?: AgentRunDraftState | null;
   disabled?: boolean;
+  replaying?: boolean;
   onOpenSql?: (sql: string) => void;
   onAsk?: (question: string) => void;
   onSuggestion?: (suggestion: FollowUpSuggestion, result: AgentRunResponse) => void;
 }
 
-export function AgentWorkspace({ result, draft, disabled, onOpenSql, onAsk, onSuggestion }: AgentWorkspaceProps) {
+export function AgentWorkspace({ result, draft, disabled, replaying, onOpenSql, onAsk, onSuggestion }: AgentWorkspaceProps) {
   const isRunningDraft = Boolean(draft && draft.status === "running" && !result);
   const artifacts = result?.artifacts || draft?.artifacts || [];
   const events = result?.events || draftVisibleEvents(draft);
@@ -34,7 +35,7 @@ export function AgentWorkspace({ result, draft, disabled, onOpenSql, onAsk, onSu
     <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: "0.68rem", lineHeight: 1.45 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
         <span className={`status-badge ${success ? "status-badge-success" : "status-badge-error"}`}>
-          {isRunningDraft ? "Agent running" : success ? "Agent answer" : "Agent stopped"}
+          {isRunningDraft ? "Agent running" : replaying ? "Agent replay" : success ? "Agent answer" : "Agent stopped"}
         </span>
         {error ? <span style={{ color: "var(--accent-red)", textAlign: "right" }}>{error}</span> : null}
       </div>

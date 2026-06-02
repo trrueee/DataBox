@@ -45,6 +45,21 @@ def api_get_recent_agent_run(datasource_id: str = Query(...), db: Session = Depe
     return result
 
 
+@router.get("/query/agent-runs/{run_id}/artifacts")
+def api_get_run_artifacts(run_id: str, db: Session = Depends(get_db)):
+    return agent_persistence.list_run_artifacts(db, run_id)
+
+
+@router.get("/query/agent-runs/{run_id}/events")
+def api_get_run_events(run_id: str, db: Session = Depends(get_db)):
+    return agent_persistence.list_run_events(db, run_id)
+
+
+@router.get("/query/agent-runs/{run_id}/trace")
+def api_get_run_trace(run_id: str, db: Session = Depends(get_db)):
+    return agent_persistence.list_run_trace_events(db, run_id)
+
+
 @router.post("/query/agent-run", response_model=AgentRunResponse)
 def api_agent_run(req: AgentRunRequest, db: Session = Depends(get_db)) -> AgentRunResponse:
     try:

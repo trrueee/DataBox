@@ -186,8 +186,47 @@ def complete_run(db: Session, response: AgentRunResponse) -> None:
         run.completed_at = datetime.now(UTC)
         run.updated_at = datetime.now(UTC)
         db.flush()
+        _save_trace_events(db, response)
     except Exception:
         logger.exception("Failed to complete run %s", response.run_id)
+
+
+def _save_trace_events(db: Session, response: AgentRunResponse) -> None:
+    if not response.trace_events:
+        return
+    for idx, trace in enumerate(response.trace_events):
+        try:
+            record = AgentTraceEventRecord(
+                id=f"trace_{response.run_id[:8]}_{idx}_{trace.sequence or idx}",
+                run_id=response.run_id,
+                session_id=response.session_id,
+                sequence=trace.sequence or idx + 1,
+                type=trace.type,
+                event_json=_safe_json(_redact_trace_for_storage(trace.model_dump())),
+                created_at_ms=0,
+                created_at=datetime.now(UTC),
+            )
+            db.add(record)
+        except Exception:
+            logger.warning("Failed to save trace event %s", trace.event_id)
+    db.flush()
+
+
+def _redact_trace_for_storage(data: dict[str, Any]) -> dict[str, Any]:
+    result = {}
+    for k, v in data.items():
+        if k in _SENSITIVE_KEYS:
+            continue
+        if isinstance(v, dict):
+            result[k] = _redact_trace_for_storage(v)
+        elif isinstance(v, list):
+            result[k] = [
+                _redact_trace_for_storage(item) if isinstance(item, dict) else item
+                for item in v
+            ]
+        else:
+            result[k] = v
+    return result
 
 
 def fail_run(
@@ -228,19 +267,25 @@ def list_session_runs(db: Session, session_id: str) -> list[dict[str, Any]]:
         .order_by(AgentRun.created_at.desc())
         .all()
     )
-    return [
-        {
+    result = []
+    for r in runs:
+        artifact_count = (
+            db.query(AgentArtifactRecord)
+            .filter(AgentArtifactRecord.run_id == r.id)
+            .count()
+        )
+        result.append({
             "run_id": r.id,
             "session_id": r.session_id,
             "parent_run_id": r.parent_run_id,
             "question": r.question,
             "status": r.status,
             "error": r.error,
+            "artifact_count": artifact_count,
             "created_at": r.created_at.isoformat() if r.created_at else None,
             "completed_at": r.completed_at.isoformat() if r.completed_at else None,
-        }
-        for r in runs
-    ]
+        })
+    return result
 
 
 def get_recent_run(db: Session, datasource_id: str) -> AgentRunResponse | None:
@@ -295,6 +340,105 @@ def build_followup_context_from_run(
             for artifact in artifacts[:8]
         ],
     )
+
+
+def list_run_artifacts(db: Session, run_id: str) -> list[dict[str, Any]]:
+    records = (
+        db.query(AgentArtifactRecord)
+        .filter(AgentArtifactRecord.run_id == run_id)
+        .order_by(AgentArtifactRecord.sequence)
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "run_id": r.run_id,
+            "semantic_id": r.semantic_id,
+            "type": r.type,
+            "title": r.title,
+            "produced_by_step": r.produced_by_step,
+            "depends_on": (_parse_json(r.depends_on_json) or {}).get("depends_on", []),
+            "payload": _parse_json(r.payload_json) or {},
+            "presentation": _parse_json(r.presentation_json) or {},
+            "refs": _parse_json(r.refs_json) or {},
+            "sequence": r.sequence,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in records
+    ]
+
+
+def list_run_events(db: Session, run_id: str) -> list[dict[str, Any]]:
+    records = (
+        db.query(AgentRuntimeEventRecord)
+        .filter(AgentRuntimeEventRecord.run_id == run_id)
+        .order_by(AgentRuntimeEventRecord.sequence)
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "run_id": r.run_id,
+            "sequence": r.sequence,
+            "type": r.type,
+            "event": _parse_json(r.event_json) or {},
+            "created_at_ms": r.created_at_ms,
+        }
+        for r in records
+    ]
+
+
+def list_run_trace_events(db: Session, run_id: str) -> list[dict[str, Any]]:
+    records = (
+        db.query(AgentTraceEventRecord)
+        .filter(AgentTraceEventRecord.run_id == run_id)
+        .order_by(AgentTraceEventRecord.sequence)
+        .all()
+    )
+    return [
+        _redact_trace_event(_parse_json(r.event_json) or {}, r)
+        for r in records
+    ]
+
+
+def restore_artifact(db: Session, artifact_id: str) -> dict[str, Any] | None:
+    record = db.query(AgentArtifactRecord).filter(AgentArtifactRecord.id == artifact_id).first()
+    if record is None:
+        return None
+    return {
+        "id": record.id,
+        "run_id": record.run_id,
+        "semantic_id": record.semantic_id,
+        "type": record.type,
+        "title": record.title,
+        "produced_by_step": record.produced_by_step,
+        "depends_on": (_parse_json(record.depends_on_json) or {}).get("depends_on", []),
+        "payload": _parse_json(record.payload_json) or {},
+        "presentation": _parse_json(record.presentation_json) or {},
+        "refs": _parse_json(record.refs_json) or {},
+        "sequence": record.sequence,
+    }
+
+
+def restore_runtime_event(db: Session, event_id: str) -> dict[str, Any] | None:
+    record = db.query(AgentRuntimeEventRecord).filter(AgentRuntimeEventRecord.id == event_id).first()
+    if record is None:
+        return None
+    return {
+        "id": record.id,
+        "run_id": record.run_id,
+        "sequence": record.sequence,
+        "type": record.type,
+        "event": _parse_json(record.event_json) or {},
+        "created_at_ms": record.created_at_ms,
+    }
+
+
+def _redact_trace_event(
+    event_data: dict[str, Any],
+    _record: AgentTraceEventRecord,
+) -> dict[str, Any]:
+    return _redact_trace_for_storage(event_data)
 
 
 def _load_run_artifacts(db: Session, run_id: str) -> list[AgentArtifactRecord]:

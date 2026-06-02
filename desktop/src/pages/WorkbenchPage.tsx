@@ -416,6 +416,95 @@ function getModuleTag(tableName: string): string {
   return "通用模块";
 }
 
+function SessionHistoryPanel({
+  runs,
+  activeRunId,
+  replayingRunId,
+  onReplay,
+}: {
+  runs: any[];
+  activeRunId: string | null;
+  replayingRunId: string | null;
+  onReplay: (runId: string) => void;
+}) {
+  const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
+    success: { bg: "var(--accent-green)", color: "#fff", label: "Success" },
+    failed: { bg: "var(--accent-red)", color: "#fff", label: "Failed" },
+    running: { bg: "var(--accent-amber)", color: "#fff", label: "Running" },
+  };
+
+  return (
+    <section style={{ padding: 8, background: "var(--bg-secondary)", marginTop: 8 }}>
+      <div style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 6 }}>
+        Session History
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {runs.map((run) => {
+          const badge = STATUS_BADGE[run.status] || STATUS_BADGE.failed;
+          const isActive = run.run_id === activeRunId;
+          const isLoading = run.run_id === replayingRunId;
+          return (
+            <button
+              key={run.run_id}
+              onClick={() => onReplay(run.run_id)}
+              disabled={isLoading}
+              className="btn-ghost"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto",
+                alignItems: "center",
+                gap: 6,
+                width: "100%",
+                padding: "4px 6px",
+                border: `1px solid ${isActive ? "var(--accent-indigo)" : "var(--border-light)"}`,
+                borderRadius: 4,
+                background: isActive ? "rgba(74,91,192,0.06)" : "transparent",
+                textAlign: "left",
+                cursor: isLoading ? "wait" : "pointer",
+                opacity: isLoading ? 0.6 : 1,
+                fontSize: "0.66rem",
+              }}
+            >
+              <div style={{ overflow: "hidden" }}>
+                <div style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  color: "var(--text-primary)",
+                  fontSize: "0.66rem",
+                  marginBottom: 2,
+                }}>
+                  {run.question || "(no question)"}
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", color: "var(--text-muted)", fontSize: "0.6rem" }}>
+                  <span>{run.artifact_count ?? 0} artifacts</span>
+                  {run.created_at && (
+                    <span>{new Date(run.created_at).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit" })}</span>
+                  )}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "0.58rem",
+                  fontWeight: 700,
+                  padding: "1px 5px",
+                  borderRadius: 3,
+                  background: badge.bg,
+                  color: badge.color,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {isLoading ? "..." : badge.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+
 export const WorkbenchPage = ({
   projects,
   activeProject,
@@ -455,6 +544,38 @@ export const WorkbenchPage = ({
   const [agentStreamEvents, setAgentStreamEvents] = useState<AgentRuntimeEvent[]>([]);
   const [aiMode, setAiMode] = useState<"sql" | "agent">("agent");
   const [aiLoading, setAiLoading] = useState(false);
+  const [replayingRunId, setReplayingRunId] = useState<string | null>(null);
+  const [sessionRuns, setSessionRuns] = useState<any[]>([]);
+
+  // ── Load session runs when agent response changes ──
+  useEffect(() => {
+    if (!agentResponse?.session_id) return;
+    api.listAgentSessionRuns(agentResponse.session_id)
+      .then(setSessionRuns)
+      .catch(() => setSessionRuns([]));
+  }, [agentResponse?.session_id]);
+
+  // ── Replay a historical run ──
+  const handleReplayRun = useCallback(async (runId: string) => {
+    if (!activeDataSource) return;
+    setReplayingRunId(runId);
+    setAiMode("agent");
+    setAiPanelCollapsed(false);
+    try {
+      const res = await api.getAgentRun(runId);
+      if (res) {
+        setAgentResponse(res);
+        setAgentDraft(null);
+        setAgentStreamEvents([]);
+        setAiResponse("");
+        setAiLoading(false);
+      }
+    } catch {
+      // Run not found — ignore
+    } finally {
+      setReplayingRunId(null);
+    }
+  }, [activeDataSource]);
 
   // Tree context menu
   const [treeContextMenu, setTreeContextMenu] = useState<{
@@ -711,6 +832,9 @@ export const WorkbenchPage = ({
         },
       );
       setAgentResponse(res);
+      if (res.session_id) {
+        api.listAgentSessionRuns(res.session_id).then(setSessionRuns).catch(() => {});
+      }
       setAgentDraft((draft) => draft ? {
         ...draft,
         status: res.success ? "completed" : "failed",
@@ -1453,10 +1577,19 @@ export const WorkbenchPage = ({
                     result={agentResponse}
                     draft={agentDraft}
                     disabled={aiLoading}
+                    replaying={!agentResponse?.run_id ? false : agentResponse.run_id !== agentDraft?.response?.run_id}
                     onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
                     onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
                     onSuggestion={handleAgentSuggestion}
                   />
+                  {sessionRuns.length > 1 && (
+                    <SessionHistoryPanel
+                      runs={sessionRuns}
+                      activeRunId={agentResponse?.run_id || agentDraft?.runId || null}
+                      replayingRunId={replayingRunId}
+                      onReplay={handleReplayRun}
+                    />
+                  )}
                 </div>
               ) : aiLoading && aiMode === "agent" ? (
                 <div style={{ display: "grid", placeItems: "center", height: "100%", padding: 30, background: "var(--bg-primary)" }}>
@@ -1746,14 +1879,25 @@ export const WorkbenchPage = ({
 
                 <section style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                   {hasLiveAgentDraft || agentResponse ? (
-                    <AgentWorkspace
-                      result={agentResponse}
-                      draft={agentDraft}
-                      disabled={aiLoading}
-                      onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
-                      onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
-                      onSuggestion={handleAgentSuggestion}
-                    />
+                    <>
+                      <AgentWorkspace
+                        result={agentResponse}
+                        draft={agentDraft}
+                        disabled={aiLoading}
+                        replaying={!agentResponse?.run_id ? false : agentResponse.run_id !== agentDraft?.response?.run_id}
+                        onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
+                        onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
+                        onSuggestion={handleAgentSuggestion}
+                      />
+                      {sessionRuns.length > 1 && (
+                        <SessionHistoryPanel
+                          runs={sessionRuns}
+                          activeRunId={agentResponse?.run_id || agentDraft?.runId || null}
+                          replayingRunId={replayingRunId}
+                          onReplay={handleReplayRun}
+                        />
+                      )}
+                    </>
                   ) : aiResponse ? (
                     <div style={{ padding: 7, background: "var(--bg-secondary)", fontSize: "0.68rem", lineHeight: 1.45 }}>
                       <div style={{ fontWeight: 700, color: "var(--accent-indigo)", marginBottom: 4, fontSize: "0.64rem" }}>

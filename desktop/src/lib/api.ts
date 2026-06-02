@@ -932,6 +932,15 @@ export const api = {
   getRecentAgentRun: (datasourceId: string) =>
     request<AgentRunResponse | null>(`/query/agent-runs/recent?datasource_id=${encodeURIComponent(datasourceId)}`),
 
+  getAgentRunArtifacts: (runId: string) =>
+    request<any[]>(`/query/agent-runs/${encodeURIComponent(runId)}/artifacts`),
+
+  getAgentRunEvents: (runId: string) =>
+    request<any[]>(`/query/agent-runs/${encodeURIComponent(runId)}/events`),
+
+  getAgentRunTrace: (runId: string) =>
+    request<any[]>(`/query/agent-runs/${encodeURIComponent(runId)}/trace`),
+
   listGoldenSql: (datasourceId: string) =>
     request<any[]>(`/golden-sql?datasource_id=${datasourceId}`),
 
