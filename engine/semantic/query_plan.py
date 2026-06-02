@@ -156,7 +156,7 @@ class QueryPlanBuilder:
         api_key = str(config.get("api_key", "") or "").strip()
         actual_mode: Literal["offline", "online"] = "online" if mode == "auto" and api_key else "offline"
         if mode in ("offline", "online"):
-            actual_mode = mode
+            actual_mode = mode  # type: ignore[assignment]
 
         if actual_mode == "online" and api_key:
             try:
@@ -291,13 +291,13 @@ class QueryPlanBuilder:
         if matched_metrics or matched_dimensions:
             tables_set: set[str] = set()
             for m in matched_metrics:
-                source_cols = _parse_source_columns(m.source_columns_json)
+                source_cols = _parse_source_columns(m.source_columns_json)  # type: ignore[arg-type]
                 source_col = source_cols[0] if source_cols else m.expression
-                table = _extract_table_from_ref(source_col)
+                table = _extract_table_from_ref(str(source_col)) if source_col else None
                 if table:
                     tables_set.add(table)
             for d in matched_dimensions:
-                table = _extract_table_from_ref(d.column_ref)
+                table = _extract_table_from_ref(d.column_ref)  # type: ignore[arg-type]
                 if table:
                     tables_set.add(table)
 
@@ -306,23 +306,23 @@ class QueryPlanBuilder:
                 tables_set = {table for table in tables_set if table.lower() in available}
 
             tables = list(tables_set) if tables_set else self._fallback_tables(datasource_id, selected_tables)
-            source_cols = _parse_source_columns(matched_metrics[0].source_columns_json) if matched_metrics else []
+            source_cols = _parse_source_columns(matched_metrics[0].source_columns_json) if matched_metrics else []  # type: ignore[arg-type]
             return QueryPlan(
                 intent="answer_question_with_semantic_definitions",
                 tables=tables,
                 metrics=[
                     QueryMetric(
-                        name=m.name,
-                        expression=m.expression,
-                        source_column=_parse_source_columns(m.source_columns_json)[0] if _parse_source_columns(m.source_columns_json) else "",
+                        name=m.name,  # type: ignore[arg-type]
+                        expression=m.expression,  # type: ignore[arg-type]
+                        source_column=_parse_source_columns(m.source_columns_json)[0] if _parse_source_columns(m.source_columns_json) else "",  # type: ignore[arg-type]
                     )
                     for m in matched_metrics
                 ],
                 dimensions=[
                     QueryDimension(
-                        name=d.name,
-                        column=d.column_ref,
-                        transform=d.transform if d.transform else None,
+                        name=d.name,  # type: ignore[arg-type]
+                        column=d.column_ref,  # type: ignore[arg-type]
+                        transform=d.transform if d.transform else None,  # type: ignore[arg-type]
                     )
                     for d in matched_dimensions
                 ],

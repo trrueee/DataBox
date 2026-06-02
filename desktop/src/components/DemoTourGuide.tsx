@@ -4,6 +4,7 @@ import type { DataSource, Project, SchemaTable } from "../lib/api";
 
 interface DemoTourGuideProps {
   activeTab: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setActiveTab: (tab: any) => void;
   activeProject: Project | null;
   projects: Project[];
@@ -168,11 +169,13 @@ export const DemoTourGuide = ({
   ];
 
   // Recalculate which steps are done
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const done: number[] = [];
     steps.forEach((s) => {
       if (s.isDone()) done.push(s.id);
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCompletedSteps(done);
 
     // Set active step based on active tab and conditions

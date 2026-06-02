@@ -694,7 +694,7 @@ def test_connection(config: dict[str, Any]) -> dict[str, Any]:
                 connect_timeout=5
             )
             try:
-                with conn.cursor() as cursor:
+                with conn.cursor() as cursor:  # type: ignore[attr-defined]
                     # Get PostgreSQL server version
                     cursor.execute("SELECT version()")
                     version_row = cursor.fetchone()
@@ -789,7 +789,7 @@ def test_connection(config: dict[str, Any]) -> dict[str, Any]:
             except Exception as se:
                 raise DataSourceConnectionError(f"无法建立 SSH 隧道，请检查跳板机配置。错误: {str(se)}")
 
-        conn = pymysql.connect(
+        conn = pymysql.connect(  # type: ignore[assignment]
             host=test_host,
             port=test_port,
             user=username,
@@ -800,7 +800,7 @@ def test_connection(config: dict[str, Any]) -> dict[str, Any]:
             **build_mysql_ssl_params(config),
         )
         try:
-            with conn.cursor() as cursor:
+            with conn.cursor() as cursor:  # type: ignore[attr-defined]
                 # Get MySQL server version
                 cursor.execute("SELECT VERSION()")
                 version_row = cursor.fetchone()

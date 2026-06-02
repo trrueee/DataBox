@@ -83,10 +83,6 @@ export const DataSourcesPage = ({
     ssl_verify_identity: true,
   });
 
-  useEffect(() => {
-    void fetchDataSources();
-  }, [activeProject?.id]);
-
   const fetchDataSources = async () => {
     try {
       setLoading(true);
@@ -95,6 +91,11 @@ export const DataSourcesPage = ({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchDataSources();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject?.id]);
 
   const syncLists = async () => {
     await fetchDataSources();
@@ -124,6 +125,7 @@ export const DataSourcesPage = ({
 
       await syncLists();
       onSelectDataSource(created);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       window.clearInterval(interval);
       setDemoError(err.message ?? "未知错误。请确保 Docker Desktop 已启动且能以管理员权限在后台运行。");
@@ -152,6 +154,7 @@ export const DataSourcesPage = ({
     try {
       const result = await api.testConnection(form);
       setTestResult({ status: "success", message: result.message ?? "连接成功。", details: result });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       setTestResult({ status: "error", message: error.message ?? "连接测试失败。" });
     }
@@ -209,6 +212,7 @@ export const DataSourcesPage = ({
       const refreshed = await api.listDatasources(activeProject?.id);
       setDataSources(refreshed);
       onSelectDataSource(refreshed.find((item) => item.id === created.id) ?? null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       setFormError(error.message ?? "保存失败。");
     } finally {
@@ -276,6 +280,7 @@ export const DataSourcesPage = ({
       await syncLists();
       if (activeDataSource?.id === ds.id) onSelectDataSource(null);
       toast.toast("数据源已删除", "success");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.toast(err.message || "删除数据源失败", "error");
     }

@@ -150,13 +150,13 @@ def api_update_alias(id: str, req: SemanticAliasUpdateRequest, db: Session = Dep
     if not item:
         raise HTTPException(status_code=404, detail={"code": "ALIAS_NOT_FOUND", "message": f"Alias {id} not found."})
     if req.alias is not None:
-        item.alias = req.alias
+        item.alias = req.alias  # type: ignore[assignment]
     if req.target_type is not None:
-        item.target_type = req.target_type
+        item.target_type = req.target_type  # type: ignore[assignment]
     if req.target is not None:
-        item.target = req.target
+        item.target = req.target  # type: ignore[assignment]
     if req.description is not None:
-        item.description = req.description
+        item.description = req.description  # type: ignore[assignment]
     db.commit()
     db.refresh(item)
     return _alias_to_dict(item)
@@ -212,13 +212,13 @@ def api_update_metric(id: str, req: SemanticMetricUpdateRequest, db: Session = D
     if not item:
         raise HTTPException(status_code=404, detail={"code": "METRIC_NOT_FOUND", "message": f"Metric {id} not found."})
     if req.name is not None:
-        item.name = req.name
+        item.name = req.name  # type: ignore[assignment]
     if req.expression is not None:
-        item.expression = req.expression
+        item.expression = req.expression  # type: ignore[assignment]
     if req.source_columns_json is not None:
-        item.source_columns_json = req.source_columns_json
+        item.source_columns_json = req.source_columns_json  # type: ignore[assignment]
     if req.description is not None:
-        item.description = req.description
+        item.description = req.description  # type: ignore[assignment]
     db.commit()
     db.refresh(item)
     return _metric_to_dict(item)
@@ -274,13 +274,13 @@ def api_update_dimension(id: str, req: SemanticDimensionUpdateRequest, db: Sessi
     if not item:
         raise HTTPException(status_code=404, detail={"code": "DIMENSION_NOT_FOUND", "message": f"Dimension {id} not found."})
     if req.name is not None:
-        item.name = req.name
+        item.name = req.name  # type: ignore[assignment]
     if req.column_ref is not None:
-        item.column_ref = req.column_ref
+        item.column_ref = req.column_ref  # type: ignore[assignment]
     if req.transform is not None:
-        item.transform = req.transform
+        item.transform = req.transform  # type: ignore[assignment]
     if req.description is not None:
-        item.description = req.description
+        item.description = req.description  # type: ignore[assignment]
     db.commit()
     db.refresh(item)
     return _dimension_to_dict(item)

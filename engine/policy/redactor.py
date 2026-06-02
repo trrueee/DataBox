@@ -27,7 +27,7 @@ class DataRedactor:
             return ""
 
         # 1. Mask credential assignments like: password = 'abc' => password = '[REDACTED_SECURE]'
-        def replace_cred_assign(match: re.Match) -> str:
+        def replace_cred_assign(match: re.Match[str]) -> str:
             keyword = match.group(1)
             return f"{keyword} = '[REDACTED_SECURE]'"
 

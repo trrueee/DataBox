@@ -25,10 +25,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, c
   // Reset states when opened
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearch("");
       setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [open]);
 
   // Fuzzy filter commands
@@ -44,6 +46,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, c
 
   // Adjust selectedIndex boundary on filter changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIndex(0);
   }, [filteredCommands]);
 

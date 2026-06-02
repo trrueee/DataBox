@@ -44,11 +44,75 @@ export const DataPage = ({
   
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
 
+  const fetchTableData = async () => {
+    if (!selectedTableName) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const offset = (page - 1) * pageSize;
+
+      // Build filters
+      let whereClause = "";
+      if (appliedFilter && columns.length > 0) {
+        const escapedFilter = appliedFilter.replace(/'/g, "''");
+        const orConditions = columns
+          .map(col => `\`${col}\` LIKE '%${escapedFilter}%'`)
+          .join(" OR ");
+        whereClause = ` WHERE ${orConditions}`;
+      }
+
+      // Build sorting
+      let orderClause = "";
+      if (sortColumn) {
+        orderClause = ` ORDER BY \`${sortColumn}\` ${sortDirection}`;
+      }
+
+      const sql = `SELECT * FROM \`${selectedTableName}\`${whereClause}${orderClause} LIMIT ${pageSize} OFFSET ${offset};`;
+      const res = await api.executeSql(datasource.id, sql);
+
+      if (res.success) {
+        setRows(res.rows || []);
+        if (res.columns && res.columns.length > 0) {
+          setColumns(res.columns);
+        }
+        setLatencyMs(res.latencyMs || res.totalMs || null);
+      } else {
+        setError("查询未成功返回结果");
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message ?? "数据加载出错，请检查 SQL 权限或过滤语法");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadInitialSchemaAndData = async () => {
+    if (!selectedTableName) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch 1 row to get columns quickly and securely
+      const sample = await api.executeSql(datasource.id, `SELECT * FROM \`${selectedTableName}\` LIMIT 1;`);
+      if (sample.success) {
+        setColumns(sample.columns || []);
+      }
+      await fetchTableData();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message ?? "加载表格架构失败");
+      setLoading(false);
+    }
+  };
+
   // Sync columns first when a table is selected
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
     setSortColumn(null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFilterText("");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAppliedFilter("");
     if (selectedTableName) {
       void loadInitialSchemaAndData();
@@ -56,11 +120,13 @@ export const DataPage = ({
       setColumns([]);
       setRows([]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTableName, datasource.id]);
 
   // Load column metadata (types, PKs, etc.) whenever schemaTables updates or selection changes
   useEffect(() => {
     if (!selectedTableName) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setColumnTypes({});
       return;
     }
@@ -91,68 +157,12 @@ export const DataPage = ({
   // Reload when page, size, sorting, or applied filters change
   useEffect(() => {
     if (selectedTableName) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void fetchTableData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, sortColumn, sortDirection, appliedFilter]);
 
-  const loadInitialSchemaAndData = async () => {
-    if (!selectedTableName) return;
-    setLoading(true);
-    setError(null);
-    try {
-      // Fetch 1 row to get columns quickly and securely
-      const sample = await api.executeSql(datasource.id, `SELECT * FROM \`${selectedTableName}\` LIMIT 1;`);
-      if (sample.success) {
-        setColumns(sample.columns || []);
-      }
-      await fetchTableData();
-    } catch (err: any) {
-      setError(err.message ?? "加载表格架构失败");
-      setLoading(false);
-    }
-  };
-
-  const fetchTableData = async () => {
-    if (!selectedTableName) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const offset = (page - 1) * pageSize;
-      
-      // Build filters
-      let whereClause = "";
-      if (appliedFilter && columns.length > 0) {
-        const escapedFilter = appliedFilter.replace(/'/g, "''");
-        const orConditions = columns
-          .map(col => `\`${col}\` LIKE '%${escapedFilter}%'`)
-          .join(" OR ");
-        whereClause = ` WHERE ${orConditions}`;
-      }
-
-      // Build sorting
-      let orderClause = "";
-      if (sortColumn) {
-        orderClause = ` ORDER BY \`${sortColumn}\` ${sortDirection}`;
-      }
-
-      const sql = `SELECT * FROM \`${selectedTableName}\`${whereClause}${orderClause} LIMIT ${pageSize} OFFSET ${offset};`;
-      const res = await api.executeSql(datasource.id, sql);
-      
-      if (res.success) {
-        setRows(res.rows || []);
-        if (res.columns && res.columns.length > 0) {
-          setColumns(res.columns);
-        }
-        setLatencyMs(res.latencyMs || res.totalMs || null);
-      } else {
-        setError("查询未成功返回结果");
-      }
-    } catch (err: any) {
-      setError(err.message ?? "数据加载出错，请检查 SQL 权限或过滤语法");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleApplyFilter = (e: React.FormEvent) => {
     e.preventDefault();

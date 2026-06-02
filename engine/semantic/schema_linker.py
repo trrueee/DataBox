@@ -145,7 +145,7 @@ class SchemaLinker:
                 .all()
             )
             if scopes:
-                ids = [s.table_id for s in scopes]
+                ids: list[str] = [str(s.table_id) for s in scopes]
                 return ids, True, len(ids)
 
         return None, False, 0

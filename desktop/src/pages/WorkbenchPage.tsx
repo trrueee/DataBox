@@ -1080,6 +1080,7 @@ export const WorkbenchPage = ({
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handleOpenQueryTab, activeTabId, tabs]);
 
   // Command palette configuration actions
@@ -1144,6 +1145,7 @@ export const WorkbenchPage = ({
         action: () => setShowTourDialog(true)
       }
     ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDataSource, handleOpenQueryTab, onRefreshSchemaTables, schemaTables]);
 
   // Menu bar definitions

@@ -688,7 +688,7 @@ class DataBoxAgentRuntime:
         if approval.status == "pending":
             raise DataBoxError("Approval is still pending.", code="APPROVAL_PENDING")
         if approval.status == "rejected":
-            agent_persistence.fail_run(self.db, run_id, run.session_id, "Approval rejected")
+            agent_persistence.fail_run(self.db, run_id, str(run.session_id), "Approval rejected")
             self.db.commit()
             raise DataBoxError("Approval rejected.", code="APPROVAL_REJECTED")
         if approval.status != "approved":
@@ -699,15 +699,15 @@ class DataBoxAgentRuntime:
             raise DataBoxError("Checkpoint state is not restorable.", code="CHECKPOINT_INVALID")
         state = AgentState.model_validate(state_payload)
         state.run_id = run_id
-        state.session_id = run.session_id
-        state.datasource_id = run.datasource_id
-        state.question = run.question
+        state.session_id = str(run.session_id)
+        state.datasource_id = str(run.datasource_id)
+        state.question = str(run.question)
 
         req = AgentRunRequest(
-            datasource_id=run.datasource_id,
-            question=run.question,
-            session_id=run.session_id,
-            parent_run_id=run.parent_run_id,
+            datasource_id=str(run.datasource_id),
+            question=str(run.question),
+            session_id=str(run.session_id),
+            parent_run_id=str(run.parent_run_id) if run.parent_run_id else None,
             execute=True,
         )
         safe_sql = self._approve_safety_for_execution(state, approval)
@@ -720,7 +720,7 @@ class DataBoxAgentRuntime:
 
         def _save_event(event: AgentRuntimeEvent) -> None:
             try:
-                agent_persistence.record_runtime_event(self.db, run.session_id, event)
+                agent_persistence.record_runtime_event(self.db, str(run.session_id), event)
             except Exception:
                 logger.warning("Persistence: failed to save resume event %s", event.event_id)
                 try:
@@ -759,7 +759,7 @@ class DataBoxAgentRuntime:
 
         def _save_artifact_record(artifact: AgentArtifact, seq: int) -> None:
             try:
-                agent_persistence.record_artifact(self.db, run.session_id, run_id, artifact, seq)
+                agent_persistence.record_artifact(self.db, str(run.session_id), run_id, artifact, seq)
             except Exception:
                 logger.warning("Persistence: failed to save resume artifact %s", artifact.id)
                 try:
@@ -827,7 +827,7 @@ class DataBoxAgentRuntime:
                 if response.success:
                     agent_persistence.complete_run(self.db, response)
                 else:
-                    agent_persistence.fail_run(self.db, run_id, run.session_id, response.error or "Agent run failed.", response)
+                    agent_persistence.fail_run(self.db, run_id, str(run.session_id), response.error or "Agent run failed.", response)
                 self.db.commit()
             except Exception:
                 logger.warning("Persistence: failed to persist resumed response for run %s", run_id)
@@ -883,7 +883,7 @@ class DataBoxAgentRuntime:
                 suggestions=[],
                 error=str(reason),
                 run_id=run_id,
-                session_id=run.session_id,
+                session_id=str(run.session_id),
                 artifacts=artifacts,
                 artifact_identity=artifact_identity,
             )
@@ -925,7 +925,7 @@ class DataBoxAgentRuntime:
             suggestions=state.suggestions,
             error=None,
             run_id=run_id,
-            session_id=run.session_id,
+            session_id=str(run.session_id),
             artifacts=artifacts,
             artifact_identity=artifact_identity,
         )
@@ -991,14 +991,14 @@ class DataBoxAgentRuntime:
         return requires_confirmation and not bool(blocked_reasons & APPROVAL_HARD_BLOCKERS)
 
     def _approval_risk_level(self, safety: dict[str, Any]) -> str:
-        trust_gate = safety.get("trust_gate") if isinstance(safety.get("trust_gate"), dict) else {}
+        trust_gate: dict[str, Any] = safety.get("trust_gate") if isinstance(safety.get("trust_gate"), dict) else {}  # type: ignore[assignment]
         risk = str(trust_gate.get("riskLevel") or safety.get("risk_level") or "warning")
         if risk == "safe" and self._should_wait_for_approval(safety):
             return "warning"
         return risk if risk in {"safe", "warning", "danger"} else "warning"
 
     def _approval_reason(self, safety: dict[str, Any]) -> str | None:
-        messages = safety.get("messages") if isinstance(safety.get("messages"), list) else []
+        messages: list[Any] = safety.get("messages") if isinstance(safety.get("messages"), list) else []  # type: ignore[assignment]
         for message in messages:
             text = str(message).strip()
             if text:
@@ -1016,14 +1016,14 @@ class DataBoxAgentRuntime:
         state: AgentState,
         sql: str | None,
     ) -> dict[str, Any]:
-        safety = state.safety or {}
+        safety: dict[str, Any] = state.safety or {}
         decision = safety.get("execution_safety_decision") if isinstance(safety.get("execution_safety_decision"), dict) else {}
         return {
             "tool_name": "sql.execute_readonly",
             "datasource_id": req.datasource_id,
             "question": req.question,
             "sql": state.sql or sql,
-            "safe_sql": safety.get("safe_sql") or decision.get("safe_sql") or state.sql or sql,
+            "safe_sql": safety.get("safe_sql") or decision.get("safe_sql") or state.sql or sql,  # type: ignore[union-attr]
         }
 
     def _pending_step_specs(self, req: AgentRunRequest, after_step: str) -> list[dict[str, Any]]:
@@ -1041,7 +1041,7 @@ class DataBoxAgentRuntime:
         if blocked_reasons & APPROVAL_HARD_BLOCKERS:
             raise DataBoxError("Approval cannot override hard safety blockers.", code="APPROVAL_HARD_BLOCKED")
 
-        decision = safety.get("execution_safety_decision") if isinstance(safety.get("execution_safety_decision"), dict) else {}
+        decision: dict[str, Any] = safety.get("execution_safety_decision") if isinstance(safety.get("execution_safety_decision"), dict) else {}  # type: ignore[assignment]
         safe_sql = str(
             decision.get("safe_sql")
             or safety.get("safe_sql")
@@ -1064,7 +1064,7 @@ class DataBoxAgentRuntime:
             decision["blocked_reasons"] = [reason for reason in (decision.get("blocked_reasons") or []) if reason != "requires_confirmation"]
             decision["messages"] = messages
             scope_state = decision.get("scope_state") if isinstance(decision.get("scope_state"), dict) else {}
-            scope_state["agent_approval_id"] = approval.id
+            scope_state["agent_approval_id"] = approval.id  # type: ignore[index]
             decision["scope_state"] = scope_state
             safety["execution_safety_decision"] = decision
 

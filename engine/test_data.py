@@ -137,7 +137,7 @@ def generate_smart_test_data(
             if col.foreign_column_id:
                 parent_col_obj = db.query(SchemaColumn).filter(SchemaColumn.id == col.foreign_column_id).first()
                 if parent_col_obj:
-                    parent_column_name = parent_col_obj.column_name
+                    parent_column_name = str(parent_col_obj.column_name)
 
             # Query existing parent table records to ensure referential integrity
             try:
@@ -147,7 +147,7 @@ def generate_smart_test_data(
                 
                 if parent_res["success"] and parent_res["rows"]:
                     parent_ids = [row[parent_column_name] for row in parent_res["rows"]]
-                    fk_mappings[col.column_name] = parent_ids
+                    fk_mappings[str(col.column_name)] = parent_ids
                 else:
                     # If parent is empty, warn and enforce user action
                     raise DataBoxError(
@@ -159,7 +159,7 @@ def generate_smart_test_data(
             except Exception as e:
                 logger.error(f"Failed to query parent keys: {e}")
                 # Create a generic dummy value just in case
-                fk_mappings[col.column_name] = [1, 2, 3]
+                fk_mappings[str(col.column_name)] = [1, 2, 3]
 
     # 3. Generate high fidelity fake data row by row
     generated_rows: List[Dict[str, Any]] = []
@@ -171,8 +171,8 @@ def generate_smart_test_data(
         row_fullname = ""
         
         for col in columns:
-            col_name = col.column_name
-            col_type = col.column_type or "varchar"
+            col_name: str = str(col.column_name)
+            col_type: str = str(col.column_type or "varchar")
             
             # Skip auto-increment columns
             # Wait, how to know if columns are auto-increment? SchemaColumn has a column_default or similar,
@@ -308,7 +308,7 @@ def generate_smart_test_data(
         latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
         
         # Automatically update metastore row count estimate
-        table.row_count_estimate = (table.row_count_estimate or 0) + inserted_count
+        table.row_count_estimate = (table.row_count_estimate or 0) + inserted_count  # type: ignore[assignment]
         db.commit()
         
         return {

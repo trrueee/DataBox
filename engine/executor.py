@@ -613,7 +613,7 @@ def execute_query(
                 safe_sql,
                 execution_id=execution_id,
                 datasource_id=datasource_id,
-                sqlite_path=ds.database_name,
+                sqlite_path=ds.database_name,  # type: ignore[arg-type]
             )
         elif db_type == "postgresql":
             conn_params = get_postgres_connection_params({

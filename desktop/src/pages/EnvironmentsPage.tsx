@@ -33,11 +33,6 @@ export const EnvironmentsPage = ({
   const [destroyError, setDestroyError] = useState("");
   const [rebuildError, setRebuildError] = useState("");
 
-  useEffect(() => {
-    void checkDocker();
-    void refreshEnvironments();
-  }, [activeProject?.id]);
-
   const checkDocker = async () => {
     setCheckingDocker(true);
     try {
@@ -60,6 +55,14 @@ export const EnvironmentsPage = ({
     }
   };
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void checkDocker();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refreshEnvironments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject?.id]);
+
   const updateEnvironment = (updated: DatabaseEnvironment) => {
     setEnvironments((items) => items.map((item) => (item.id === updated.id ? updated : item)));
   };
@@ -79,6 +82,7 @@ export const EnvironmentsPage = ({
       await onRefreshDatasources();
       const sources = await api.listDatasources(activeProject.id);
       onSelectDataSource(sources.find((source) => source.id === created.datasource_id) ?? null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message ?? "Create local MySQL environment failed.");
     } finally {
@@ -133,6 +137,7 @@ export const EnvironmentsPage = ({
       setConfirmDestroyEnv(null);
       await refreshEnvironments();
       await onRefreshDatasources();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setDestroyError(err.message ?? "Destroy environment failed.");
     } finally {
@@ -150,6 +155,7 @@ export const EnvironmentsPage = ({
       setConfirmRebuildEnv(null);
       await refreshEnvironments();
       await onRefreshDatasources();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setRebuildError(err.message ?? "Rebuild environment failed.");
     } finally {

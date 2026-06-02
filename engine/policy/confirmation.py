@@ -5,7 +5,7 @@ import os
 import sys
 import hashlib
 import threading
-from typing import Dict, Any, Tuple
+from typing import Any
 
 logger = logging.getLogger("databox.security.confirmation")
 
@@ -26,11 +26,11 @@ def sha256_hash(text: str) -> str:
 
 class ConfirmationManager:
     def __init__(self, ttl_seconds: int = 300):
-        self._confirmations: Dict[str, Tuple[float, dict]] = {}
+        self._confirmations: dict[str, tuple[float, dict[str, Any]]] = {}
         self._lock = threading.Lock()
         self._ttl = ttl_seconds
 
-    def create_confirmation(self, datasource_id: str, action: str, details: dict, expected_confirm_text: str) -> str:
+    def create_confirmation(self, datasource_id: str, action: str, details: dict[str, Any], expected_confirm_text: str) -> str:
         with self._lock:
             # Clean expired first
             now = time.time()
@@ -57,7 +57,7 @@ class ConfirmationManager:
         expected_action: str,
         expected_datasource_id: str,
         expected_details: dict[str, Any]
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Validates and consumes a confirmation token with strict context-matching to prevent tampering or token reuse.
         Returns (is_valid, error_message)
@@ -98,7 +98,7 @@ class ConfirmationManager:
             logger.info("Successfully consumed confirmation token %s... for action %s", token[:8], data["action"])
             return True, ""
 
-    def _cleanup(self, now: float):
+    def _cleanup(self, now: float) -> None:
         expired = [token for token, (exp_time, _) in self._confirmations.items() if now > exp_time]
         for token in expired:
             del self._confirmations[token]

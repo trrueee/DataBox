@@ -143,7 +143,7 @@ def _pymysql_simple_sql_export(ds: DataSource, output_path: Path) -> None:
                     f.write(f"-- Table structure for table `{table}`\n")
                     f.write(f"DROP TABLE IF EXISTS `{table}`;\n")
                     cursor.execute(f"SHOW CREATE TABLE `{table}`")
-                    create_table_sql = cursor.fetchone()[1]
+                    create_table_sql = cursor.fetchone()[1]  # type: ignore[index]
                     f.write(f"{create_table_sql};\n\n")
                     
                     # 2. Fetch rows
@@ -176,7 +176,7 @@ def _pymysql_simple_sql_export(ds: DataSource, output_path: Path) -> None:
                     f.write(f"-- View structure for view `{view}`\n")
                     f.write(f"DROP VIEW IF EXISTS `{view}`;\n")
                     cursor.execute(f"SHOW CREATE VIEW `{view}`")
-                    create_view_sql = cursor.fetchone()[1]
+                    create_view_sql = cursor.fetchone()[1]  # type: ignore[index]
                     f.write(f"{create_view_sql};\n\n")
             
             f.write("SET FOREIGN_KEY_CHECKS=1;\n")

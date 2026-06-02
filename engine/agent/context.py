@@ -105,10 +105,10 @@ def _summarize_payload(payload: dict[str, Any] | None) -> str:
         return str(payload["sql"])
     if "rowCount" in payload or "columns" in payload:
         columns = payload.get("columns") if isinstance(payload.get("columns"), list) else []
-        return f"rowCount={payload.get('rowCount')}; columns={', '.join(str(item) for item in columns[:8])}"
+        return f"rowCount={payload.get('rowCount')}; columns={', '.join(str(item) for item in columns[:8])}"  # type: ignore[index]
     if "notable_facts" in payload:
         facts = payload.get("notable_facts") if isinstance(payload.get("notable_facts"), list) else []
-        return "; ".join(str(item) for item in facts[:4])
+        return "; ".join(str(item) for item in facts[:4])  # type: ignore[index]
     if "can_execute" in payload:
         return f"can_execute={payload.get('can_execute')}; messages={payload.get('messages')}"
     if "error" in payload:

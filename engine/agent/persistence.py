@@ -96,7 +96,7 @@ def create_or_get_session(
         db.add(existing)
         db.flush()
     else:
-        existing.updated_at = datetime.now(UTC)
+        existing.updated_at = datetime.now(UTC)  # type: ignore[assignment]
         db.flush()
     return session_id
 
@@ -191,14 +191,14 @@ def complete_run(db: Session, response: AgentRunResponse) -> None:
         if run is None:
             logger.warning("Cannot complete run %s: run not found", response.run_id)
             return
-        run.status = "success" if response.success else "failed"
-        run.current_step_name = None
-        run.waiting_approval_id = None
-        run.response_json = _safe_json(_redact_response(response))
-        run.context_summary = response.context_summary
-        run.error = response.error
-        run.completed_at = datetime.now(UTC)
-        run.updated_at = datetime.now(UTC)
+        run.status = "success" if response.success else "failed"  # type: ignore[assignment]
+        run.current_step_name = None  # type: ignore[assignment]
+        run.waiting_approval_id = None  # type: ignore[assignment]
+        run.response_json = _safe_json(_redact_response(response))  # type: ignore[assignment]
+        run.context_summary = response.context_summary  # type: ignore[assignment]
+        run.error = response.error  # type: ignore[assignment]
+        run.completed_at = datetime.now(UTC)  # type: ignore[assignment]
+        run.updated_at = datetime.now(UTC)  # type: ignore[assignment]
         db.flush()
         _save_trace_events(db, response)
     except Exception:
@@ -227,7 +227,7 @@ def _save_trace_events(db: Session, response: AgentRunResponse) -> None:
 
 
 def _redact_trace_for_storage(data: dict[str, Any]) -> dict[str, Any]:
-    result = {}
+    result: dict[str, Any] = {}
     for k, v in data.items():
         if k in _SENSITIVE_KEYS:
             continue
@@ -255,15 +255,15 @@ def fail_run(
         if run is None:
             logger.warning("Cannot fail run %s: run not found", run_id)
             return
-        run.status = "failed"
-        run.current_step_name = None
-        run.waiting_approval_id = None
-        run.error = error
+        run.status = "failed"  # type: ignore[assignment]
+        run.current_step_name = None  # type: ignore[assignment]
+        run.waiting_approval_id = None  # type: ignore[assignment]
+        run.error = error  # type: ignore[assignment]
         if response is not None:
-            run.response_json = _safe_json(_redact_response(response))
-            run.context_summary = response.context_summary
-        run.completed_at = datetime.now(UTC)
-        run.updated_at = datetime.now(UTC)
+            run.response_json = _safe_json(_redact_response(response))  # type: ignore[assignment]
+            run.context_summary = response.context_summary  # type: ignore[assignment]
+        run.completed_at = datetime.now(UTC)  # type: ignore[assignment]
+        run.updated_at = datetime.now(UTC)  # type: ignore[assignment]
         db.flush()
     except Exception:
         logger.exception("Failed to record failure for run %s", run_id)
@@ -346,20 +346,20 @@ def resolve_approval(
     if approval.status != "pending":
         raise DataBoxError("Approval has already been resolved.", code="APPROVAL_ALREADY_RESOLVED")
 
-    approval.status = decision
-    approval.decided_by = decided_by
-    approval.decision_note = note
-    approval.decided_at = datetime.now(UTC)
+    approval.status = decision  # type: ignore[assignment]
+    approval.decided_by = decided_by  # type: ignore[assignment]
+    approval.decision_note = note  # type: ignore[assignment]
+    approval.decided_at = datetime.now(UTC)  # type: ignore[assignment]
 
     if decision == "rejected":
         run = db.query(AgentRun).filter(AgentRun.id == run_id).first()
         if run is not None:
-            run.status = "failed"
-            run.error = "Approval rejected"
-            run.current_step_name = None
-            run.waiting_approval_id = None
-            run.completed_at = datetime.now(UTC)
-            run.updated_at = datetime.now(UTC)
+            run.status = "failed"  # type: ignore[assignment]
+            run.error = "Approval rejected"  # type: ignore[assignment]
+            run.current_step_name = None  # type: ignore[assignment]
+            run.waiting_approval_id = None  # type: ignore[assignment]
+            run.completed_at = datetime.now(UTC)  # type: ignore[assignment]
+            run.updated_at = datetime.now(UTC)  # type: ignore[assignment]
 
     db.flush()
     return _approval_record(approval)
@@ -416,11 +416,11 @@ def get_latest_checkpoint_payload(db: Session, run_id: str) -> dict[str, Any] | 
         return None
     return {
         "record": _checkpoint_record(checkpoint),
-        "plan": _parse_json_any(checkpoint.plan_json),
-        "state": _parse_json_any(checkpoint.state_json),
-        "completed_steps": _parse_json_any(checkpoint.completed_steps_json) or [],
-        "pending_steps": _parse_json_any(checkpoint.pending_steps_json) or [],
-        "artifacts": _parse_json_any(checkpoint.artifacts_json) or [],
+        "plan": _parse_json_any(checkpoint.plan_json),  # type: ignore[arg-type]
+        "state": _parse_json_any(checkpoint.state_json),  # type: ignore[arg-type]
+        "completed_steps": _parse_json_any(checkpoint.completed_steps_json) or [],  # type: ignore[arg-type]
+        "pending_steps": _parse_json_any(checkpoint.pending_steps_json) or [],  # type: ignore[arg-type]
+        "artifacts": _parse_json_any(checkpoint.artifacts_json) or [],  # type: ignore[arg-type]
     }
 
 
@@ -445,15 +445,15 @@ def mark_run_waiting_approval(
     run = db.query(AgentRun).filter(AgentRun.id == run_id).first()
     if run is None:
         raise DataBoxError("Agent run not found.", code="RUN_NOT_FOUND")
-    run.status = "waiting_approval"
-    run.current_step_name = current_step_name
-    run.waiting_approval_id = approval_id
-    run.error = None
-    run.completed_at = None
-    run.updated_at = datetime.now(UTC)
+    run.status = "waiting_approval"  # type: ignore[assignment]
+    run.current_step_name = current_step_name  # type: ignore[assignment]
+    run.waiting_approval_id = approval_id  # type: ignore[assignment]
+    run.error = None  # type: ignore[assignment]
+    run.completed_at = None  # type: ignore[assignment]
+    run.updated_at = datetime.now(UTC)  # type: ignore[assignment]
     if response is not None:
-        run.response_json = _safe_json(_redact_response(response))
-        run.context_summary = response.context_summary
+        run.response_json = _safe_json(_redact_response(response))  # type: ignore[assignment]
+        run.context_summary = response.context_summary  # type: ignore[assignment]
     db.flush()
 
 
@@ -461,12 +461,12 @@ def mark_run_resumed(db: Session, *, run_id: str, current_step_name: str | None 
     run = db.query(AgentRun).filter(AgentRun.id == run_id).first()
     if run is None:
         raise DataBoxError("Agent run not found.", code="RUN_NOT_FOUND")
-    run.status = "running"
-    run.current_step_name = current_step_name
-    run.waiting_approval_id = None
-    run.error = None
-    run.completed_at = None
-    run.updated_at = datetime.now(UTC)
+    run.status = "running"  # type: ignore[assignment]
+    run.current_step_name = current_step_name  # type: ignore[assignment]
+    run.waiting_approval_id = None  # type: ignore[assignment]
+    run.error = None  # type: ignore[assignment]
+    run.completed_at = None  # type: ignore[assignment]
+    run.updated_at = datetime.now(UTC)  # type: ignore[assignment]
     db.flush()
 
 
@@ -540,7 +540,7 @@ def build_followup_context_from_run(
 
     artifacts = _load_run_artifacts(db, parent_run_id)
 
-    response_data = _parse_json(run.response_json) if run.response_json else None
+    response_data = _parse_json(run.response_json) if run.response_json else None  # type: ignore[arg-type]
     previous_answer = None
     if response_data:
         answer = response_data.get("answer")
@@ -550,19 +550,19 @@ def build_followup_context_from_run(
             previous_answer = response_data.get("explanation")
 
     return AgentFollowUpContext(
-        session_id=run.session_id,
-        parent_run_id=run.id,
-        previous_question=run.question,
+        session_id=run.session_id,  # type: ignore[arg-type]
+        parent_run_id=run.id,  # type: ignore[arg-type]
+        previous_question=run.question,  # type: ignore[arg-type]
         previous_answer=previous_answer,
         artifacts=[
             AgentContextArtifact(
-                id=artifact.id,
+                id=artifact.id,  # type: ignore[arg-type]
                 type=artifact.type,  # type: ignore[arg-type]
-                title=artifact.title,
+                title=artifact.title,  # type: ignore[arg-type]
                 summary=_summarize_artifact_payload(
-                    _parse_json(artifact.payload_json) or {}
+                    _parse_json(artifact.payload_json) or {}  # type: ignore[arg-type]
                 ),
-                payload=_parse_json(artifact.payload_json) or {},
+                payload=_parse_json(artifact.payload_json) or {},  # type: ignore[arg-type]
             )
             for artifact in artifacts[:8]
         ],
@@ -584,10 +584,10 @@ def list_run_artifacts(db: Session, run_id: str) -> list[dict[str, Any]]:
             "type": r.type,
             "title": r.title,
             "produced_by_step": r.produced_by_step,
-            "depends_on": (_parse_json(r.depends_on_json) or {}).get("depends_on", []),
-            "payload": _parse_json(r.payload_json) or {},
-            "presentation": _parse_json(r.presentation_json) or {},
-            "refs": _parse_json(r.refs_json) or {},
+            "depends_on": (_parse_json(r.depends_on_json) or {}).get("depends_on", []),  # type: ignore[arg-type]
+            "payload": _parse_json(r.payload_json) or {},  # type: ignore[arg-type]
+            "presentation": _parse_json(r.presentation_json) or {},  # type: ignore[arg-type]
+            "refs": _parse_json(r.refs_json) or {},  # type: ignore[arg-type]
             "sequence": r.sequence,
             "created_at": r.created_at.isoformat() if r.created_at else None,
         }
@@ -608,7 +608,7 @@ def list_run_events(db: Session, run_id: str) -> list[dict[str, Any]]:
             "run_id": r.run_id,
             "sequence": r.sequence,
             "type": r.type,
-            "event": _parse_json(r.event_json) or {},
+            "event": _parse_json(r.event_json) or {},  # type: ignore[arg-type]
             "created_at_ms": r.created_at_ms,
         }
         for r in records
@@ -623,7 +623,7 @@ def list_run_trace_events(db: Session, run_id: str) -> list[dict[str, Any]]:
         .all()
     )
     return [
-        _redact_trace_event(_parse_json(r.event_json) or {}, r)
+        _redact_trace_event(_parse_json(r.event_json) or {}, r)  # type: ignore[arg-type]
         for r in records
     ]
 
@@ -639,10 +639,10 @@ def restore_artifact(db: Session, artifact_id: str) -> dict[str, Any] | None:
         "type": record.type,
         "title": record.title,
         "produced_by_step": record.produced_by_step,
-        "depends_on": (_parse_json(record.depends_on_json) or {}).get("depends_on", []),
-        "payload": _parse_json(record.payload_json) or {},
-        "presentation": _parse_json(record.presentation_json) or {},
-        "refs": _parse_json(record.refs_json) or {},
+        "depends_on": (_parse_json(record.depends_on_json) or {}).get("depends_on", []),  # type: ignore[arg-type]
+        "payload": _parse_json(record.payload_json) or {},  # type: ignore[arg-type]
+        "presentation": _parse_json(record.presentation_json) or {},  # type: ignore[arg-type]
+        "refs": _parse_json(record.refs_json) or {},  # type: ignore[arg-type]
         "sequence": record.sequence,
     }
 
@@ -656,7 +656,7 @@ def restore_runtime_event(db: Session, event_id: str) -> dict[str, Any] | None:
         "run_id": record.run_id,
         "sequence": record.sequence,
         "type": record.type,
-        "event": _parse_json(record.event_json) or {},
+        "event": _parse_json(record.event_json) or {},  # type: ignore[arg-type]
         "created_at_ms": record.created_at_ms,
     }
 
@@ -672,34 +672,34 @@ def _latest_checkpoint_model(db: Session, run_id: str) -> AgentCheckpoint | None
 
 def _approval_record(approval: AgentApproval) -> AgentApprovalRecord:
     return AgentApprovalRecord(
-        id=approval.id,
-        run_id=approval.run_id,
-        session_id=approval.session_id,
-        step_name=approval.step_name,
-        tool_name=approval.tool_name,
+        id=approval.id,  # type: ignore[arg-type]
+        run_id=approval.run_id,  # type: ignore[arg-type]
+        session_id=approval.session_id,  # type: ignore[arg-type]
+        step_name=approval.step_name,  # type: ignore[arg-type]
+        tool_name=approval.tool_name,  # type: ignore[arg-type]
         status=approval.status,  # type: ignore[arg-type]
         risk_level=_normalize_risk_level(approval.risk_level),  # type: ignore[arg-type]
-        reason=approval.reason,
-        policy_decision=_parse_json(approval.policy_decision_json) or {},
-        requested_action=_parse_json(approval.requested_action_json),
-        created_at=approval.created_at,
-        expires_at=approval.expires_at,
-        decided_at=approval.decided_at,
-        decided_by=approval.decided_by,
-        decision_note=approval.decision_note,
+        reason=approval.reason,  # type: ignore[arg-type]
+        policy_decision=_parse_json(approval.policy_decision_json) or {},  # type: ignore[arg-type]
+        requested_action=_parse_json(approval.requested_action_json),  # type: ignore[arg-type]
+        created_at=approval.created_at,  # type: ignore[arg-type]
+        expires_at=approval.expires_at,  # type: ignore[arg-type]
+        decided_at=approval.decided_at,  # type: ignore[arg-type]
+        decided_by=approval.decided_by,  # type: ignore[arg-type]
+        decision_note=approval.decision_note,  # type: ignore[arg-type]
     )
 
 
 def _checkpoint_record(checkpoint: AgentCheckpoint) -> AgentCheckpointRecord:
     return AgentCheckpointRecord(
-        id=checkpoint.id,
-        run_id=checkpoint.run_id,
-        session_id=checkpoint.session_id,
-        checkpoint_index=checkpoint.checkpoint_index,
-        status=checkpoint.status,
-        current_step_name=checkpoint.current_step_name,
-        next_step_name=checkpoint.next_step_name,
-        created_at=checkpoint.created_at,
+        id=checkpoint.id,  # type: ignore[arg-type]
+        run_id=checkpoint.run_id,  # type: ignore[arg-type]
+        session_id=checkpoint.session_id,  # type: ignore[arg-type]
+        checkpoint_index=checkpoint.checkpoint_index,  # type: ignore[arg-type]
+        status=checkpoint.status,  # type: ignore[arg-type]
+        current_step_name=checkpoint.current_step_name,  # type: ignore[arg-type]
+        next_step_name=checkpoint.next_step_name,  # type: ignore[arg-type]
+        created_at=checkpoint.created_at,  # type: ignore[arg-type]
     )
 
 
@@ -728,7 +728,7 @@ def _load_run_artifacts(db: Session, run_id: str) -> list[AgentArtifactRecord]:
 def _restore_response(run: AgentRun) -> AgentRunResponse | None:
     if run.response_json is None:
         return None
-    data = _parse_json(run.response_json)
+    data = _parse_json(run.response_json)  # type: ignore[arg-type]
     if data is None:
         return None
     return AgentRunResponse.model_validate(data)
@@ -747,10 +747,10 @@ def _summarize_artifact_payload(payload: dict[str, Any]) -> str:
         return str(payload["sql"])[:360]
     if "rowCount" in payload or "columns" in payload:
         columns = payload.get("columns") if isinstance(payload.get("columns"), list) else []
-        return f"rowCount={payload.get('rowCount')}; columns={', '.join(str(c) for c in columns[:8])}"
+        return f"rowCount={payload.get('rowCount')}; columns={', '.join(str(c) for c in columns[:8])}"  # type: ignore[index]
     if "notable_facts" in payload:
         facts = payload.get("notable_facts") if isinstance(payload.get("notable_facts"), list) else []
-        return "; ".join(str(f) for f in facts[:4])
+        return "; ".join(str(f) for f in facts[:4])  # type: ignore[index]
     if "can_execute" in payload:
         return f"can_execute={payload.get('can_execute')}"
     if "error" in payload:

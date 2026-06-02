@@ -33,7 +33,7 @@ router = APIRouter()
 
 
 @router.get("/query/agent-runs/{run_id}", response_model=AgentRunResponse | None)
-def api_get_agent_run(run_id: str, db: Session = Depends(get_db)):
+def api_get_agent_run(run_id: str, db: Session = Depends(get_db)) -> AgentRunResponse | None:
     result = agent_persistence.get_run(db, run_id)
     if result is None:
         raise HTTPException(status_code=404, detail={"code": "RUN_NOT_FOUND", "message": f"Agent run {run_id} not found."})
@@ -41,12 +41,12 @@ def api_get_agent_run(run_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/query/agent-sessions/{session_id}/runs")
-def api_list_session_runs(session_id: str, db: Session = Depends(get_db)):
+def api_list_session_runs(session_id: str, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     return agent_persistence.list_session_runs(db, session_id)
 
 
 @router.get("/query/agent-runs/recent", response_model=AgentRunResponse | None)
-def api_get_recent_agent_run(datasource_id: str = Query(...), db: Session = Depends(get_db)):
+def api_get_recent_agent_run(datasource_id: str = Query(...), db: Session = Depends(get_db)) -> AgentRunResponse | None:
     result = agent_persistence.get_recent_run(db, datasource_id)
     if result is None:
         raise HTTPException(status_code=404, detail={"code": "NO_RECENT_RUN", "message": "No recent agent run found for this datasource."})
@@ -54,27 +54,27 @@ def api_get_recent_agent_run(datasource_id: str = Query(...), db: Session = Depe
 
 
 @router.get("/query/agent-runs/{run_id}/artifacts")
-def api_get_run_artifacts(run_id: str, db: Session = Depends(get_db)):
+def api_get_run_artifacts(run_id: str, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     return agent_persistence.list_run_artifacts(db, run_id)
 
 
 @router.get("/query/agent-runs/{run_id}/events")
-def api_get_run_events(run_id: str, db: Session = Depends(get_db)):
+def api_get_run_events(run_id: str, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     return agent_persistence.list_run_events(db, run_id)
 
 
 @router.get("/query/agent-runs/{run_id}/trace")
-def api_get_run_trace(run_id: str, db: Session = Depends(get_db)):
+def api_get_run_trace(run_id: str, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
     return agent_persistence.list_run_trace_events(db, run_id)
 
 
 @router.get("/query/agent-runs/{run_id}/approvals")
-def api_get_run_approvals(run_id: str, db: Session = Depends(get_db)):
+def api_get_run_approvals(run_id: str, db: Session = Depends(get_db)) -> list[Any]:
     return agent_persistence.list_run_approvals(db, run_id)
 
 
 @router.get("/query/agent-runs/{run_id}/checkpoints")
-def api_get_run_checkpoints(run_id: str, db: Session = Depends(get_db)):
+def api_get_run_checkpoints(run_id: str, db: Session = Depends(get_db)) -> list[Any]:
     return agent_persistence.list_checkpoints(db, run_id)
 
 
@@ -84,7 +84,7 @@ def api_resolve_agent_approval(
     approval_id: str,
     req: AgentApprovalDecisionRequest,
     db: Session = Depends(get_db),
-):
+) -> Any:
     try:
         approval = agent_persistence.resolve_approval(
             db,
@@ -159,7 +159,7 @@ def _format_sse_event(event: AgentRuntimeEvent) -> str:
 
 @router.post("/query/agent-run/stream")
 def api_agent_run_stream(req: AgentRunRequest, db: Session = Depends(get_db)) -> StreamingResponse:
-    def stream_events():
+    def stream_events() -> Any:  # noqa
         try:
             for event in DataBoxAgentRuntime(db).run_iter(req):
                 yield _format_sse_event(event)
@@ -205,7 +205,7 @@ def api_agent_run_resume_stream(
     req: AgentResumeRequest,
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
-    def stream_events():
+    def stream_events() -> Any:  # noqa
         try:
             for event in DataBoxAgentRuntime(db).resume_iter(run_id, req.approval_id):
                 yield _format_sse_event(event)

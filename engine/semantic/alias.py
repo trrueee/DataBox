@@ -61,11 +61,11 @@ class SemanticAliasResolver:
         db_aliases: dict[str, str] = {}
         db_meta: dict[str, dict[str, str]] = {}
         for row in rows:
-            db_aliases[row.alias] = row.target
-            db_meta[row.alias] = {"target_type": row.target_type, "source": "db"}
+            db_aliases[row.alias] = row.target  # type: ignore[index,assignment]
+            db_meta[str(row.alias)] = {"target_type": str(row.target_type), "source": "db"}
         # DB takes priority — update over defaults
         resolver.aliases = {**DEFAULT_ALIASES, **db_aliases}
-        resolver.db_alias_keys = set(db_aliases.keys())
+        resolver.db_alias_keys = set(db_aliases.keys())  # type: ignore[attr-defined]
         return resolver
 
     def resolve(self, text: str) -> list[AliasMatch]:

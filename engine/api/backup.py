@@ -216,7 +216,7 @@ def api_restore_backup(
                 datasource_id=str(record.datasource_id),
                 action="restore_backup",
                 details=expected_details,
-                expected_confirm_text=datasource.name  # 期望用户输入的文本是该数据源的真实名称
+                expected_confirm_text=str(datasource.name)  # 期望用户输入的文本是该数据源的真实名称
             )
             return {
                 "success": False,

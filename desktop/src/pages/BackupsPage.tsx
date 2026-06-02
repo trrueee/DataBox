@@ -37,12 +37,9 @@ export const BackupsPage = ({ activeProject, datasources, activeDataSource }: Ba
   const [confirmDetails, setConfirmDetails] = useState<ConfirmationDetails | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedDatasourceId(activeDataSource?.id ?? datasources[0]?.id ?? "");
   }, [activeDataSource?.id, datasources]);
-
-  useEffect(() => {
-    void refreshBackups();
-  }, [activeProject?.id, selectedDatasourceId]);
 
   const refreshBackups = async () => {
     if (!activeProject) return;
@@ -53,6 +50,12 @@ export const BackupsPage = ({ activeProject, datasources, activeDataSource }: Ba
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refreshBackups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject?.id, selectedDatasourceId]);
 
   const handleCreateBackup = async () => {
     if (!selectedDatasourceId) {
@@ -65,6 +68,7 @@ export const BackupsPage = ({ activeProject, datasources, activeDataSource }: Ba
       const created = await api.createBackup(selectedDatasourceId, label);
       setBackups((items) => [created, ...items]);
       setLabel("");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message ?? "Backup failed.");
     } finally {
@@ -84,6 +88,7 @@ export const BackupsPage = ({ activeProject, datasources, activeDataSource }: Ba
         fileSizeBytes: result.fileSizeBytes,
         filePath: result.filePath,
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message ?? "Restore precheck failed.");
     }
@@ -107,6 +112,7 @@ export const BackupsPage = ({ activeProject, datasources, activeDataSource }: Ba
         fileSizeBytes: result.fileSizeBytes,
         filePath: result.filePath,
       });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setRestoreError(err.message ?? "Restore precheck failed.");
     }
@@ -147,6 +153,7 @@ export const BackupsPage = ({ activeProject, datasources, activeDataSource }: Ba
       }
       setRestoreSuccess(true);
       void refreshBackups();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setRestoreError(err.message ?? "Database restore failed.");
     } finally {

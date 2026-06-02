@@ -107,6 +107,7 @@ function AliasesEditor({ datasourceId }: { datasourceId: string }) {
     finally { setLoading(false); }
   }, [datasourceId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const handleCreate = async () => {
@@ -176,6 +177,7 @@ function MetricsEditor({ datasourceId }: { datasourceId: string }) {
     finally { setLoading(false); }
   }, [datasourceId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const handleCreate = async () => {
@@ -243,6 +245,7 @@ function DimensionsEditor({ datasourceId }: { datasourceId: string }) {
     finally { setLoading(false); }
   }, [datasourceId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const handleCreate = async () => {
@@ -312,6 +315,7 @@ function TableScopeEditor({ datasourceId, projectId, tables }: { datasourceId: s
     finally { setLoading(false); }
   }, [projectId, datasourceId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const toggle = (tableId: string) => {

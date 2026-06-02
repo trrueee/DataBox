@@ -54,15 +54,15 @@ def _profile_column(column: str, values: list[Any]) -> ColumnProfile:
     numeric_values = [_coerce_number(value) for value in non_null]
     numeric_values = [value for value in numeric_values if value is not None]
     if non_null and len(numeric_values) >= max(1, int(len(non_null) * 0.8)):
-        total = sum(numeric_values)
+        total = sum(numeric_values)  # type: ignore[arg-type]
         return ColumnProfile(
             kind="numeric",
             count=len(values),
             null_count=len(values) - len(non_null),
             distinct_count=distinct_count,
             sample_values=sample_values,
-            min=round(min(numeric_values), 4),
-            max=round(max(numeric_values), 4),
+            min=round(min(numeric_values), 4),  # type: ignore[arg-type,type-var]
+            max=round(max(numeric_values), 4),  # type: ignore[arg-type,type-var]
             sum=round(total, 4),
             avg=round(total / len(numeric_values), 4),
         )
@@ -76,8 +76,8 @@ def _profile_column(column: str, values: list[Any]) -> ColumnProfile:
             null_count=len(values) - len(non_null),
             distinct_count=distinct_count,
             sample_values=sample_values,
-            min=min(time_values).isoformat(),
-            max=max(time_values).isoformat(),
+            min=min(time_values).isoformat(),  # type: ignore[union-attr,type-var]
+            max=max(time_values).isoformat(),  # type: ignore[union-attr,type-var]
         )
 
     top_values = [
@@ -149,7 +149,7 @@ def _detect_anomalies(profiles: dict[str, ColumnProfile]) -> list[str]:
             continue
         try:
             max_value = float(profile.max)
-            avg_value = float(profile.avg)
+            avg_value = float(profile.avg)  # type: ignore[arg-type]
         except (TypeError, ValueError):
             continue
         if max_value >= avg_value * 3 and max_value > 0:

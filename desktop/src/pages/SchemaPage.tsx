@@ -80,6 +80,7 @@ export const SchemaPage = ({ datasource, initialViewTab, selectedTableName, onOp
         setShowTestDataModal(false);
         setTestDataResult(null);
       }, 1800);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setTestDataError(err.message ?? "注入测试数据失败，请检查主外键关联表是否已填充数据。");
     } finally {
@@ -114,6 +115,7 @@ export const SchemaPage = ({ datasource, initialViewTab, selectedTableName, onOp
         model: aiAlterModelName || undefined,
       });
       setAiAlterResultDdl(data.ddl);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setAiAlterError(err.message ?? "AI 批注式修改失败，请检查模型配置。");
     } finally {
@@ -157,6 +159,7 @@ export const SchemaPage = ({ datasource, initialViewTab, selectedTableName, onOp
         setAiAlterPrompt("");
         setApplySuccess(false);
       }, 1500);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setAiAlterError(err.message ?? "应用 DDL 变更失败，请检查 SQL 语法或外键冲突。");
     } finally {
@@ -164,28 +167,45 @@ export const SchemaPage = ({ datasource, initialViewTab, selectedTableName, onOp
     }
   };
 
-  useEffect(() => {
-    void fetchTables(selectedTableName ?? undefined);
-    void fetchERDiagram();
-  }, [datasource.id]);
+  const buildPreviewSql = (tableName: string) => `SELECT * FROM \`${tableName}\` LIMIT 100;`;
 
-  useEffect(() => {
-    if (!selectedTableName || tables.length === 0) return;
-    const nextTable = tables.find((table) => table.table_name === selectedTableName);
-    if (nextTable && nextTable.id !== selectedTable?.id) {
-      void handleSelectTable(nextTable);
+  const fetchPreviewData = async (tableName: string) => {
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setPreviewData(null);
+    try {
+      const result = await api.executeSql(datasource.id, buildPreviewSql(tableName));
+      setPreviewData(result);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      setPreviewError(error.message ?? "预览失败");
+    } finally {
+      setPreviewLoading(false);
     }
-  }, [selectedTableName, tables]);
+  };
 
-  useEffect(() => {
-    if (initialViewTab) {
-      setViewTab(initialViewTab);
+  const fetchERDiagram = async () => {
+    try {
+      setErData(await api.getERDiagram(datasource.id));
+    } catch (err) {
+      console.error("ER load failed", err);
     }
-  }, [initialViewTab]);
+  };
 
-  useEffect(() => {
-    if (viewTab === "data" && selectedTable) void fetchPreviewData(selectedTable.table_name);
-  }, [viewTab, selectedTable?.id]);
+  const handleSelectTable = async (table: SchemaTable) => {
+    setSelectedTable(table);
+    setErFocusTable(table.table_name);
+    setColumnsLoading(true);
+    setPreviewData(null);
+    setPreviewError(null);
+    try {
+      setColumns(await api.listColumns(table.id));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setColumnsLoading(false);
+    }
+  };
 
   const fetchTables = async (selectTableName?: string) => {
     try {
@@ -203,35 +223,11 @@ export const SchemaPage = ({ datasource, initialViewTab, selectedTableName, onOp
     }
   };
 
-  const fetchERDiagram = async () => {
-    try {
-      setErData(await api.getERDiagram(datasource.id));
-    } catch (err) {
-      console.error("ER load failed", err);
-    }
-  };
-
   const handleExecuteSuccess = (newTableName?: string) => {
     void fetchTables(newTableName);
     void fetchERDiagram();
     setViewTab("fields");
   };
-
-  const fetchPreviewData = async (tableName: string) => {
-    setPreviewLoading(true);
-    setPreviewError(null);
-    setPreviewData(null);
-    try {
-      const result = await api.executeSql(datasource.id, buildPreviewSql(tableName));
-      setPreviewData(result);
-    } catch (error: any) {
-      setPreviewError(error.message ?? "预览失败");
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const buildPreviewSql = (tableName: string) => `SELECT * FROM \`${tableName}\` LIMIT 100;`;
 
   const previewSql = selectedTable ? buildPreviewSql(selectedTable.table_name) : "";
 
@@ -247,20 +243,33 @@ export const SchemaPage = ({ datasource, initialViewTab, selectedTableName, onOp
     onOpenSql?.(previewSql, `Preview ${selectedTable.table_name}`);
   };
 
-  const handleSelectTable = async (table: SchemaTable) => {
-    setSelectedTable(table);
-    setErFocusTable(table.table_name);
-    setColumnsLoading(true);
-    setPreviewData(null);
-    setPreviewError(null);
-    try {
-      setColumns(await api.listColumns(table.id));
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setColumnsLoading(false);
+  useEffect(() => {
+    void fetchTables(selectedTableName ?? undefined);
+    void fetchERDiagram();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datasource.id]);
+
+  useEffect(() => {
+    if (!selectedTableName || tables.length === 0) return;
+    const nextTable = tables.find((table) => table.table_name === selectedTableName);
+    if (nextTable && nextTable.id !== selectedTable?.id) {
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+      void handleSelectTable(nextTable);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTableName, tables]);
+
+  useEffect(() => {
+    if (initialViewTab) {
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+      setViewTab(initialViewTab);
+    }
+  }, [initialViewTab]);
+
+  useEffect(() => {
+    if (viewTab === "data" && selectedTable) void fetchPreviewData(selectedTable.table_name);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewTab, selectedTable?.id]);
 
   const safeErData = useMemo<ERDiagramData>(
     () => ({

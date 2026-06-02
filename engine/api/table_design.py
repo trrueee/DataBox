@@ -96,7 +96,7 @@ def api_execute_table_design_ddl(req: TableDesignExecuteRequest, db: Session = D
                 datasource_id=req.datasource_id,
                 action="execute_ddl",
                 details=expected_details,
-                expected_confirm_text=datasource.name
+                expected_confirm_text=str(datasource.name)
             )
             return {
                 "success": False,
@@ -243,7 +243,7 @@ def api_generate_test_data(req: TestDataGenerateRequest, db: Session = Depends(g
                 datasource_id=req.datasource_id,
                 action="generate_test_data",
                 details=expected_details,
-                expected_confirm_text=datasource.name
+                expected_confirm_text=str(datasource.name)
             )
             return {
                 "success": False,

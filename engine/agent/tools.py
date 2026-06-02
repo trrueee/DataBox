@@ -614,7 +614,7 @@ def _render_sql_from_query_plan(
     if not query_plan:
         return None
 
-    raw_plan = query_plan.get("raw_plan") if isinstance(query_plan.get("raw_plan"), dict) else query_plan
+    raw_plan: dict[str, Any] = query_plan.get("raw_plan") if isinstance(query_plan.get("raw_plan"), dict) else query_plan  # type: ignore[assignment]
     schema = _schema_columns(db, datasource_id)
     if not schema:
         return None
@@ -806,11 +806,11 @@ def _expanded_star_columns(
         alias_to_table[table_name] = table_name
 
     if star_table:
-        table_name = alias_to_table.get(star_table.lower())
-        if not table_name or table_name not in schema:
+        matched_table = alias_to_table.get(star_table.lower())
+        if not matched_table or matched_table not in schema:
             return [], []
-        truncated = [table_name] if len(schema[table_name]) > STAR_EXPANSION_LIMIT else []
-        return [exp.column(column, table=star_table) for column in schema[table_name][:STAR_EXPANSION_LIMIT]], truncated
+        truncated_cols = [matched_table] if len(schema[matched_table]) > STAR_EXPANSION_LIMIT else []
+        return [exp.column(column, table=star_table) for column in schema[matched_table][:STAR_EXPANSION_LIMIT]], truncated_cols
 
     expanded: list[exp.Expression] = []
     truncated: list[str] = []
@@ -930,7 +930,7 @@ def _try_fix_sql(
             "remaining_risks": ["No local schema context was available for deterministic repair."],
         }
 
-    guardrail = safety.get("guardrail") if isinstance(safety.get("guardrail"), dict) else {}
+    guardrail: dict[str, Any] = safety.get("guardrail") if isinstance(safety.get("guardrail"), dict) else {}  # type: ignore[assignment]
     rules = {str(item.get("rule", "")) for item in _list_value(guardrail.get("checks")) if isinstance(item, dict)}
     if "select_star" not in rules and "SELECT *" not in sql.upper():
         return {

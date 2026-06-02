@@ -345,9 +345,9 @@ def _build_sqlite_schema_snapshot(ds: DataSource, datasource_id: str) -> SchemaS
                     fk_column = column_objects.get((t_name, c_col))
                     ref_col_id = column_name_to_id.get((referred_table, r_col))
                     if fk_column and ref_col_id:
-                        fk_column.is_foreign_key = True
-                        fk_column.foreign_table_id = ref_table_id
-                        fk_column.foreign_column_id = ref_col_id
+                        fk_column.is_foreign_key = True  # type: ignore[assignment]
+                        fk_column.foreign_table_id = ref_table_id  # type: ignore[assignment]
+                        fk_column.foreign_column_id = ref_col_id  # type: ignore[assignment]
 
         return tables_to_insert, columns_to_insert, len(tables_to_insert)
     finally:
@@ -476,9 +476,9 @@ def _build_postgresql_schema_snapshot(ds: DataSource, datasource_id: str) -> Sch
                     fk_column = column_objects.get((t_name, c_col))
                     ref_col_id = column_name_to_id.get((referred_table, r_col))
                     if fk_column and ref_col_id:
-                        fk_column.is_foreign_key = True
-                        fk_column.foreign_table_id = ref_table_id
-                        fk_column.foreign_column_id = ref_col_id
+                        fk_column.is_foreign_key = True  # type: ignore[assignment]
+                        fk_column.foreign_table_id = ref_table_id  # type: ignore[assignment]
+                        fk_column.foreign_column_id = ref_col_id  # type: ignore[assignment]
 
         return tables_to_insert, columns_to_insert, len(tables_to_insert)
     finally:

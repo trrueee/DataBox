@@ -189,7 +189,8 @@ export const ConsoleTranscript: React.FC<ConsoleTranscriptProps> = ({
     if (!currentSql.trim()) return null;
     try {
       return actionRegistry.previewPlan(currentSql);
-    } catch (e) {
+    } catch {
+      // Plan preview may fail silently
       return null;
     }
   }, [currentSql]);
