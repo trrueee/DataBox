@@ -310,6 +310,7 @@ export interface AgentChartSuggestion {
 
 export interface AgentArtifact {
   id: string;
+  semantic_id?: string | null;
   type: "query_plan" | "sql" | "safety" | "table" | "chart" | "insight" | "recommendation" | "error";
   title: string;
   payload: Record<string, unknown>;
@@ -319,6 +320,8 @@ export interface AgentArtifact {
     collapsed?: boolean;
   };
   refs?: Record<string, unknown>;
+  produced_by_step?: string | null;
+  depends_on?: string[];
 }
 
 export interface FollowUpSuggestion {
@@ -471,6 +474,85 @@ export interface AgentRuntimeEvent {
   answer?: AgentAnswer | null;
   response?: AgentRunResponse | null;
   error?: string | null;
+}
+
+export interface AgentRunDraftState {
+  runId?: string;
+  status: "idle" | "running" | "failed" | "completed";
+  question: string;
+  events: AgentRuntimeEvent[];
+  artifacts: AgentArtifact[];
+  answer?: AgentAnswer | null;
+  response?: AgentRunResponse | null;
+  error?: string | null;
+}
+
+export function createAgentRunDraft(question: string): AgentRunDraftState {
+  return {
+    status: "running",
+    question,
+    events: [],
+    artifacts: [],
+    answer: null,
+    response: null,
+    error: null,
+  };
+}
+
+export function reduceAgentRuntimeEvent(draft: AgentRunDraftState, event: AgentRuntimeEvent): AgentRunDraftState {
+  const next: AgentRunDraftState = {
+    ...draft,
+    runId: event.run_id || draft.runId,
+    events: [...draft.events, event],
+  };
+
+  if (event.type === "agent.run.started") {
+    const question = typeof event.step?.question === "string" ? event.step.question : draft.question;
+    return { ...next, question, status: "running", error: null };
+  }
+
+  if (event.type === "agent.artifact.created" && event.artifact) {
+    return {
+      ...next,
+      artifacts: mergeArtifacts(draft.artifacts, [event.artifact]),
+    };
+  }
+
+  if (event.type === "agent.answer.completed") {
+    return { ...next, answer: event.answer || draft.answer || null };
+  }
+
+  if (event.type === "agent.run.completed" && event.response) {
+    return {
+      ...next,
+      status: "completed",
+      response: event.response,
+      answer: event.response.answer || draft.answer || null,
+      artifacts: mergeArtifacts(draft.artifacts, event.response.artifacts || []),
+      error: null,
+    };
+  }
+
+  if (event.type === "agent.run.failed") {
+    return {
+      ...next,
+      status: "failed",
+      response: event.response || draft.response || null,
+      answer: event.response?.answer || draft.answer || null,
+      artifacts: mergeArtifacts(draft.artifacts, event.response?.artifacts || []),
+      error: event.error || event.response?.error || "Agent stream failed.",
+    };
+  }
+
+  return next;
+}
+
+function mergeArtifacts(current: AgentArtifact[], incoming: AgentArtifact[]): AgentArtifact[] {
+  const byId = new Map(current.map((artifact) => [artifact.id, artifact]));
+  for (const artifact of incoming) {
+    byId.set(artifact.id, artifact);
+  }
+  return Array.from(byId.values());
 }
 
 function buildAgentRunPayload(datasourceId: string, question: string, config?: AgentRunConfig) {

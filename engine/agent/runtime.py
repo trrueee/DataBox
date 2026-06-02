@@ -8,7 +8,18 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from engine.agent.answer import synthesize_agent_answer
-from engine.agent.artifacts import build_agent_artifacts
+from engine.agent.artifacts import (
+    AgentArtifactIdentity,
+    build_agent_artifacts,
+    build_chart_artifact,
+    build_error_artifact,
+    build_profile_artifact,
+    build_query_plan_artifact,
+    build_recommendations_artifact,
+    build_safety_artifact,
+    build_sql_artifact,
+    build_table_artifact,
+)
 from engine.agent.context import build_response_context_summary, has_follow_up_context, referenced_artifact_ids
 from engine.agent.events import build_trace_events
 from engine.agent.narration import build_message_blocks, build_visible_events
@@ -57,8 +68,11 @@ class DataBoxAgentRuntime:
     def run_iter(self, req: AgentRunRequest) -> Iterator[AgentRuntimeEvent]:
         run_id = str(uuid.uuid4())
         session_id = self._session_id(req)
+        artifact_identity = AgentArtifactIdentity(run_id)
         sequence = 0
         steps: list[AgentStep] = []
+        artifacts: list[AgentArtifact] = []
+        emitted_artifact_ids: set[str] = set()
         query_plan: dict[str, Any] | None = None
         sql: str | None = None
         safety: dict[str, Any] | None = None
@@ -114,11 +128,21 @@ class DataBoxAgentRuntime:
 
         def final_events(response: AgentRunResponse) -> Iterator[AgentRuntimeEvent]:
             for artifact in response.artifacts:
+                if artifact.id in emitted_artifact_ids:
+                    continue
+                emitted_artifact_ids.add(artifact.id)
                 yield emit("agent.artifact.created", artifact=artifact)
             if response.answer is not None:
                 yield emit("agent.answer.completed", answer_payload=response.answer)
             final_type: AgentRuntimeEventType = "agent.run.completed" if response.success else "agent.run.failed"
             yield emit(final_type, response=response, error=response.error)
+
+        def append_artifact(artifact: AgentArtifact) -> AgentRuntimeEvent:
+            semantic_to_id = {item.semantic_id or item.id: item.id for item in artifacts}
+            artifact.depends_on = [semantic_to_id.get(dependency, dependency) for dependency in artifact.depends_on]
+            artifacts.append(artifact)
+            emitted_artifact_ids.add(artifact.id)
+            return emit("agent.artifact.created", artifact=artifact)
 
         def build_failure(error: str, plan: dict[str, Any] | None = None) -> AgentRunResponse:
             return self._failure(
@@ -128,6 +152,8 @@ class DataBoxAgentRuntime:
                 query_plan=plan,
                 run_id=run_id,
                 session_id=session_id,
+                artifacts=artifacts,
+                artifact_identity=artifact_identity,
             )
 
         yield emit(
@@ -170,6 +196,8 @@ class DataBoxAgentRuntime:
             yield from final_events(build_failure("Failed to build query plan."))
             return
         query_plan = plan_obs.output
+        if query_plan:
+            yield append_artifact(build_query_plan_artifact(query_plan, identity=artifact_identity))
 
         if self._budget_reached(req, steps):
             yield from final_events(build_failure("Agent stopped before SQL generation because max_steps was reached.", query_plan))
@@ -213,6 +241,8 @@ class DataBoxAgentRuntime:
         yield complete_step(validate_obs)
         safety = validate_obs.output or {}
         self._attach_generation_notes(safety, sql_output)
+        yield append_artifact(build_sql_artifact(sql, safety=safety, identity=artifact_identity))
+        yield append_artifact(build_safety_artifact(safety, identity=artifact_identity))
         if validate_obs.status == "failed" or not safety.get("can_execute"):
             reason = (
                 safety.get("revise_suggestion")
@@ -238,6 +268,8 @@ class DataBoxAgentRuntime:
                 error=str(reason),
                 run_id=run_id,
                 session_id=session_id,
+                artifacts=artifacts,
+                artifact_identity=artifact_identity,
             )
             yield from final_events(response)
             return
@@ -263,6 +295,8 @@ class DataBoxAgentRuntime:
                     error="Agent stopped before SQL execution because max_steps was reached.",
                     run_id=run_id,
                     session_id=session_id,
+                    artifacts=artifacts,
+                    artifact_identity=artifact_identity,
                 )
                 yield from final_events(response)
                 return
@@ -271,6 +305,8 @@ class DataBoxAgentRuntime:
             execute_obs = execute_sql_tool(self.db, req, safe_sql, safety=safety)
             yield complete_step(execute_obs)
             execution = execute_obs.output or {}
+            if execute_obs.status != "failed" and execution.get("success"):
+                yield append_artifact(build_table_artifact(execution, safety=safety, identity=artifact_identity))
             if execute_obs.status == "failed":
                 reason = (
                     execution.get("revise_suggestion")
@@ -296,6 +332,8 @@ class DataBoxAgentRuntime:
                     error=str(reason),
                     run_id=run_id,
                     session_id=session_id,
+                    artifacts=artifacts,
+                    artifact_identity=artifact_identity,
                 )
                 yield from final_events(response)
                 return
@@ -311,12 +349,16 @@ class DataBoxAgentRuntime:
             yield complete_step(profile_obs)
             if profile_obs.output:
                 result_profile = profile_obs.output
+                parsed_profile = ResultProfile.model_validate(result_profile)
+                yield append_artifact(build_profile_artifact(parsed_profile, safety=safety, identity=artifact_identity))
 
         if not self._budget_reached(req, steps):
             yield start_step("suggest_chart")
             chart_obs = suggest_chart_tool(execution)
             yield complete_step(chart_obs)
             chart_suggestion = chart_obs.output
+            if chart_suggestion and chart_suggestion.get("type") and chart_suggestion.get("type") != "table":
+                yield append_artifact(build_chart_artifact(chart_suggestion, safety=safety, identity=artifact_identity))
 
         if not self._budget_reached(req, steps):
             yield start_step("suggest_followups")
@@ -358,6 +400,8 @@ class DataBoxAgentRuntime:
             error=None,
             run_id=run_id,
             session_id=session_id,
+            artifacts=artifacts,
+            artifact_identity=artifact_identity,
         )
         yield from final_events(response)
 
@@ -406,6 +450,8 @@ class DataBoxAgentRuntime:
         error: str | None,
         run_id: str | None = None,
         session_id: str | None = None,
+        artifacts: list[AgentArtifact] | None = None,
+        artifact_identity: AgentArtifactIdentity | None = None,
     ) -> AgentRunResponse:
         parsed_profile = ResultProfile.model_validate(result_profile) if result_profile else None
         parsed_suggestions = [
@@ -427,7 +473,8 @@ class DataBoxAgentRuntime:
             )
             explanation = explanation or parsed_answer.answer
 
-        artifacts = build_agent_artifacts(
+        response_artifacts = self._response_artifacts(
+            artifacts=artifacts,
             query_plan=query_plan,
             sql=sql,
             safety=safety,
@@ -436,11 +483,15 @@ class DataBoxAgentRuntime:
             result_profile=parsed_profile,
             answer=parsed_answer,
             error=error,
+            run_id=run_id,
+            artifact_identity=artifact_identity,
         )
+        if parsed_answer is not None:
+            self._bind_answer_evidence(parsed_answer, response_artifacts)
         events = build_visible_events(
             question=req.question,
             steps=steps,
-            artifacts=artifacts,
+            artifacts=response_artifacts,
             answer=parsed_answer,
             suggestions=parsed_suggestions,
             error=error,
@@ -449,7 +500,7 @@ class DataBoxAgentRuntime:
         response_context_summary = build_response_context_summary(
             req=req,
             answer=parsed_answer.answer if parsed_answer else explanation,
-            artifacts=artifacts,
+            artifacts=response_artifacts,
         )
 
         response = AgentRunResponse(
@@ -469,7 +520,7 @@ class DataBoxAgentRuntime:
             result_profile=parsed_profile,
             answer=parsed_answer,
             suggestions=parsed_suggestions,
-            artifacts=artifacts,
+            artifacts=response_artifacts,
             message_blocks=message_blocks,
             events=events,
             trace_events=build_trace_events(steps),
@@ -479,6 +530,62 @@ class DataBoxAgentRuntime:
         validate_agent_response_contract(response)
         return response
 
+    def _response_artifacts(
+        self,
+        artifacts: list[AgentArtifact] | None,
+        query_plan: dict[str, Any] | None,
+        sql: str | None,
+        safety: dict[str, Any] | None,
+        execution: dict[str, Any] | None,
+        chart_suggestion: dict[str, Any] | None,
+        result_profile: ResultProfile | None,
+        answer: AgentAnswer | None,
+        error: str | None,
+        run_id: str | None,
+        artifact_identity: AgentArtifactIdentity | None,
+    ) -> list[AgentArtifact]:
+        identity = artifact_identity or AgentArtifactIdentity(run_id)
+        if artifacts is None:
+            response_artifacts = build_agent_artifacts(
+                query_plan=query_plan,
+                sql=sql,
+                safety=safety,
+                execution=execution,
+                chart_suggestion=chart_suggestion,
+                result_profile=result_profile,
+                answer=answer,
+                error=error,
+                identity=identity,
+            )
+        else:
+            response_artifacts = list(artifacts)
+            semantic_ids = {artifact.semantic_id or artifact.id for artifact in response_artifacts}
+            if answer and answer.recommendations and "recommendations" not in semantic_ids:
+                response_artifacts.append(build_recommendations_artifact(answer, identity=identity))
+                semantic_ids.add("recommendations")
+            if error and "agent_error" not in semantic_ids:
+                response_artifacts.append(
+                    build_error_artifact(error, safety=safety, execution=execution, identity=identity)
+                )
+
+        self._bind_artifact_dependencies(response_artifacts)
+        return response_artifacts
+
+    def _bind_answer_evidence(self, answer: AgentAnswer, artifacts: list[AgentArtifact]) -> None:
+        semantic_to_id = {artifact.semantic_id or artifact.id: artifact.id for artifact in artifacts}
+        artifact_ids = {artifact.id for artifact in artifacts}
+        answer.evidence = [
+            evidence if evidence.artifact_id in artifact_ids else evidence.model_copy(
+                update={"artifact_id": semantic_to_id.get(evidence.artifact_id, evidence.artifact_id)}
+            )
+            for evidence in answer.evidence
+        ]
+
+    def _bind_artifact_dependencies(self, artifacts: list[AgentArtifact]) -> None:
+        semantic_to_id = {artifact.semantic_id or artifact.id: artifact.id for artifact in artifacts}
+        for artifact in artifacts:
+            artifact.depends_on = [semantic_to_id.get(dependency, dependency) for dependency in artifact.depends_on]
+
     def _failure(
         self,
         req: AgentRunRequest,
@@ -487,6 +594,8 @@ class DataBoxAgentRuntime:
         query_plan: dict[str, Any] | None = None,
         run_id: str | None = None,
         session_id: str | None = None,
+        artifacts: list[AgentArtifact] | None = None,
+        artifact_identity: AgentArtifactIdentity | None = None,
     ) -> AgentRunResponse:
         return self._response(
             req=req,
@@ -504,6 +613,8 @@ class DataBoxAgentRuntime:
             error=error,
             run_id=run_id,
             session_id=session_id,
+            artifacts=artifacts,
+            artifact_identity=artifact_identity,
         )
 
     def _session_id(self, req: AgentRunRequest) -> str:

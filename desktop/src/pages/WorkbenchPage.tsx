@@ -18,8 +18,8 @@ import {
   Layers
 } from "lucide-react";
 import { MenuBar, type MenuDef } from "../components/MenuBar";
-import { api } from "../lib/api";
-import type { AgentRunResponse, AgentRuntimeEvent, DataSource, FollowUpSuggestion, Project, SchemaTable } from "../lib/api";
+import { api, createAgentRunDraft, reduceAgentRuntimeEvent } from "../lib/api";
+import type { AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, DataSource, FollowUpSuggestion, Project, SchemaTable } from "../lib/api";
 import { EnvironmentsPage } from "./EnvironmentsPage";
 import { BackupsPage } from "./BackupsPage";
 import { DataSourcesPage } from "./DataSourcesPage";
@@ -451,6 +451,7 @@ export const WorkbenchPage = ({
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [agentResponse, setAgentResponse] = useState<AgentRunResponse | null>(null);
+  const [agentDraft, setAgentDraft] = useState<AgentRunDraftState | null>(null);
   const [agentStreamEvents, setAgentStreamEvents] = useState<AgentRuntimeEvent[]>([]);
   const [aiMode, setAiMode] = useState<"sql" | "agent">("agent");
   const [aiLoading, setAiLoading] = useState(false);
@@ -646,6 +647,7 @@ export const WorkbenchPage = ({
     setAiLoading(true);
     setAiResponse("");
     setAgentResponse(null);
+    setAgentDraft(null);
     setAgentStreamEvents([]);
     setAiPrompt(promptText);
     try {
@@ -667,6 +669,7 @@ export const WorkbenchPage = ({
     setAiLoading(true);
     setAiResponse("");
     setAgentResponse(null);
+    setAgentDraft(createAgentRunDraft(question));
     setAgentStreamEvents([]);
     setAiPrompt(question);
     try {
@@ -674,10 +677,28 @@ export const WorkbenchPage = ({
         activeDataSource.id,
         question,
         { optimizeRag: true, execute: true, followUpContext },
-        { onEvent: (event) => setAgentStreamEvents((prev) => [...prev, event]) },
+        {
+          onEvent: (event) => {
+            setAgentStreamEvents((prev) => [...prev, event]);
+            setAgentDraft((draft) => reduceAgentRuntimeEvent(draft || createAgentRunDraft(question), event));
+          },
+        },
       );
       setAgentResponse(res);
+      setAgentDraft((draft) => draft ? {
+        ...draft,
+        status: res.success ? "completed" : "failed",
+        response: res,
+        answer: res.answer || draft.answer || null,
+        artifacts: res.artifacts || draft.artifacts,
+        error: res.error || null,
+      } : draft);
     } catch (err: unknown) {
+      setAgentDraft((draft) => draft ? {
+        ...draft,
+        status: "failed",
+        error: getErrorMessage(err, "Agent request failed"),
+      } : draft);
       setAiResponse(`Agent 运行失败: ${getErrorMessage(err, "Agent request failed")}`);
     } finally {
       setAiLoading(false);
@@ -723,6 +744,7 @@ export const WorkbenchPage = ({
     setAiLoading(true);
     setAiResponse("");
     setAgentResponse(null);
+    setAgentDraft(null);
     setAgentStreamEvents([]);
     try {
       const res = await api.generateSql(activeDataSource.id, aiPrompt);
@@ -1012,6 +1034,14 @@ export const WorkbenchPage = ({
       },
     ];
   }, [activeDataSource, handleExportConnectionConfig, handleImportConnectionConfig, handleOpenQueryTab, handleOpenTableTab, handleAiContextAction, handleSaveCurrentSql, handleTestActiveConnection, onRefreshSchemaTables, triggerActiveTabAction, schemaTables, setAiPanelCollapsed, setShowCommandPalette, setShowSettingsModal, setShowBackupsModal, setShowDashboardModal, setShowEnvironmentsModal, setShowTourDialog, setActiveDataSource]);
+
+  const currentAgentEvents = agentDraft?.events.length ? agentDraft.events : agentStreamEvents;
+  const hasLiveAgentDraft = Boolean(
+    aiMode === "agent" &&
+    agentDraft &&
+    !agentResponse &&
+    (agentDraft.artifacts.length > 0 || agentDraft.answer || agentDraft.status === "failed"),
+  );
 
   return (
     <div
@@ -1391,21 +1421,22 @@ export const WorkbenchPage = ({
           {/* Active Tab content viewport */}
           <div style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
             {tabs.length === 0 ? (
-              aiLoading && aiMode === "agent" ? (
-                <div style={{ display: "grid", placeItems: "center", height: "100%", padding: 30, background: "var(--bg-primary)" }}>
-                  <div style={{ width: "min(620px, 100%)" }}>
-                    <AgentLoadingNarrative prompt={aiPrompt} events={agentStreamEvents} />
-                  </div>
-                </div>
-              ) : agentResponse ? (
+              hasLiveAgentDraft || agentResponse ? (
                 <div style={{ height: "100%", overflow: "auto", padding: 18, background: "var(--bg-primary)" }}>
                   <AgentWorkspace
                     result={agentResponse}
+                    draft={agentDraft}
                     disabled={aiLoading}
                     onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
-                    onAsk={(question) => handleRunAgentPrompt(question, agentResponse)}
+                    onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
                     onSuggestion={handleAgentSuggestion}
                   />
+                </div>
+              ) : aiLoading && aiMode === "agent" ? (
+                <div style={{ display: "grid", placeItems: "center", height: "100%", padding: 30, background: "var(--bg-primary)" }}>
+                  <div style={{ width: "min(620px, 100%)" }}>
+                    <AgentLoadingNarrative prompt={aiPrompt} events={currentAgentEvents} />
+                  </div>
                 </div>
               ) : (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", padding: 30, background: "var(--bg-primary)" }}>
@@ -1688,12 +1719,13 @@ export const WorkbenchPage = ({
                 </section>
 
                 <section style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-                  {agentResponse ? (
+                  {hasLiveAgentDraft || agentResponse ? (
                     <AgentWorkspace
                       result={agentResponse}
+                      draft={agentDraft}
                       disabled={aiLoading}
                       onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
-                      onAsk={(question) => handleRunAgentPrompt(question, agentResponse)}
+                      onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
                       onSuggestion={handleAgentSuggestion}
                     />
                   ) : aiResponse ? (
@@ -1718,7 +1750,7 @@ export const WorkbenchPage = ({
                     </div>
                   ) : aiLoading ? (
                     aiMode === "agent" ? (
-                      <AgentLoadingNarrative compact prompt={aiPrompt} events={agentStreamEvents} />
+                      <AgentLoadingNarrative compact prompt={aiPrompt} events={currentAgentEvents} />
                     ) : (
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "16px 0", color: "var(--text-muted)", fontSize: "0.66rem" }}>
                         <span className="animate-spin" style={{ fontSize: 12 }}>↻</span> AI 推理中...
@@ -1766,6 +1798,7 @@ export const WorkbenchPage = ({
                     onClick={() => {
                       setAiMode("sql");
                       setAgentResponse(null);
+                      setAgentDraft(null);
                       setAgentStreamEvents([]);
                     }}
                     style={{ justifyContent: "center" }}
@@ -1778,6 +1811,7 @@ export const WorkbenchPage = ({
                     onClick={() => {
                       setAiMode("agent");
                       setAiResponse("");
+                      setAgentDraft(null);
                       setAgentStreamEvents([]);
                     }}
                     style={{ justifyContent: "center" }}

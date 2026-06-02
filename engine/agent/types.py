@@ -117,11 +117,14 @@ class AgentArtifactPresentation(BaseModel):
 
 class AgentArtifact(BaseModel):
     id: str
+    semantic_id: str | None = None
     type: AgentArtifactType
     title: str
     payload: dict[str, Any] = Field(default_factory=dict)
     presentation: AgentArtifactPresentation
     refs: dict[str, Any] = Field(default_factory=dict)
+    produced_by_step: str | None = None
+    depends_on: list[str] = Field(default_factory=list)
 
 
 class FollowUpSuggestion(BaseModel):

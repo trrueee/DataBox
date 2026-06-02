@@ -27,8 +27,11 @@ def test_agent_runtime_execute_false_generates_full_review_response(db_session, 
     assert res.answer.evidence
     assert res.artifacts
     artifact_ids = {artifact.id for artifact in res.artifacts}
+    artifact_semantic_ids = {artifact.semantic_id for artifact in res.artifacts}
     assert {item.artifact_id for item in res.answer.evidence}.issubset(artifact_ids)
-    assert any(item.artifact_id == "result_profile" for item in res.answer.evidence)
+    result_profile_artifact = next(artifact for artifact in res.artifacts if artifact.semantic_id == "result_profile")
+    assert "result_profile" in artifact_semantic_ids
+    assert any(item.artifact_id == result_profile_artifact.id for item in res.answer.evidence)
     sql_artifact = next(artifact for artifact in res.artifacts if artifact.type == "sql")
     assert sql_artifact.payload["safety_state"]["can_execute"] is True
     assert res.events
@@ -93,6 +96,60 @@ def test_agent_runtime_run_iter_emits_ordered_events_and_final_response(db_sessi
     ]
     answer_index = next(index for index, event in enumerate(events) if event.type == "agent.answer.completed")
     assert answer_index > max(index for index, event in enumerate(events) if event.type == "agent.artifact.created")
+
+
+def test_agent_runtime_run_iter_streams_artifacts_after_producing_steps(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "SELECT id, username FROM users LIMIT 3",
+            "model": "test",
+            "mode": "offline",
+            "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    monkeypatch.setattr("engine.agent.tools._render_sql_from_query_plan", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+    req = AgentRunRequest(datasource_id=demo_datasource.id, question="list users", execute=True)
+
+    events = list(DataBoxAgentRuntime(db_session).run_iter(req))
+    final_response = events[-1].response
+
+    assert final_response is not None
+    assert final_response.success is True
+    artifact_events = [event for event in events if event.type == "agent.artifact.created"]
+    semantic_ids = [event.artifact.semantic_id for event in artifact_events if event.artifact]
+    assert {"query_plan", "sql_candidate", "safety_report", "result_table"}.issubset(set(semantic_ids))
+    assert all(event.artifact.id.startswith(f"run_{final_response.run_id}.artifact.") for event in artifact_events if event.artifact)
+
+    def step_index(step_name: str, event_type: str) -> int:
+        return next(
+            index for index, event in enumerate(events)
+            if event.type == event_type and event.step and event.step.get("name") == step_name
+        )
+
+    def artifact_index(semantic_id: str) -> int:
+        return next(
+            index for index, event in enumerate(events)
+            if event.type == "agent.artifact.created"
+            and event.artifact
+            and event.artifact.semantic_id == semantic_id
+        )
+
+    assert step_index("build_query_plan", "agent.step.completed") < artifact_index("query_plan") < step_index("generate_sql_candidate", "agent.step.started")
+    assert step_index("validate_sql", "agent.step.completed") < artifact_index("sql_candidate") < step_index("execute_sql", "agent.step.started")
+    assert step_index("validate_sql", "agent.step.completed") < artifact_index("safety_report") < step_index("execute_sql", "agent.step.started")
+    assert step_index("execute_sql", "agent.step.completed") < artifact_index("result_table") < step_index("profile_result", "agent.step.started")
+
+    artifacts_by_semantic = {artifact.semantic_id: artifact for artifact in final_response.artifacts}
+    result_table = artifacts_by_semantic["result_table"]
+    assert artifacts_by_semantic["sql_candidate"].id in result_table.depends_on
+    assert artifacts_by_semantic["safety_report"].id in result_table.depends_on
+    assert {evidence.artifact_id for evidence in final_response.answer.evidence}.issubset(
+        {artifact.id for artifact in final_response.artifacts}
+    )
 
 
 def test_agent_runtime_reuses_validation_safety_decision_for_execution(db_session, demo_datasource, monkeypatch) -> None:
@@ -201,6 +258,41 @@ def test_agent_runtime_blocks_guardrail_failure_without_execution(db_session, de
     error_artifact = next(artifact for artifact in res.artifacts if artifact.type == "error")
     assert error_artifact.payload["recovery_guidance"]
     assert error_artifact.payload["safety_state"]["can_execute"] is False
+
+
+def test_agent_runtime_run_iter_trustgate_failure_streams_error_artifact(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {
+            "sql": "DELETE FROM users",
+            "model": "test",
+            "mode": "offline",
+            "latencyMs": 1,
+            "schemaValidationWarnings": [],
+        }
+
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+    req = AgentRunRequest(datasource_id=demo_datasource.id, question="delete users", execute=True)
+
+    events = list(DataBoxAgentRuntime(db_session).run_iter(req))
+    final = events[-1]
+
+    assert final.type == "agent.run.failed"
+    assert final.response is not None
+    assert final.response.success is False
+    assert final.response.answer is not None
+    assert final.response.answer.key_findings == []
+    artifact_semantic_ids = [
+        event.artifact.semantic_id
+        for event in events
+        if event.type == "agent.artifact.created" and event.artifact
+    ]
+    assert "safety_report" in artifact_semantic_ids
+    assert "agent_error" in artifact_semantic_ids
+    assert "result_table" not in artifact_semantic_ids
+    error_artifact = next(artifact for artifact in final.response.artifacts if artifact.semantic_id == "agent_error")
+    assert error_artifact.payload["recovery_guidance"]
 
 
 def test_agent_runtime_execution_failure_returns_revise_suggestion(db_session, demo_datasource, monkeypatch) -> None:

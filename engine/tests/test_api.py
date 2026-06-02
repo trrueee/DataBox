@@ -483,6 +483,25 @@ def test_agent_run_stream_endpoint_returns_sse_final_response(client) -> None:
         "suggest_followups",
         "answer_synthesizer",
     ]
+    streamed_semantic_ids = [artifact["semantic_id"] for artifact in final_response["artifacts"]]
+    assert "query_plan" in streamed_semantic_ids
+    assert "sql_candidate" in streamed_semantic_ids
+    assert "safety_report" in streamed_semantic_ids
+
+    fallback_resp = client.post("/api/v1/query/agent-run", json={
+        "datasource_id": ds_id,
+        "question": "list users",
+        "execute": False,
+    }, headers=_headers())
+    assert fallback_resp.status_code == 200
+    fallback = fallback_resp.json()
+    assert final_response["success"] == fallback["success"]
+    assert final_response["question"] == fallback["question"]
+    assert final_response["sql"] == fallback["sql"]
+    assert final_response["error"] == fallback["error"]
+    assert [artifact["semantic_id"] for artifact in final_response["artifacts"]] == [
+        artifact["semantic_id"] for artifact in fallback["artifacts"]
+    ]
 
 
 def test_agent_run_endpoint_accepts_followup_context(client) -> None:
