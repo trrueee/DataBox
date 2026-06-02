@@ -3,20 +3,26 @@ from __future__ import annotations
 import time
 
 from engine.agent.types import AgentStep, AgentTraceEvent
+from engine.agent.trace_redactor import AgentTraceRedactor
 
 
-def build_trace_events(steps: list[AgentStep]) -> list[AgentTraceEvent]:
+def build_trace_events(
+    steps: list[AgentStep],
+    redactor: AgentTraceRedactor | None = None,
+) -> list[AgentTraceEvent]:
+    redactor = redactor or AgentTraceRedactor()
     events: list[AgentTraceEvent] = []
     created_at_ms = _now_ms()
     for index, step in enumerate(steps, start=1):
         step_id = f"step_{index}_{step.name}"
         started_sequence = len(events) + 1
         events.append(
-            AgentTraceEvent(
+            _trace_event(
+                redactor,
                 event_id=f"trace_{started_sequence}_{step_id}_started",
                 sequence=started_sequence,
                 created_at_ms=created_at_ms + started_sequence,
-                type="agent.trace.step_started",
+                event_type="agent.trace.step_started",
                 step_id=step_id,
                 name=step.name,
                 input=step.input,
@@ -24,11 +30,12 @@ def build_trace_events(steps: list[AgentStep]) -> list[AgentTraceEvent]:
         )
         completed_sequence = len(events) + 1
         events.append(
-            AgentTraceEvent(
+            _trace_event(
+                redactor,
                 event_id=f"trace_{completed_sequence}_{step_id}_completed",
                 sequence=completed_sequence,
                 created_at_ms=created_at_ms + completed_sequence,
-                type="agent.trace.step_completed",
+                event_type="agent.trace.step_completed",
                 step_id=step_id,
                 name=step.name,
                 status=step.status,
@@ -39,6 +46,36 @@ def build_trace_events(steps: list[AgentStep]) -> list[AgentTraceEvent]:
             )
         )
     return events
+
+
+def _trace_event(
+    redactor: AgentTraceRedactor,
+    event_id: str,
+    sequence: int,
+    created_at_ms: int,
+    event_type: str,
+    step_id: str,
+    name: str,
+    status: str | None = None,
+    input: dict | None = None,
+    output: dict | None = None,
+    error: str | None = None,
+    latency_ms: int | None = None,
+) -> AgentTraceEvent:
+    event_data = {
+        "event_id": event_id,
+        "sequence": sequence,
+        "created_at_ms": created_at_ms,
+        "type": event_type,
+        "step_id": step_id,
+        "name": name,
+        "status": status,
+        "input": redactor.redact(input) if input is not None else None,
+        "output": redactor.redact(output) if output is not None else None,
+        "error": redactor.redact(error) if error is not None else None,
+        "latency_ms": latency_ms,
+    }
+    return AgentTraceEvent.model_validate(redactor.cap_event(event_data))
 
 
 def _now_ms() -> int:

@@ -175,6 +175,8 @@ def test_validate_sql_tool_blocks_unrewritten_select_star(db_session, demo_datas
     assert obs.status == "success"
     assert obs.output is not None
     assert obs.output["can_execute"] is False
+    assert obs.output["execution_safety_decision"]["policy"] == "agent_readonly"
+    assert "select_star" in obs.output["execution_safety_decision"]["blocked_reasons"]
     assert "explicit column" in obs.output["revise_suggestion"]
 
 

@@ -13,6 +13,7 @@ from engine.models import DataSource
 
 
 RiskLevel = Literal["safe", "warning", "danger"]
+ExecutionPolicy = Literal["readonly", "agent_readonly", "explain"]
 SchemaValidator = Callable[[str, Session, str], list[str]]
 
 
@@ -29,6 +30,7 @@ class TrustGateResult(TypedDict, total=False):
 class ExecutionSafetyDecision(BaseModel):
     decision_id: str = Field(default_factory=lambda: f"safety-{uuid4()}")
     datasource_id: str
+    policy: ExecutionPolicy = "readonly"
     original_sql: str
     safe_sql: str | None
     passed: bool
@@ -37,6 +39,7 @@ class ExecutionSafetyDecision(BaseModel):
     guardrail: GuardrailResult
     schema_warnings: list[str] = Field(default_factory=list)
     scope_state: dict[str, Any] = Field(default_factory=dict)
+    blocked_reasons: list[str] = Field(default_factory=list)
     messages: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -88,7 +91,12 @@ class TrustGate:
             "canExecute": can_execute,
         }
 
-    def execution_decision(self, datasource_id: str, sql: str) -> ExecutionSafetyDecision:
+    def execution_decision(
+        self,
+        datasource_id: str,
+        sql: str,
+        policy: ExecutionPolicy = "readonly",
+    ) -> ExecutionSafetyDecision:
         datasource = self.db.query(DataSource).filter(DataSource.id == datasource_id).first()
         trust_gate = self.evaluate(datasource_id, sql)
         guardrail = trust_gate["guardrail"]
@@ -96,22 +104,35 @@ class TrustGate:
         messages = list(trust_gate.get("messages", []))
         env = str(datasource.env or "dev").lower() if datasource else "unknown"
         guardrail_rejected = guardrail.get("result") == "reject"
+        guardrail_checks = list(guardrail.get("checks", []))
+        select_star_blocked = (
+            policy == "agent_readonly"
+            and any(check.get("rule") == "select_star" for check in guardrail_checks)
+        )
         requires_confirmation = env == "prod"
+        blocked_reasons: list[str] = []
+
+        if not datasource:
+            blocked_reasons.append("datasource_scope")
+            messages.append("Datasource scope could not be resolved.")
+        if guardrail_rejected:
+            blocked_reasons.append("guardrail_reject")
         if schema_warnings:
+            blocked_reasons.append("schema_validation")
             messages.append("Execution blocked until schema validation warnings are resolved.")
         if requires_confirmation:
+            blocked_reasons.append("requires_confirmation")
             messages.append("Execution blocked until production datasource confirmation is handled.")
+        if select_star_blocked:
+            blocked_reasons.append("select_star")
+            messages.append("Agent execution requires explicit projected columns instead of SELECT *.")
 
-        can_execute = bool(
-            datasource
-            and not guardrail_rejected
-            and not schema_warnings
-            and not requires_confirmation
-        )
+        can_execute = not blocked_reasons
         safe_sql = str(guardrail.get("safeSql") or "").strip() if can_execute else None
 
         return ExecutionSafetyDecision(
             datasource_id=datasource_id,
+            policy=policy,
             original_sql=sql,
             safe_sql=safe_sql,
             passed=can_execute,
@@ -128,5 +149,6 @@ class TrustGate:
                 "project_id": str(datasource.project_id) if datasource and datasource.project_id else None,
                 "environment_id": str(datasource.environment_id) if datasource and datasource.environment_id else None,
             },
+            blocked_reasons=blocked_reasons,
             messages=messages,
         )

@@ -186,40 +186,27 @@ def validate_sql_tool(db: Session, datasource_id: str, sql: str) -> ToolObservat
     def body() -> dict[str, Any]:
         gate = TrustGate(db, validate_sql_schema)
         trust_gate = gate.evaluate(datasource_id, sql)
-        execution_decision = gate.execution_decision(datasource_id, sql)
-        guardrail = trust_gate["guardrail"]
-        schema_warnings = list(trust_gate.get("schemaWarnings", []))
-        reject_checks = [item for item in guardrail.get("checks", []) if item.get("level") == "reject"]
-        select_star_checks = [item for item in guardrail.get("checks", []) if item.get("rule") == "select_star"]
-        auto_limit_only = _is_auto_limit_only(guardrail)
-        prod_confirmation = _requires_prod_confirmation(trust_gate)
-        requires_confirmation = bool(trust_gate.get("requiresConfirmation")) and not auto_limit_only
-
-        passed = (
-            guardrail.get("result") != "reject"
-            and not reject_checks
-            and not schema_warnings
-            and not select_star_checks
-            and not prod_confirmation
-        )
-        can_execute = passed and not requires_confirmation
-        revise_suggestion = None if can_execute else _revise_suggestion(
+        execution_decision = gate.execution_decision(datasource_id, sql, policy="agent_readonly")
+        guardrail = execution_decision.guardrail
+        schema_warnings = list(execution_decision.schema_warnings)
+        revise_suggestion = None if execution_decision.can_execute else _revise_suggestion(
             guardrail=guardrail,
             schema_warnings=schema_warnings,
-            requires_confirmation=requires_confirmation,
+            requires_confirmation=execution_decision.requires_confirmation,
         )
 
         return {
-            "passed": passed,
-            "can_execute": can_execute,
-            "safe_sql": guardrail.get("safeSql") if can_execute else None,
+            "passed": execution_decision.passed,
+            "can_execute": execution_decision.can_execute,
+            "safe_sql": execution_decision.safe_sql,
             "original_sql": sql,
             "schema_warnings": schema_warnings,
             "guardrail": dict(guardrail),
             "trust_gate": dict(trust_gate),
             "execution_safety_decision": execution_decision.model_dump(mode="json"),
-            "requires_confirmation": requires_confirmation,
-            "messages": list(trust_gate.get("messages", [])),
+            "requires_confirmation": execution_decision.requires_confirmation,
+            "messages": list(execution_decision.messages),
+            "blocked_reasons": list(execution_decision.blocked_reasons),
             "revise_suggestion": revise_suggestion,
         }
 

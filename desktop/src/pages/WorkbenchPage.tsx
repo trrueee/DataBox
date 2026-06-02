@@ -211,6 +211,67 @@ export function AgentRunPanel({ result, onOpenSql }: { result: AgentRunResponse;
   );
 }
 
+const AGENT_LOADING_STEPS = [
+  "正在理解问题",
+  "正在匹配可信 schema",
+  "正在生成查询计划",
+  "正在通过 TrustGate",
+  "正在执行并整理证据",
+];
+
+function AgentLoadingNarrative({ compact = false, prompt }: { compact?: boolean; prompt?: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: compact ? 8 : 12,
+        padding: compact ? 8 : 16,
+        background: compact ? "var(--bg-secondary)" : "var(--bg-surface)",
+        border: compact ? "none" : "1px solid var(--border-light)",
+        borderRadius: compact ? 0 : 8,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--accent-indigo)", fontWeight: 800, fontSize: compact ? "0.68rem" : "0.84rem" }}>
+        <span className="animate-spin" style={{ fontSize: compact ? 11 : 14 }}>↻</span>
+        Agent 正在调查
+      </div>
+      {prompt?.trim() ? (
+        <div style={{ color: "var(--text-secondary)", fontSize: compact ? "0.66rem" : "0.76rem", lineHeight: 1.5 }}>
+          {prompt.trim()}
+        </div>
+      ) : null}
+      <div style={{ display: "flex", flexDirection: "column", gap: compact ? 5 : 7 }}>
+        {AGENT_LOADING_STEPS.map((step, index) => (
+          <div
+            key={step}
+            style={{
+              display: "grid",
+              gridTemplateColumns: compact ? "16px 1fr" : "22px 1fr",
+              alignItems: "center",
+              gap: 7,
+              color: index < 2 ? "var(--text-primary)" : "var(--text-secondary)",
+              fontSize: compact ? "0.66rem" : "0.75rem",
+            }}
+          >
+            <span
+              style={{
+                width: compact ? 7 : 9,
+                height: compact ? 7 : 9,
+                borderRadius: "50%",
+                background: index < 2 ? "var(--accent-indigo)" : "var(--border-medium)",
+                boxShadow: index < 2 ? "0 0 0 4px rgba(74,91,192,0.08)" : "none",
+                justifySelf: "center",
+              }}
+            />
+            <span>{step}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const DashboardPage = lazy(() =>
   import("./DashboardPage").then((module) => ({ default: module.DashboardPage })),
 );
@@ -1265,7 +1326,13 @@ export const WorkbenchPage = ({
           {/* Active Tab content viewport */}
           <div style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
             {tabs.length === 0 ? (
-              agentResponse ? (
+              aiLoading && aiMode === "agent" ? (
+                <div style={{ display: "grid", placeItems: "center", height: "100%", padding: 30, background: "var(--bg-primary)" }}>
+                  <div style={{ width: "min(620px, 100%)" }}>
+                    <AgentLoadingNarrative prompt={aiPrompt} />
+                  </div>
+                </div>
+              ) : agentResponse ? (
                 <div style={{ height: "100%", overflow: "auto", padding: 18, background: "var(--bg-primary)" }}>
                   <AgentWorkspace
                     result={agentResponse}
@@ -1585,9 +1652,13 @@ export const WorkbenchPage = ({
                       )}
                     </div>
                   ) : aiLoading ? (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "16px 0", color: "var(--text-muted)", fontSize: "0.66rem" }}>
-                      <span className="animate-spin" style={{ fontSize: 12 }}>↻</span> AI 推理中...
-                    </div>
+                    aiMode === "agent" ? (
+                      <AgentLoadingNarrative compact prompt={aiPrompt} />
+                    ) : (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "16px 0", color: "var(--text-muted)", fontSize: "0.66rem" }}>
+                        <span className="animate-spin" style={{ fontSize: 12 }}>↻</span> AI 推理中...
+                      </div>
+                    )
                   ) : (
                     <div style={{ fontSize: "0.66rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
                       <div style={{ fontWeight: 700, marginBottom: 5, color: "var(--text-muted)" }}>建议</div>

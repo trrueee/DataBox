@@ -266,6 +266,21 @@ class TestPerformanceAndExplain:
 
         assert any(check["rule"] == "safety_decision_sql_mismatch" for check in exc_info.value.checks)
 
+    def test_execute_query_bypass_requires_testing_env(self, db_session, demo_datasource, monkeypatch) -> None:
+        from engine.errors import GuardrailValidationError
+
+        monkeypatch.delenv("DATABOX_TESTING", raising=False)
+
+        with pytest.raises(GuardrailValidationError) as exc_info:
+            execute_query(
+                db_session,
+                demo_datasource.id,
+                "SELECT id FROM users LIMIT 3",
+                bypass_guardrail=True,
+            )
+
+        assert any(check["rule"] == "trust_gate_bypass_disabled" for check in exc_info.value.checks)
+
     def test_explain_sql_sqlite(self, db_session, demo_datasource) -> None:
         demo_datasource.host = "demo"
         demo_datasource.database_name = "demo_shop"
@@ -273,6 +288,8 @@ class TestPerformanceAndExplain:
 
         res = explain_sql(db_session, demo_datasource.id, "SELECT id, username FROM users LIMIT 3")
         assert res["success"] is True
+        assert res["safetyDecision"]["decision_id"]
+        assert res["safetyDecision"]["can_execute"] is True
         assert "records" in res
         assert "warnings" in res
         assert len(res["records"]) >= 1
@@ -284,5 +301,8 @@ class TestPerformanceAndExplain:
         assert "Extra" in record
 
     def test_explain_sql_non_select_rejected(self, db_session, demo_datasource) -> None:
-        with pytest.raises(ValueError, match="EXPLAIN 诊断仅支持 SELECT 语句"):
+        from engine.errors import GuardrailValidationError
+
+        with pytest.raises(GuardrailValidationError) as exc_info:
             explain_sql(db_session, demo_datasource.id, "DELETE FROM users")
+        assert any(check["rule"] in {"select_only", "blocked_command_type"} for check in exc_info.value.checks)

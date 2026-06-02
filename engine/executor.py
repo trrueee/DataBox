@@ -21,11 +21,10 @@ from engine.errors import (
     SQLQueryCancelledError,
     SQLQueryTimeoutError,
 )
-from engine.guardrail import guardrail_check
 from engine.models import DataSource, QueryHistory
 from engine.policy.redactor import DataRedactor
 from engine.query_registry import QUERY_REGISTRY
-from engine.trust_gate import ExecutionSafetyDecision, TrustGate
+from engine.trust_gate import ExecutionPolicy, ExecutionSafetyDecision, TrustGate
 
 MAX_ROWS = 1000
 MAX_COLUMNS = 100
@@ -398,6 +397,7 @@ def _resolve_execution_safety_decision(
     sql_str: str,
     bypass_guardrail: bool,
     safety_decision: ExecutionSafetyDecision | dict[str, Any] | None,
+    policy: ExecutionPolicy = "readonly",
 ) -> ExecutionSafetyDecision:
     if safety_decision is not None:
         decision = (
@@ -431,6 +431,15 @@ def _resolve_execution_safety_decision(
         return decision
 
     if bypass_guardrail:
+        if os.environ.get("DATABOX_TESTING") != "1":
+            raise GuardrailValidationError(
+                "TrustGate bypass is only available in the test environment.",
+                checks=[{
+                    "rule": "trust_gate_bypass_disabled",
+                    "level": "reject",
+                    "message": "bypass_guardrail requires DATABOX_TESTING=1 and cannot be used in normal execution.",
+                }],
+            )
         guard_res = {
             "result": "pass",
             "originalSql": sql_str,
@@ -440,6 +449,7 @@ def _resolve_execution_safety_decision(
         }
         return ExecutionSafetyDecision(
             datasource_id=datasource_id,
+            policy=policy,
             original_sql=sql_str,
             safe_sql=sql_str,
             passed=True,
@@ -457,7 +467,7 @@ def _resolve_execution_safety_decision(
 
     from engine.ai import validate_sql_schema
 
-    return TrustGate(db, validate_sql_schema).execution_decision(datasource_id, sql_str)
+    return TrustGate(db, validate_sql_schema).execution_decision(datasource_id, sql_str, policy=policy)
 
 
 def _decision_checks_for_history(decision: ExecutionSafetyDecision) -> list[dict[str, Any]]:
@@ -476,6 +486,16 @@ def _decision_checks_for_history(decision: ExecutionSafetyDecision) -> list[dict
                 "rule": "requires_confirmation",
                 "level": "reject",
                 "message": "Execution requires manual confirmation before a result set can be produced.",
+            }
+        )
+    for reason in decision.blocked_reasons:
+        if reason in {"guardrail_reject", "schema_validation", "requires_confirmation"}:
+            continue
+        checks.append(
+            {
+                "rule": reason,
+                "level": "reject",
+                "message": f"TrustGate blocked execution because of {reason}.",
             }
         )
     if not decision.scope_state.get("datasource_exists", True):
@@ -518,6 +538,7 @@ def execute_query(
     execution_id: str | None = None,
     bypass_guardrail: bool = False,
     safety_decision: ExecutionSafetyDecision | dict[str, Any] | None = None,
+    safety_policy: ExecutionPolicy = "readonly",
 ) -> dict[str, Any]:
     """
     Safely executes a SQL query:
@@ -538,6 +559,7 @@ def execute_query(
         sql_str=sql_str,
         bypass_guardrail=bypass_guardrail,
         safety_decision=safety_decision,
+        policy=safety_policy,
     )
     guard_res = decision.guardrail
     guardrail_ms = int((time.perf_counter() - t_guard_start) * 1000)
@@ -742,27 +764,28 @@ def explain_sql(
 ) -> dict[str, Any]:
     """
     Diagnose query execution plans:
-    1. Verify SELECT only
-    2. Pass Guardrail check
-    3. Execute EXPLAIN
-    4. Format diagnostics and return warnings for slow patterns (type=ALL or key=NULL)
+    1. Resolve a TrustGate execution decision
+    2. Execute EXPLAIN against the approved safe SQL
+    3. Format diagnostics and return warnings for slow patterns (type=ALL or key=NULL)
     """
-    sql_strip = sql_str.strip().upper()
-    if not sql_strip.startswith("SELECT"):
-        raise ValueError("EXPLAIN 诊断仅支持 SELECT 语句")
-
     ds = db.query(DataSource).filter(DataSource.id == datasource_id).first()
     if not ds:
         raise ValueError("Data source not found")
 
-    guard_res = guardrail_check(sql_str, dialect=ds.db_type or "mysql")
-    if guard_res["result"] == "reject":
-        from typing import cast
+    decision = _resolve_execution_safety_decision(
+        db=db,
+        datasource_id=datasource_id,
+        sql_str=sql_str,
+        bypass_guardrail=False,
+        safety_decision=None,
+        policy="explain",
+    )
+    if not decision.can_execute or not str(decision.safe_sql or "").strip():
         raise GuardrailValidationError(
-            guard_res["message"], checks=cast(Any, guard_res["checks"])
+            _decision_block_message(decision),
+            checks=_decision_checks_for_error(decision),
         )
-        
-    safe_sql = guard_res["safeSql"]
+    safe_sql = str(decision.safe_sql or "").strip()
         
     warnings = []
     records = []
@@ -859,5 +882,6 @@ def explain_sql(
     return {
         "success": True,
         "records": records,
-        "warnings": list(set(warnings))
+        "warnings": list(set(warnings)),
+        "safetyDecision": decision.model_dump(mode="json"),
     }
