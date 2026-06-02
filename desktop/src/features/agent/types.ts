@@ -1,7 +1,9 @@
 export type {
   AgentAnswer,
+  AgentApproval,
   AgentFollowUpContext,
   AgentArtifact,
+  AgentCheckpoint,
   AgentMessageBlock,
   AgentRunDraftState,
   AgentRunResponse,

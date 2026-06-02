@@ -27,7 +27,9 @@ from engine.agent.validation import validate_agent_response_contract
 from engine.agent.tools import skipped_execute_observation
 from engine.agent.types import (
     AgentAnswer,
+    AgentApprovalRecord,
     AgentArtifact,
+    AgentCheckpointRecord,
     AgentRunRequest,
     AgentRunResponse,
     AgentRuntimeEvent,
@@ -37,8 +39,12 @@ from engine.agent.types import (
     ResultProfile,
     ToolObservation,
 )
+from engine.errors import DataBoxError
+from engine.models import AgentRun
 
 logger = logging.getLogger("databox.agent.runtime")
+
+APPROVAL_HARD_BLOCKERS = {"guardrail_reject", "schema_validation", "datasource_scope", "select_star"}
 
 
 class DataBoxAgentRuntime:
@@ -121,6 +127,8 @@ class DataBoxAgentRuntime:
             artifact: AgentArtifact | None = None,
             answer_payload: AgentAnswer | None = None,
             response: AgentRunResponse | None = None,
+            approval: AgentApprovalRecord | None = None,
+            checkpoint: AgentCheckpointRecord | None = None,
             error: str | None = None,
         ) -> AgentRuntimeEvent:
             return event_emitter.emit(
@@ -129,6 +137,8 @@ class DataBoxAgentRuntime:
                 artifact=artifact,
                 answer_payload=answer_payload,
                 response=response,
+                approval=approval,
+                checkpoint=checkpoint,
                 error=error,
             )
 
@@ -191,6 +201,7 @@ class DataBoxAgentRuntime:
                     agent_persistence.complete_run(self.db, response)
                 else:
                     agent_persistence.fail_run(self.db, run_id, session_id, response.error or "Agent run failed.", response)
+                self.db.commit()
             except Exception:
                 logger.warning("Persistence: failed to persist final response for run %s", run_id)
                 try:
@@ -324,6 +335,82 @@ class DataBoxAgentRuntime:
         state.safety = safety
         state.sql = sql
         yield from append_artifacts_from_observation("validate_sql", validate_obs)
+        if validate_obs.status != "failed" and self._should_wait_for_approval(safety):
+            approval = agent_persistence.create_approval(
+                self.db,
+                run_id=run_id,
+                session_id=session_id,
+                step_name="validate_sql",
+                tool_name="sql.execute_readonly",
+                risk_level=self._approval_risk_level(safety),
+                reason=self._approval_reason(safety),
+                policy_decision=self._policy_decision(safety),
+                requested_action=self._requested_action(req, state, sql),
+            )
+            checkpoint = agent_persistence.save_checkpoint(
+                self.db,
+                run_id=run_id,
+                session_id=session_id,
+                status="waiting_approval",
+                current_step_name="validate_sql",
+                next_step_name="execute_sql",
+                plan=[step.model_dump(mode="json") for step in self.build_default_plan(req)],
+                state=state.model_dump(mode="json"),
+                completed_steps=[step.model_dump(mode="json") for step in state.steps],
+                pending_steps=self._pending_step_specs(req, after_step="validate_sql"),
+                artifacts=[artifact.model_dump(mode="json") for artifact in artifacts],
+            )
+            response = self._response(
+                req=req,
+                success=False,
+                steps=steps,
+                query_plan=state.query_plan,
+                sql=state.sql or sql,
+                safety=safety,
+                execution=None,
+                explanation=None,
+                chart_suggestion=None,
+                result_profile=None,
+                answer=None,
+                suggestions=[],
+                error=None,
+                run_id=run_id,
+                session_id=session_id,
+                artifacts=artifacts,
+                artifact_identity=artifact_identity,
+                status="waiting_approval",
+                approval=approval,
+                checkpoint=checkpoint,
+            )
+            agent_persistence.mark_run_waiting_approval(
+                self.db,
+                run_id=run_id,
+                approval_id=approval.id,
+                current_step_name="validate_sql",
+                response=response,
+            )
+            approval_event = emit(
+                "agent.approval.required",
+                step={"name": "validate_sql", "next_step": "execute_sql"},
+                approval=approval,
+            )
+            checkpoint_event = emit(
+                "agent.checkpoint.saved",
+                step={"name": "validate_sql", "next_step": "execute_sql"},
+                checkpoint=checkpoint,
+            )
+            waiting_event = emit(
+                "agent.run.waiting_approval",
+                step={"name": "execute_sql", "status": "waiting_approval"},
+                response=response,
+                approval=approval,
+                checkpoint=checkpoint,
+            )
+            self.db.commit()
+            yield approval_event
+            yield checkpoint_event
+            yield waiting_event
+            return
         if validate_obs.status == "failed" or not safety.get("can_execute"):
             reason = (
                 safety.get("revise_suggestion")
@@ -481,6 +568,288 @@ class DataBoxAgentRuntime:
         )
         yield from final_events(response)
 
+    def resume(self, run_id: str, approval_id: str | None = None) -> AgentRunResponse:
+        final_response: AgentRunResponse | None = None
+        for event in self.resume_iter(run_id, approval_id):
+            if event.response is not None:
+                final_response = event.response
+        if final_response is None:
+            raise RuntimeError("Agent runtime resume completed without a final response.")
+        return final_response
+
+    def resume_iter(self, run_id: str, approval_id: str | None = None) -> Iterator[AgentRuntimeEvent]:
+        run = self.db.query(AgentRun).filter(AgentRun.id == run_id).first()
+        if run is None:
+            raise DataBoxError(f"Agent run {run_id} not found.", code="RUN_NOT_FOUND")
+        if run.status != "waiting_approval":
+            raise DataBoxError("Agent run is not waiting for approval.", code="RUN_NOT_WAITING_APPROVAL")
+
+        checkpoint_payload = agent_persistence.get_latest_checkpoint_payload(self.db, run_id)
+        if checkpoint_payload is None:
+            raise DataBoxError("No checkpoint is available for this run.", code="CHECKPOINT_NOT_FOUND")
+
+        checkpoint = checkpoint_payload["record"]
+        if checkpoint.next_step_name != "execute_sql":
+            raise DataBoxError("Only resume from execute_sql is supported in this version.", code="UNSUPPORTED_RESUME_POINT")
+
+        resolved_approval_id = approval_id or str(run.waiting_approval_id or "")
+        if not resolved_approval_id:
+            pending = agent_persistence.get_pending_approval_for_run(self.db, run_id)
+            resolved_approval_id = pending.id if pending is not None else ""
+        if not resolved_approval_id:
+            raise DataBoxError("No approval id was supplied for resume.", code="APPROVAL_NOT_FOUND")
+
+        approval = agent_persistence.get_approval(self.db, resolved_approval_id)
+        if approval is None:
+            raise DataBoxError("Approval not found.", code="APPROVAL_NOT_FOUND")
+        if approval.run_id != run_id:
+            raise DataBoxError("Approval does not belong to this run.", code="APPROVAL_RUN_MISMATCH")
+        if approval.status == "pending":
+            raise DataBoxError("Approval is still pending.", code="APPROVAL_PENDING")
+        if approval.status == "rejected":
+            agent_persistence.fail_run(self.db, run_id, run.session_id, "Approval rejected")
+            self.db.commit()
+            raise DataBoxError("Approval rejected.", code="APPROVAL_REJECTED")
+        if approval.status != "approved":
+            raise DataBoxError(f"Approval status {approval.status} cannot resume this run.", code="APPROVAL_NOT_APPROVED")
+
+        state_payload = checkpoint_payload.get("state")
+        if not isinstance(state_payload, dict):
+            raise DataBoxError("Checkpoint state is not restorable.", code="CHECKPOINT_INVALID")
+        state = AgentState.model_validate(state_payload)
+        state.run_id = run_id
+        state.session_id = run.session_id
+        state.datasource_id = run.datasource_id
+        state.question = run.question
+
+        req = AgentRunRequest(
+            datasource_id=run.datasource_id,
+            question=run.question,
+            session_id=run.session_id,
+            parent_run_id=run.parent_run_id,
+            execute=True,
+        )
+        safe_sql = self._approve_safety_for_execution(state, approval)
+        safety = state.safety or {}
+        steps = state.steps
+        artifacts = state.artifacts
+        emitted_artifact_ids = {artifact.id for artifact in artifacts}
+        artifact_identity = AgentArtifactIdentity(run_id)
+        explanation: str | None = None
+
+        def _save_event(event: AgentRuntimeEvent) -> None:
+            try:
+                agent_persistence.record_runtime_event(self.db, run.session_id, event)
+            except Exception:
+                logger.warning("Persistence: failed to save resume event %s", event.event_id)
+                try:
+                    self.db.rollback()
+                except Exception:
+                    pass
+
+        event_emitter = EventEmitter(
+            run_id,
+            _save_event,
+            start_sequence=agent_persistence.get_latest_runtime_event_sequence(self.db, run_id),
+        )
+        tool_ctx = AgentToolContext(db=self.db, request=req, state=state)
+
+        def emit(
+            event_type: AgentRuntimeEventType,
+            *,
+            step: dict[str, Any] | None = None,
+            artifact: AgentArtifact | None = None,
+            answer_payload: AgentAnswer | None = None,
+            response: AgentRunResponse | None = None,
+            approval: AgentApprovalRecord | None = None,
+            checkpoint: AgentCheckpointRecord | None = None,
+            error: str | None = None,
+        ) -> AgentRuntimeEvent:
+            return event_emitter.emit(
+                event_type,
+                step=step,
+                artifact=artifact,
+                answer_payload=answer_payload,
+                response=response,
+                approval=approval,
+                checkpoint=checkpoint,
+                error=error,
+            )
+
+        def _save_artifact_record(artifact: AgentArtifact, seq: int) -> None:
+            try:
+                agent_persistence.record_artifact(self.db, run.session_id, run_id, artifact, seq)
+            except Exception:
+                logger.warning("Persistence: failed to save resume artifact %s", artifact.id)
+                try:
+                    self.db.rollback()
+                except Exception:
+                    pass
+
+        def start_step(name: str) -> AgentRuntimeEvent:
+            return emit("agent.step.started", step={"name": name, "index": len(steps) + 1})
+
+        def execute_step(
+            name: str,
+            tool_name: str,
+            input_override: dict[str, Any] | None = None,
+        ) -> tuple[AgentStep, ToolObservation]:
+            step, observation = self.step_executor.execute_step(
+                AgentStepSpec(name=name, tool_name=tool_name),
+                state,
+                tool_ctx,
+                input_override=input_override,
+            )
+            state.apply_observation(name, observation, agent_step=step)
+            return step, observation
+
+        def complete_step(step: AgentStep) -> AgentRuntimeEvent:
+            return emit(
+                "agent.step.completed",
+                step={
+                    "name": step.name,
+                    "status": step.status,
+                    "error": step.error,
+                    "latency_ms": step.latency_ms,
+                    "index": len(steps),
+                },
+            )
+
+        def append_artifact(artifact: AgentArtifact) -> AgentRuntimeEvent:
+            bound_artifact = self.artifact_emitter.bind_dependencies(artifacts, artifact)
+            artifacts.append(bound_artifact)
+            emitted_artifact_ids.add(bound_artifact.id)
+            event = emit("agent.artifact.created", artifact=bound_artifact)
+            _save_artifact_record(bound_artifact, len(artifacts))
+            return event
+
+        def append_artifacts_from_observation(
+            name: str,
+            observation: ToolObservation,
+        ) -> Iterator[AgentRuntimeEvent]:
+            for artifact in self.artifact_emitter.from_observation(name, observation, state, artifact_identity):
+                yield append_artifact(artifact)
+
+        def final_events(response: AgentRunResponse) -> Iterator[AgentRuntimeEvent]:
+            for artifact in response.artifacts:
+                if artifact.id in emitted_artifact_ids:
+                    continue
+                emitted_artifact_ids.add(artifact.id)
+                event = emit("agent.artifact.created", artifact=artifact)
+                yield event
+                _save_artifact_record(artifact, len(artifacts))
+            if response.answer is not None:
+                yield emit("agent.answer.completed", answer_payload=response.answer)
+            final_type: AgentRuntimeEventType = "agent.run.completed" if response.success else "agent.run.failed"
+            yield emit(final_type, response=response, error=response.error)
+            try:
+                if response.success:
+                    agent_persistence.complete_run(self.db, response)
+                else:
+                    agent_persistence.fail_run(self.db, run_id, run.session_id, response.error or "Agent run failed.", response)
+                self.db.commit()
+            except Exception:
+                logger.warning("Persistence: failed to persist resumed response for run %s", run_id)
+                try:
+                    self.db.rollback()
+                except Exception:
+                    pass
+
+        agent_persistence.mark_run_resumed(self.db, run_id=run_id, current_step_name="execute_sql")
+        resumed_event = emit(
+            "agent.run.resumed",
+            step={"name": "execute_sql", "status": "running"},
+            approval=approval,
+            checkpoint=checkpoint,
+        )
+        self.db.commit()
+        yield resumed_event
+
+        yield start_step("execute_sql")
+        execute_step_result, execute_obs = execute_step(
+            "execute_sql",
+            "sql.execute_readonly",
+            {"sql": safe_sql, "safety": safety},
+        )
+        yield complete_step(execute_step_result)
+        execution = state.execution or execute_obs.output or {}
+        yield from append_artifacts_from_observation("execute_sql", execute_obs)
+        if execute_obs.status == "failed":
+            reason = (
+                execution.get("revise_suggestion")
+                or execute_obs.error
+                or "SQL execution failed."
+            )
+            yield start_step("revise_sql")
+            revise_step, revise_obs = execute_step(
+                "revise_sql",
+                "sql.revise",
+                {"sql": safe_sql, "error": str(reason), "safety": safety},
+            )
+            yield complete_step(revise_step)
+            response = self._response(
+                req=req,
+                success=False,
+                steps=steps,
+                query_plan=state.query_plan,
+                sql=safe_sql,
+                safety=safety,
+                execution=execution,
+                explanation=None,
+                chart_suggestion=None,
+                result_profile=None,
+                answer=None,
+                suggestions=[],
+                error=str(reason),
+                run_id=run_id,
+                session_id=run.session_id,
+                artifacts=artifacts,
+                artifact_identity=artifact_identity,
+            )
+            yield from final_events(response)
+            return
+
+        yield start_step("profile_result")
+        profile_step, profile_obs = execute_step("profile_result", "result.profile")
+        yield complete_step(profile_step)
+        yield from append_artifacts_from_observation("profile_result", profile_obs)
+
+        yield start_step("suggest_chart")
+        chart_step, chart_obs = execute_step("suggest_chart", "chart.suggest")
+        yield complete_step(chart_step)
+        yield from append_artifacts_from_observation("suggest_chart", chart_obs)
+
+        yield start_step("suggest_followups")
+        suggestions_step, suggestions_obs = execute_step("suggest_followups", "followup.suggest")
+        yield complete_step(suggestions_step)
+
+        yield start_step("answer_synthesizer")
+        answer_step, answer_obs = execute_step("answer_synthesizer", "answer.synthesize")
+        yield complete_step(answer_step)
+        if state.answer:
+            explanation = str(state.answer.get("answer") or "")
+
+        response = self._response(
+            req=req,
+            success=True,
+            steps=steps,
+            query_plan=state.query_plan,
+            sql=safe_sql,
+            safety=safety,
+            execution=state.execution,
+            explanation=explanation,
+            chart_suggestion=state.chart_suggestion,
+            result_profile=state.result_profile,
+            answer=state.answer,
+            suggestions=state.suggestions,
+            error=None,
+            run_id=run_id,
+            session_id=run.session_id,
+            artifacts=artifacts,
+            artifact_identity=artifact_identity,
+        )
+        yield from final_events(response)
+
     def _record(self, steps: list[AgentStep], observation: ToolObservation) -> AgentStep:
         step = AgentStep(
             name=observation.name,
@@ -492,6 +861,107 @@ class DataBoxAgentRuntime:
         )
         steps.append(step)
         return step
+
+    def _should_wait_for_approval(self, safety: dict[str, Any]) -> bool:
+        blocked_reasons = {str(item) for item in (safety.get("blocked_reasons") or [])}
+        requires_confirmation = bool(
+            safety.get("requires_confirmation")
+            or "requires_confirmation" in blocked_reasons
+        )
+        return requires_confirmation and not bool(blocked_reasons & APPROVAL_HARD_BLOCKERS)
+
+    def _approval_risk_level(self, safety: dict[str, Any]) -> str:
+        trust_gate = safety.get("trust_gate") if isinstance(safety.get("trust_gate"), dict) else {}
+        risk = str(trust_gate.get("riskLevel") or safety.get("risk_level") or "warning")
+        if risk == "safe" and self._should_wait_for_approval(safety):
+            return "warning"
+        return risk if risk in {"safe", "warning", "danger"} else "warning"
+
+    def _approval_reason(self, safety: dict[str, Any]) -> str | None:
+        messages = safety.get("messages") if isinstance(safety.get("messages"), list) else []
+        for message in messages:
+            text = str(message).strip()
+            if text:
+                return text
+        suggestion = str(safety.get("revise_suggestion") or "").strip()
+        return suggestion or "Manual approval is required before executing this SQL."
+
+    def _policy_decision(self, safety: dict[str, Any]) -> dict[str, Any]:
+        decision = safety.get("execution_safety_decision")
+        return dict(decision) if isinstance(decision, dict) else dict(safety)
+
+    def _requested_action(
+        self,
+        req: AgentRunRequest,
+        state: AgentState,
+        sql: str | None,
+    ) -> dict[str, Any]:
+        safety = state.safety or {}
+        decision = safety.get("execution_safety_decision") if isinstance(safety.get("execution_safety_decision"), dict) else {}
+        return {
+            "tool_name": "sql.execute_readonly",
+            "datasource_id": req.datasource_id,
+            "question": req.question,
+            "sql": state.sql or sql,
+            "safe_sql": safety.get("safe_sql") or decision.get("safe_sql") or state.sql or sql,
+        }
+
+    def _pending_step_specs(self, req: AgentRunRequest, after_step: str) -> list[dict[str, Any]]:
+        plan = self.build_default_plan(req)
+        start_index = 0
+        for index, step in enumerate(plan):
+            if step.name == after_step:
+                start_index = index + 1
+                break
+        return [step.model_dump(mode="json") for step in plan[start_index:]]
+
+    def _approve_safety_for_execution(self, state: AgentState, approval: AgentApprovalRecord) -> str:
+        safety = state.safety or {}
+        blocked_reasons = {str(item) for item in (safety.get("blocked_reasons") or [])}
+        if blocked_reasons & APPROVAL_HARD_BLOCKERS:
+            raise DataBoxError("Approval cannot override hard safety blockers.", code="APPROVAL_HARD_BLOCKED")
+
+        decision = safety.get("execution_safety_decision") if isinstance(safety.get("execution_safety_decision"), dict) else {}
+        safe_sql = str(
+            decision.get("safe_sql")
+            or safety.get("safe_sql")
+            or state.sql
+            or decision.get("original_sql")
+            or ""
+        ).strip()
+        if not safe_sql:
+            raise DataBoxError("Checkpoint does not contain executable SQL.", code="CHECKPOINT_SQL_MISSING")
+
+        approved_blockers = [reason for reason in (safety.get("blocked_reasons") or []) if reason != "requires_confirmation"]
+        messages = [str(message) for message in (safety.get("messages") or [])]
+        messages.append(f"Agent approval {approval.id} approved execution after manual review.")
+
+        if isinstance(decision, dict):
+            decision["safe_sql"] = safe_sql
+            decision["can_execute"] = True
+            decision["passed"] = True
+            decision["requires_confirmation"] = False
+            decision["blocked_reasons"] = [reason for reason in (decision.get("blocked_reasons") or []) if reason != "requires_confirmation"]
+            decision["messages"] = messages
+            scope_state = decision.get("scope_state") if isinstance(decision.get("scope_state"), dict) else {}
+            scope_state["agent_approval_id"] = approval.id
+            decision["scope_state"] = scope_state
+            safety["execution_safety_decision"] = decision
+
+        safety["safe_sql"] = safe_sql
+        safety["can_execute"] = not approved_blockers
+        safety["passed"] = not approved_blockers
+        safety["requires_confirmation"] = False
+        safety["blocked_reasons"] = approved_blockers
+        safety["messages"] = messages
+        safety["approval"] = {
+            "id": approval.id,
+            "status": approval.status,
+            "decided_at": approval.decided_at.isoformat() if approval.decided_at else None,
+        }
+        state.safety = safety
+        state.sql = safe_sql
+        return safe_sql
 
     def _budget_reached(self, req: AgentRunRequest, steps: list[AgentStep]) -> bool:
         return len(steps) >= req.max_steps
@@ -530,6 +1000,9 @@ class DataBoxAgentRuntime:
         session_id: str | None = None,
         artifacts: list[AgentArtifact] | None = None,
         artifact_identity: AgentArtifactIdentity | None = None,
+        status: str | None = None,
+        approval: AgentApprovalRecord | None = None,
+        checkpoint: AgentCheckpointRecord | None = None,
     ) -> AgentRunResponse:
         parsed_profile = ResultProfile.model_validate(result_profile) if result_profile else None
         parsed_suggestions = [
@@ -586,6 +1059,7 @@ class DataBoxAgentRuntime:
             session_id=session_id or self._session_id(req),
             parent_run_id=req.parent_run_id or (req.follow_up_context.parent_run_id if req.follow_up_context else None),
             success=success,
+            status=status or ("success" if success else "failed"),
             question=req.question,
             context_summary=response_context_summary,
             referenced_artifact_ids=referenced_artifact_ids(req),
@@ -604,6 +1078,8 @@ class DataBoxAgentRuntime:
             trace_events=build_trace_events(steps),
             steps=steps,
             error=error,
+            approval=approval,
+            checkpoint=checkpoint,
         )
         validate_agent_response_contract(response)
         return response

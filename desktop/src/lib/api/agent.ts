@@ -2,6 +2,8 @@ import { BASE_URL, ENGINE_TOKEN, request } from "./client";
 import type {
   AgentArtifact,
   AgentArtifactRecord,
+  AgentApproval,
+  AgentCheckpoint,
   AgentRunConfig,
   AgentRunDraftState,
   AgentRunResponse,
@@ -19,6 +21,8 @@ export function createAgentRunDraft(question: string): AgentRunDraftState {
     artifacts: [],
     answer: null,
     response: null,
+    approval: null,
+    checkpoint: null,
     error: null,
   };
 }
@@ -44,6 +48,44 @@ export function reduceAgentRuntimeEvent(draft: AgentRunDraftState, event: AgentR
 
   if (event.type === "agent.answer.completed") {
     return { ...next, answer: event.answer || draft.answer || null };
+  }
+
+  if (event.type === "agent.approval.required") {
+    return { ...next, approval: event.approval || draft.approval || null };
+  }
+
+  if (event.type === "agent.checkpoint.saved") {
+    return { ...next, checkpoint: event.checkpoint || draft.checkpoint || null };
+  }
+
+  if (event.type === "agent.approval.resolved") {
+    return {
+      ...next,
+      approval: event.approval || draft.approval || null,
+      error: event.approval?.status === "rejected" ? "Approval rejected" : draft.error,
+    };
+  }
+
+  if (event.type === "agent.run.waiting_approval") {
+    return {
+      ...next,
+      status: "waiting_approval",
+      response: event.response || draft.response || null,
+      approval: event.approval || event.response?.approval || draft.approval || null,
+      checkpoint: event.checkpoint || event.response?.checkpoint || draft.checkpoint || null,
+      artifacts: mergeArtifacts(draft.artifacts, event.response?.artifacts || []),
+      error: null,
+    };
+  }
+
+  if (event.type === "agent.run.resumed") {
+    return {
+      ...next,
+      status: "running",
+      approval: event.approval || draft.approval || null,
+      checkpoint: event.checkpoint || draft.checkpoint || null,
+      error: null,
+    };
   }
 
   if (event.type === "agent.run.completed" && event.response) {
@@ -109,13 +151,37 @@ async function streamAgentRun(
   config?: AgentRunConfig,
   options?: { signal?: AbortSignal; onEvent?: (event: AgentRuntimeEvent) => void },
 ): Promise<AgentRunResponse> {
-  const response = await fetch(`${BASE_URL}/query/agent-run/stream`, {
+  return streamAgentEndpoint(
+    "/query/agent-run/stream",
+    buildAgentRunPayload(datasourceId, question, config),
+    options,
+  );
+}
+
+export async function streamResumeAgentRun(
+  runId: string,
+  approvalId?: string | null,
+  options?: { signal?: AbortSignal; onEvent?: (event: AgentRuntimeEvent) => void },
+): Promise<AgentRunResponse> {
+  return streamAgentEndpoint(
+    `/query/agent-runs/${encodeURIComponent(runId)}/resume/stream`,
+    { approval_id: approvalId || null },
+    options,
+  );
+}
+
+async function streamAgentEndpoint(
+  path: string,
+  payload: Record<string, unknown>,
+  options?: { signal?: AbortSignal; onEvent?: (event: AgentRuntimeEvent) => void },
+): Promise<AgentRunResponse> {
+  const response = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Local-Token": ENGINE_TOKEN,
     },
-    body: JSON.stringify(buildAgentRunPayload(datasourceId, question, config)),
+    body: JSON.stringify(payload),
     signal: options?.signal,
   });
 
@@ -178,6 +244,29 @@ async function streamAgentRun(
   return finalResponse;
 }
 
+export const listAgentRunApprovals = (runId: string) =>
+  request<AgentApproval[]>(`/query/agent-runs/${encodeURIComponent(runId)}/approvals`);
+
+export const listAgentRunCheckpoints = (runId: string) =>
+  request<AgentCheckpoint[]>(`/query/agent-runs/${encodeURIComponent(runId)}/checkpoints`);
+
+export const resolveAgentApproval = (
+  runId: string,
+  approvalId: string,
+  decision: "approved" | "rejected",
+  note?: string,
+) =>
+  request<AgentApproval>(`/query/agent-runs/${encodeURIComponent(runId)}/approvals/${encodeURIComponent(approvalId)}`, {
+    method: "POST",
+    body: JSON.stringify({ decision, note }),
+  });
+
+export const resumeAgentRun = (runId: string, approvalId?: string | null) =>
+  request<AgentRunResponse>(`/query/agent-runs/${encodeURIComponent(runId)}/resume`, {
+    method: "POST",
+    body: JSON.stringify({ approval_id: approvalId || null }),
+  });
+
 export const agentApi = {
   runAgentQuery: (datasourceId: string, question: string, config?: AgentRunConfig, signal?: AbortSignal) =>
     request<AgentRunResponse>("/query/agent-run", {
@@ -210,4 +299,14 @@ export const agentApi = {
 
   getAgentRunTrace: (runId: string) =>
     request<AgentTraceEventRecord[]>(`/query/agent-runs/${encodeURIComponent(runId)}/trace`),
+
+  listAgentRunApprovals,
+
+  listAgentRunCheckpoints,
+
+  resolveAgentApproval,
+
+  resumeAgentRun,
+
+  streamResumeAgentRun,
 };

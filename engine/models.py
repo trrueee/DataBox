@@ -339,6 +339,8 @@ class AgentRun(Base):  # type: ignore[misc,valid-type]
     datasource_id = Column(String, ForeignKey("data_sources.id", ondelete="CASCADE"), nullable=False)
     question = Column(Text, nullable=False)
     status = Column(String, nullable=False, default="running")
+    current_step_name = Column(String, nullable=True)
+    waiting_approval_id = Column(String, nullable=True)
     response_json = Column(Text, nullable=True)
     context_summary = Column(Text, nullable=True)
     error = Column(Text, nullable=True)
@@ -350,6 +352,66 @@ class AgentRun(Base):  # type: ignore[misc,valid-type]
     artifacts = relationship("AgentArtifactRecord", back_populates="run", cascade="all, delete-orphan")
     runtime_events = relationship("AgentRuntimeEventRecord", back_populates="run", cascade="all, delete-orphan")
     trace_events = relationship("AgentTraceEventRecord", back_populates="run", cascade="all, delete-orphan")
+    approvals = relationship("AgentApproval", back_populates="run", cascade="all, delete-orphan")
+    checkpoints = relationship("AgentCheckpoint", back_populates="run", cascade="all, delete-orphan")
+
+
+class AgentApproval(Base):  # type: ignore[misc,valid-type]
+    __tablename__ = "agent_approvals"
+    __table_args__ = (
+        Index("ix_agent_approvals_run", "run_id"),
+        Index("ix_agent_approvals_session", "session_id"),
+        Index("ix_agent_approvals_status", "status"),
+    )
+
+    id = Column(String, primary_key=True)
+    run_id = Column(String, ForeignKey("agent_runs.id", ondelete="CASCADE"), nullable=False)
+    session_id = Column(String, nullable=False)
+    step_name = Column(String, nullable=False)
+    tool_name = Column(String, nullable=True)
+
+    status = Column(String, nullable=False, default="pending")
+    risk_level = Column(String, nullable=False, default="warning")
+    reason = Column(Text, nullable=True)
+
+    policy_decision_json = Column(Text, nullable=False)
+    requested_action_json = Column(Text, nullable=True)
+
+    decided_by = Column(String, nullable=True)
+    decision_note = Column(Text, nullable=True)
+    decided_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    expires_at = Column(DateTime, nullable=True)
+
+    run = relationship("AgentRun", back_populates="approvals")
+
+
+class AgentCheckpoint(Base):  # type: ignore[misc,valid-type]
+    __tablename__ = "agent_checkpoints"
+    __table_args__ = (
+        Index("ix_agent_checkpoints_run", "run_id"),
+        Index("ix_agent_checkpoints_session", "session_id"),
+    )
+
+    id = Column(String, primary_key=True)
+    run_id = Column(String, ForeignKey("agent_runs.id", ondelete="CASCADE"), nullable=False)
+    session_id = Column(String, nullable=False)
+
+    checkpoint_index = Column(Integer, nullable=False)
+    status = Column(String, nullable=False)
+    current_step_name = Column(String, nullable=True)
+    next_step_name = Column(String, nullable=True)
+
+    plan_json = Column(Text, nullable=True)
+    state_json = Column(Text, nullable=False)
+    completed_steps_json = Column(Text, nullable=False)
+    pending_steps_json = Column(Text, nullable=False)
+    artifacts_json = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+
+    run = relationship("AgentRun", back_populates="checkpoints")
 
 
 class AgentArtifactRecord(Base):  # type: ignore[misc,valid-type]

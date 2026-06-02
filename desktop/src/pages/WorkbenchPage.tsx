@@ -432,6 +432,7 @@ function SessionHistoryPanel({
     success: { bg: "var(--accent-green)", color: "#fff", label: "Success" },
     failed: { bg: "var(--accent-red)", color: "#fff", label: "Failed" },
     running: { bg: "var(--accent-amber)", color: "#fff", label: "Running" },
+    waiting_approval: { bg: "var(--accent-amber)", color: "#fff", label: "Approval" },
   };
 
   return (
@@ -839,9 +840,11 @@ export const WorkbenchPage = ({
       }
       setAgentDraft((draft) => draft ? {
         ...draft,
-        status: res.success ? "completed" : "failed",
+        status: res.status === "waiting_approval" ? "waiting_approval" : res.success ? "completed" : "failed",
         response: res,
         answer: res.answer || draft.answer || null,
+        approval: res.approval || draft.approval || null,
+        checkpoint: res.checkpoint || draft.checkpoint || null,
         artifacts: res.artifacts || draft.artifacts,
         error: res.error || null,
       } : draft);
@@ -856,6 +859,29 @@ export const WorkbenchPage = ({
       setAiLoading(false);
     }
   }, [activeDataSource]);
+
+  const handleAgentRuntimeEvent = useCallback((event: AgentRuntimeEvent) => {
+    const fallbackQuestion = agentResponse?.question || aiPrompt || "Agent resume";
+    setAgentStreamEvents((prev) => [...prev, event]);
+    setAgentDraft((draft) => reduceAgentRuntimeEvent(draft || createAgentRunDraft(fallbackQuestion), event));
+  }, [agentResponse?.question, aiPrompt]);
+
+  const handleAgentResumeComplete = useCallback((res: AgentRunResponse) => {
+    setAgentResponse(res);
+    setAgentDraft((draft) => draft ? {
+      ...draft,
+      status: res.status === "waiting_approval" ? "waiting_approval" : res.success ? "completed" : "failed",
+      response: res,
+      answer: res.answer || draft.answer || null,
+      approval: res.approval || draft.approval || null,
+      checkpoint: res.checkpoint || draft.checkpoint || null,
+      artifacts: res.artifacts || draft.artifacts,
+      error: res.error || null,
+    } : draft);
+    if (res.session_id) {
+      api.listAgentSessionRuns(res.session_id).then(setSessionRuns).catch(() => {});
+    }
+  }, []);
 
   const handleAgentSuggestion = useCallback(async (suggestion: FollowUpSuggestion, result: AgentRunResponse) => {
     if (suggestion.action_type === "save_golden_sql") {
@@ -1192,7 +1218,7 @@ export const WorkbenchPage = ({
     aiMode === "agent" &&
     agentDraft &&
     !agentResponse &&
-    (agentDraft.artifacts.length > 0 || agentDraft.answer || agentDraft.status === "failed"),
+    (agentDraft.artifacts.length > 0 || agentDraft.answer || agentDraft.status === "failed" || agentDraft.status === "waiting_approval"),
   );
 
   return (
@@ -1599,6 +1625,8 @@ export const WorkbenchPage = ({
                     onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
                     onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
                     onSuggestion={handleAgentSuggestion}
+                    onRuntimeEvent={handleAgentRuntimeEvent}
+                    onResumeComplete={handleAgentResumeComplete}
                   />
                   {sessionRuns.length > 1 && (
                     <SessionHistoryPanel
@@ -1906,6 +1934,8 @@ export const WorkbenchPage = ({
                         onOpenSql={(sql) => handleOpenQueryTab(sql, "Agent SQL")}
                         onAsk={agentResponse ? (question) => handleRunAgentPrompt(question, agentResponse) : undefined}
                         onSuggestion={handleAgentSuggestion}
+                        onRuntimeEvent={handleAgentRuntimeEvent}
+                        onResumeComplete={handleAgentResumeComplete}
                       />
                       {sessionRuns.length > 1 && (
                         <SessionHistoryPanel

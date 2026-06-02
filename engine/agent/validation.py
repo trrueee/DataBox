@@ -4,6 +4,9 @@ from engine.agent.types import AgentRunResponse
 
 
 def validate_agent_response_contract(response: AgentRunResponse) -> None:
+    if response.status == "waiting_approval":
+        return
+
     artifact_ids = {artifact.id for artifact in response.artifacts}
     evidence_ids = {
         evidence.artifact_id

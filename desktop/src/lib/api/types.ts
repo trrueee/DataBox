@@ -359,6 +359,35 @@ export interface AgentArtifact {
   depends_on?: string[];
 }
 
+export interface AgentApproval {
+  id: string;
+  run_id: string;
+  session_id: string;
+  step_name: string;
+  tool_name?: string | null;
+  status: "pending" | "approved" | "rejected" | "expired";
+  risk_level: "safe" | "warning" | "danger";
+  reason?: string | null;
+  policy_decision: Record<string, unknown>;
+  requested_action?: Record<string, unknown> | null;
+  created_at: string;
+  expires_at?: string | null;
+  decided_at?: string | null;
+  decided_by?: string | null;
+  decision_note?: string | null;
+}
+
+export interface AgentCheckpoint {
+  id: string;
+  run_id: string;
+  session_id: string;
+  checkpoint_index: number;
+  status: string;
+  current_step_name?: string | null;
+  next_step_name?: string | null;
+  created_at: string;
+}
+
 export interface FollowUpSuggestion {
   label: string;
   question: string;
@@ -451,6 +480,7 @@ export interface AgentRunResponse {
   session_id: string;
   parent_run_id?: string | null;
   success: boolean;
+  status?: string | null;
   question: string;
   context_summary?: string | null;
   referenced_artifact_ids?: string[];
@@ -478,6 +508,8 @@ export interface AgentRunResponse {
   trace_events?: AgentTraceEvent[];
   steps: AgentStep[];
   error?: string | null;
+  approval?: AgentApproval | null;
+  checkpoint?: AgentCheckpoint | null;
 }
 
 export interface AgentRunConfig {
@@ -498,7 +530,12 @@ export type AgentRuntimeEventType =
   | "agent.artifact.created"
   | "agent.answer.completed"
   | "agent.run.completed"
-  | "agent.run.failed";
+  | "agent.run.failed"
+  | "agent.approval.required"
+  | "agent.approval.resolved"
+  | "agent.checkpoint.saved"
+  | "agent.run.waiting_approval"
+  | "agent.run.resumed";
 
 export interface AgentRuntimeEvent {
   event_id: string;
@@ -510,17 +547,21 @@ export interface AgentRuntimeEvent {
   artifact?: AgentArtifact | null;
   answer?: AgentAnswer | null;
   response?: AgentRunResponse | null;
+  approval?: AgentApproval | null;
+  checkpoint?: AgentCheckpoint | null;
   error?: string | null;
 }
 
 export interface AgentRunDraftState {
   runId?: string;
-  status: "idle" | "running" | "failed" | "completed";
+  status: "idle" | "running" | "waiting_approval" | "failed" | "completed";
   question: string;
   events: AgentRuntimeEvent[];
   artifacts: AgentArtifact[];
   answer?: AgentAnswer | null;
   response?: AgentRunResponse | null;
+  approval?: AgentApproval | null;
+  checkpoint?: AgentCheckpoint | null;
   error?: string | null;
 }
 

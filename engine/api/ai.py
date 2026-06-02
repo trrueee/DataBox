@@ -7,8 +7,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from engine.agent import AgentRunRequest, AgentRunResponse, AgentRuntimeEvent, DataBoxAgentRuntime
+from engine.agent import (
+    AgentApprovalDecisionRequest,
+    AgentResumeRequest,
+    AgentRunRequest,
+    AgentRunResponse,
+    AgentRuntimeEvent,
+    DataBoxAgentRuntime,
+)
 from engine.agent import persistence as agent_persistence
+from engine.agent.events import EventEmitter
 from engine.ai import generate_sql
 from engine.db import get_db
 from engine.errors import DataBoxError
@@ -60,6 +68,57 @@ def api_get_run_trace(run_id: str, db: Session = Depends(get_db)):
     return agent_persistence.list_run_trace_events(db, run_id)
 
 
+@router.get("/query/agent-runs/{run_id}/approvals")
+def api_get_run_approvals(run_id: str, db: Session = Depends(get_db)):
+    return agent_persistence.list_run_approvals(db, run_id)
+
+
+@router.get("/query/agent-runs/{run_id}/checkpoints")
+def api_get_run_checkpoints(run_id: str, db: Session = Depends(get_db)):
+    return agent_persistence.list_checkpoints(db, run_id)
+
+
+@router.post("/query/agent-runs/{run_id}/approvals/{approval_id}")
+def api_resolve_agent_approval(
+    run_id: str,
+    approval_id: str,
+    req: AgentApprovalDecisionRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        approval = agent_persistence.resolve_approval(
+            db,
+            run_id=run_id,
+            approval_id=approval_id,
+            decision=req.decision,
+            note=req.note,
+        )
+        emitter = EventEmitter(
+            run_id,
+            lambda event: agent_persistence.record_runtime_event(db, approval.session_id, event),
+            start_sequence=agent_persistence.get_latest_runtime_event_sequence(db, run_id),
+        )
+        emitter.emit(
+            "agent.approval.resolved",
+            step={"name": approval.step_name, "status": approval.status},
+            approval=approval,
+        )
+        if approval.status == "rejected":
+            emitter.emit("agent.run.failed", error="Approval rejected")
+        db.commit()
+        return approval
+    except DataBoxError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail={"code": exc.code, "message": str(exc)})
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Failed to resolve agent approval")
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "APPROVAL_RESOLVE_ERROR", "message": f"Failed to resolve approval: {str(exc)}"},
+        )
+
+
 @router.post("/query/agent-run", response_model=AgentRunResponse)
 def api_agent_run(req: AgentRunRequest, db: Session = Depends(get_db)) -> AgentRunResponse:
     try:
@@ -71,6 +130,26 @@ def api_agent_run(req: AgentRunRequest, db: Session = Depends(get_db)) -> AgentR
         raise HTTPException(
             status_code=500,
             detail={"code": "AGENT_RUNTIME_ERROR", "message": f"Agent runtime failed: {str(exc)}"},
+        )
+
+
+@router.post("/query/agent-runs/{run_id}/resume", response_model=AgentRunResponse)
+def api_agent_run_resume(
+    run_id: str,
+    req: AgentResumeRequest,
+    db: Session = Depends(get_db),
+) -> AgentRunResponse:
+    try:
+        return DataBoxAgentRuntime(db).resume(run_id, req.approval_id)
+    except DataBoxError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail={"code": exc.code, "message": str(exc)})
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Agent runtime resume failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "AGENT_RESUME_ERROR", "message": f"Agent resume failed: {str(exc)}"},
         )
 
 
@@ -107,6 +186,52 @@ def api_agent_run_stream(req: AgentRunRequest, db: Session = Depends(get_db)) ->
                 "error": f"Agent runtime failed: {str(exc)}",
                 "response": None,
                 "code": "AGENT_RUNTIME_ERROR",
+            }
+            yield f"event: agent.run.failed\ndata: {json.dumps(payload)}\n\n"
+
+    return StreamingResponse(
+        stream_events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/query/agent-runs/{run_id}/resume/stream")
+def api_agent_run_resume_stream(
+    run_id: str,
+    req: AgentResumeRequest,
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    def stream_events():
+        try:
+            for event in DataBoxAgentRuntime(db).resume_iter(run_id, req.approval_id):
+                yield _format_sse_event(event)
+        except DataBoxError as exc:
+            payload = {
+                "event_id": "runtime_resume_error_databox",
+                "run_id": run_id,
+                "sequence": 1,
+                "created_at_ms": 0,
+                "type": "agent.run.failed",
+                "error": str(exc),
+                "response": None,
+                "code": exc.code,
+            }
+            yield f"event: agent.run.failed\ndata: {json.dumps(payload)}\n\n"
+        except Exception as exc:
+            logger.exception("Agent runtime resume stream failed")
+            payload = {
+                "event_id": "runtime_resume_error_unhandled",
+                "run_id": run_id,
+                "sequence": 1,
+                "created_at_ms": 0,
+                "type": "agent.run.failed",
+                "error": f"Agent resume failed: {str(exc)}",
+                "response": None,
+                "code": "AGENT_RESUME_ERROR",
             }
             yield f"event: agent.run.failed\ndata: {json.dumps(payload)}\n\n"
 

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { ArtifactInspector } from "./ArtifactInspector";
 import { AgentComposer } from "./AgentComposer";
 import { AgentNarrativeStream } from "./AgentNarrativeStream";
+import { ApprovalCard } from "./ApprovalCard";
 import { TraceDrawer } from "./TraceDrawer";
-import type { AgentRunDraftState, AgentRunResponse, AgentStep, AgentVisibleEvent, FollowUpSuggestion } from "./types";
+import type { AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentStep, AgentVisibleEvent, FollowUpSuggestion } from "./types";
 
 interface AgentWorkspaceProps {
   result?: AgentRunResponse | null;
@@ -13,19 +14,33 @@ interface AgentWorkspaceProps {
   onOpenSql?: (sql: string) => void;
   onAsk?: (question: string) => void;
   onSuggestion?: (suggestion: FollowUpSuggestion, result: AgentRunResponse) => void;
+  onRuntimeEvent?: (event: AgentRuntimeEvent) => void;
+  onResumeComplete?: (response: AgentRunResponse) => void;
 }
 
-export function AgentWorkspace({ result, draft, disabled, replaying, onOpenSql, onAsk, onSuggestion }: AgentWorkspaceProps) {
+export function AgentWorkspace({
+  result,
+  draft,
+  disabled,
+  replaying,
+  onOpenSql,
+  onAsk,
+  onSuggestion,
+  onRuntimeEvent,
+  onResumeComplete,
+}: AgentWorkspaceProps) {
   const isRunningDraft = Boolean(draft && draft.status === "running" && !result);
+  const isWaitingApproval = result?.status === "waiting_approval" || draft?.status === "waiting_approval";
   const artifacts = result?.artifacts || draft?.artifacts || [];
   const events = result?.events || draftVisibleEvents(draft);
   const messageBlocks = result?.message_blocks || [];
   const suggestions = result?.suggestions || [];
   const steps = result?.steps || draftSteps(draft);
   const traceEvents = result?.trace_events || [];
-  const success = result ? result.success : draft?.status !== "failed";
+  const success = result ? result.success || result.status === "waiting_approval" : draft?.status !== "failed";
   const error = result?.error || draft?.error || null;
   const answer = result?.answer || draft?.answer || null;
+  const approval = result?.approval || draft?.approval || null;
   const [selectedArtifactId, setSelectedArtifactId] = useState("");
   const activeArtifactId = selectedArtifactId && artifacts.some((artifact) => artifact.id === selectedArtifactId)
     ? selectedArtifactId
@@ -34,11 +49,20 @@ export function AgentWorkspace({ result, draft, disabled, replaying, onOpenSql, 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: "0.68rem", lineHeight: 1.45 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-        <span className={`status-badge ${success ? "status-badge-success" : "status-badge-error"}`}>
-          {isRunningDraft ? "Agent running" : replaying ? "Agent replay" : success ? "Agent answer" : "Agent stopped"}
+        <span className={`status-badge ${isWaitingApproval ? "status-badge-neutral" : success ? "status-badge-success" : "status-badge-error"}`}>
+          {isWaitingApproval ? "Approval needed" : isRunningDraft ? "Agent running" : replaying ? "Agent replay" : success ? "Agent answer" : "Agent stopped"}
         </span>
         {error ? <span style={{ color: "var(--accent-red)", textAlign: "right" }}>{error}</span> : null}
       </div>
+
+      <ApprovalCard
+        approval={approval}
+        response={result || draft?.response || null}
+        disabled={disabled}
+        onOpenSql={onOpenSql}
+        onRuntimeEvent={onRuntimeEvent}
+        onResumeComplete={onResumeComplete}
+      />
 
       <AgentNarrativeStream
         events={events}
@@ -58,7 +82,7 @@ export function AgentWorkspace({ result, draft, disabled, replaying, onOpenSql, 
         onActiveArtifactChange={setSelectedArtifactId}
         onOpenSql={onOpenSql}
       />
-      {onAsk && result ? (
+      {onAsk && result && !isWaitingApproval ? (
         <AgentComposer
           disabled={disabled}
           placeholder="Ask a follow-up about this result"

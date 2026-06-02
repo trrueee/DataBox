@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -25,7 +26,54 @@ AgentRuntimeEventType = Literal[
     "agent.answer.completed",
     "agent.run.completed",
     "agent.run.failed",
+    "agent.approval.required",
+    "agent.approval.resolved",
+    "agent.checkpoint.saved",
+    "agent.run.waiting_approval",
+    "agent.run.resumed",
 ]
+
+AgentApprovalStatus = Literal["pending", "approved", "rejected", "expired"]
+AgentApprovalDecision = Literal["approved", "rejected"]
+AgentApprovalRiskLevel = Literal["safe", "warning", "danger"]
+
+
+class AgentApprovalRecord(BaseModel):
+    id: str
+    run_id: str
+    session_id: str
+    step_name: str
+    tool_name: str | None = None
+    status: AgentApprovalStatus
+    risk_level: AgentApprovalRiskLevel
+    reason: str | None = None
+    policy_decision: dict[str, Any]
+    requested_action: dict[str, Any] | None = None
+    created_at: datetime
+    expires_at: datetime | None = None
+    decided_at: datetime | None = None
+    decided_by: str | None = None
+    decision_note: str | None = None
+
+
+class AgentApprovalDecisionRequest(BaseModel):
+    decision: AgentApprovalDecision
+    note: str | None = None
+
+
+class AgentResumeRequest(BaseModel):
+    approval_id: str | None = None
+
+
+class AgentCheckpointRecord(BaseModel):
+    id: str
+    run_id: str
+    session_id: str
+    checkpoint_index: int
+    status: str
+    current_step_name: str | None = None
+    next_step_name: str | None = None
+    created_at: datetime
 
 
 class AgentContextArtifact(BaseModel):
@@ -226,6 +274,7 @@ class AgentRunResponse(BaseModel):
     session_id: str
     parent_run_id: str | None = None
     success: bool
+    status: str | None = None
     question: str
     context_summary: str | None = None
     referenced_artifact_ids: list[str] = Field(default_factory=list)
@@ -244,6 +293,8 @@ class AgentRunResponse(BaseModel):
     trace_events: list[AgentTraceEvent] = Field(default_factory=list)
     steps: list[AgentStep] = Field(default_factory=list)
     error: str | None = None
+    approval: AgentApprovalRecord | None = None
+    checkpoint: AgentCheckpointRecord | None = None
 
 
 class AgentRuntimeEvent(BaseModel):
@@ -256,4 +307,6 @@ class AgentRuntimeEvent(BaseModel):
     artifact: AgentArtifact | None = None
     answer: AgentAnswer | None = None
     response: AgentRunResponse | None = None
+    approval: AgentApprovalRecord | None = None
+    checkpoint: AgentCheckpointRecord | None = None
     error: str | None = None

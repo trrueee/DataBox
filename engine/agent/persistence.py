@@ -2,15 +2,20 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from engine.errors import DataBoxError
 from engine.agent.types import (
     AgentArtifact,
     AgentAnswer,
     AgentArtifactPresentation,
+    AgentApprovalRecord,
+    AgentCheckpointRecord,
     AgentContextArtifact,
     AgentFollowUpContext,
     AgentRunRequest,
@@ -23,7 +28,9 @@ from engine.agent.types import (
     ResultProfile,
 )
 from engine.models import (
+    AgentApproval,
     AgentArtifactRecord,
+    AgentCheckpoint,
     AgentRun,
     AgentRuntimeEventRecord,
     AgentSession,
@@ -33,19 +40,24 @@ from engine.models import (
 logger = logging.getLogger("databox.agent.persistence")
 
 
-def _safe_json(payload: dict[str, Any] | None) -> str:
+def _safe_json(payload: Any | None) -> str:
     if payload is None:
         return "{}"
     return json.dumps(payload, ensure_ascii=False, default=str)
 
 
-def _parse_json(raw: str | None) -> dict[str, Any] | None:
+def _parse_json_any(raw: str | None) -> Any:
     if raw is None:
         return None
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
         return None
+
+
+def _parse_json(raw: str | None) -> dict[str, Any] | None:
+    parsed = _parse_json_any(raw)
+    return parsed if isinstance(parsed, dict) else None
 
 
 _SENSITIVE_KEYS = frozenset({
@@ -180,6 +192,8 @@ def complete_run(db: Session, response: AgentRunResponse) -> None:
             logger.warning("Cannot complete run %s: run not found", response.run_id)
             return
         run.status = "success" if response.success else "failed"
+        run.current_step_name = None
+        run.waiting_approval_id = None
         run.response_json = _safe_json(_redact_response(response))
         run.context_summary = response.context_summary
         run.error = response.error
@@ -242,6 +256,8 @@ def fail_run(
             logger.warning("Cannot fail run %s: run not found", run_id)
             return
         run.status = "failed"
+        run.current_step_name = None
+        run.waiting_approval_id = None
         run.error = error
         if response is not None:
             run.response_json = _safe_json(_redact_response(response))
@@ -251,6 +267,217 @@ def fail_run(
         db.flush()
     except Exception:
         logger.exception("Failed to record failure for run %s", run_id)
+
+
+def create_approval(
+    db: Session,
+    *,
+    run_id: str,
+    session_id: str,
+    step_name: str,
+    tool_name: str | None,
+    risk_level: str,
+    reason: str | None,
+    policy_decision: dict[str, Any],
+    requested_action: dict[str, Any] | None = None,
+    expires_at: datetime | None = None,
+) -> AgentApprovalRecord:
+    approval = AgentApproval(
+        id=f"approval_{uuid.uuid4().hex}",
+        run_id=run_id,
+        session_id=session_id,
+        step_name=step_name,
+        tool_name=tool_name,
+        status="pending",
+        risk_level=_normalize_risk_level(risk_level),
+        reason=reason,
+        policy_decision_json=_safe_json(policy_decision),
+        requested_action_json=_safe_json(requested_action) if requested_action is not None else None,
+        created_at=datetime.now(UTC),
+        expires_at=expires_at,
+    )
+    db.add(approval)
+    db.flush()
+    return _approval_record(approval)
+
+
+def get_approval(db: Session, approval_id: str) -> AgentApprovalRecord | None:
+    approval = db.query(AgentApproval).filter(AgentApproval.id == approval_id).first()
+    return _approval_record(approval) if approval is not None else None
+
+
+def get_pending_approval_for_run(db: Session, run_id: str) -> AgentApprovalRecord | None:
+    approval = (
+        db.query(AgentApproval)
+        .filter(AgentApproval.run_id == run_id, AgentApproval.status == "pending")
+        .order_by(AgentApproval.created_at.desc())
+        .first()
+    )
+    return _approval_record(approval) if approval is not None else None
+
+
+def list_run_approvals(db: Session, run_id: str) -> list[AgentApprovalRecord]:
+    approvals = (
+        db.query(AgentApproval)
+        .filter(AgentApproval.run_id == run_id)
+        .order_by(AgentApproval.created_at.asc())
+        .all()
+    )
+    return [_approval_record(approval) for approval in approvals]
+
+
+def resolve_approval(
+    db: Session,
+    *,
+    run_id: str,
+    approval_id: str,
+    decision: str,
+    note: str | None = None,
+    decided_by: str | None = "local-user",
+) -> AgentApprovalRecord:
+    if decision not in {"approved", "rejected"}:
+        raise DataBoxError("Invalid approval decision.", code="INVALID_APPROVAL_DECISION")
+
+    approval = db.query(AgentApproval).filter(AgentApproval.id == approval_id).first()
+    if approval is None:
+        raise DataBoxError("Approval not found.", code="APPROVAL_NOT_FOUND")
+    if approval.run_id != run_id:
+        raise DataBoxError("Approval does not belong to this run.", code="APPROVAL_RUN_MISMATCH")
+    if approval.status != "pending":
+        raise DataBoxError("Approval has already been resolved.", code="APPROVAL_ALREADY_RESOLVED")
+
+    approval.status = decision
+    approval.decided_by = decided_by
+    approval.decision_note = note
+    approval.decided_at = datetime.now(UTC)
+
+    if decision == "rejected":
+        run = db.query(AgentRun).filter(AgentRun.id == run_id).first()
+        if run is not None:
+            run.status = "failed"
+            run.error = "Approval rejected"
+            run.current_step_name = None
+            run.waiting_approval_id = None
+            run.completed_at = datetime.now(UTC)
+            run.updated_at = datetime.now(UTC)
+
+    db.flush()
+    return _approval_record(approval)
+
+
+def save_checkpoint(
+    db: Session,
+    *,
+    run_id: str,
+    session_id: str,
+    status: str,
+    current_step_name: str | None,
+    next_step_name: str | None,
+    plan: Any | None,
+    state: dict[str, Any],
+    completed_steps: list[dict[str, Any]],
+    pending_steps: list[dict[str, Any]],
+    artifacts: list[dict[str, Any]] | None = None,
+) -> AgentCheckpointRecord:
+    latest_index = (
+        db.query(func.max(AgentCheckpoint.checkpoint_index))
+        .filter(AgentCheckpoint.run_id == run_id)
+        .scalar()
+        or 0
+    )
+    checkpoint = AgentCheckpoint(
+        id=f"checkpoint_{uuid.uuid4().hex}",
+        run_id=run_id,
+        session_id=session_id,
+        checkpoint_index=int(latest_index) + 1,
+        status=status,
+        current_step_name=current_step_name,
+        next_step_name=next_step_name,
+        plan_json=_safe_json(plan) if plan is not None else None,
+        state_json=_safe_json(state),
+        completed_steps_json=_safe_json(completed_steps),
+        pending_steps_json=_safe_json(pending_steps),
+        artifacts_json=_safe_json(artifacts) if artifacts is not None else None,
+        created_at=datetime.now(UTC),
+    )
+    db.add(checkpoint)
+    db.flush()
+    return _checkpoint_record(checkpoint)
+
+
+def get_latest_checkpoint(db: Session, run_id: str) -> AgentCheckpointRecord | None:
+    checkpoint = _latest_checkpoint_model(db, run_id)
+    return _checkpoint_record(checkpoint) if checkpoint is not None else None
+
+
+def get_latest_checkpoint_payload(db: Session, run_id: str) -> dict[str, Any] | None:
+    checkpoint = _latest_checkpoint_model(db, run_id)
+    if checkpoint is None:
+        return None
+    return {
+        "record": _checkpoint_record(checkpoint),
+        "plan": _parse_json_any(checkpoint.plan_json),
+        "state": _parse_json_any(checkpoint.state_json),
+        "completed_steps": _parse_json_any(checkpoint.completed_steps_json) or [],
+        "pending_steps": _parse_json_any(checkpoint.pending_steps_json) or [],
+        "artifacts": _parse_json_any(checkpoint.artifacts_json) or [],
+    }
+
+
+def list_checkpoints(db: Session, run_id: str) -> list[AgentCheckpointRecord]:
+    checkpoints = (
+        db.query(AgentCheckpoint)
+        .filter(AgentCheckpoint.run_id == run_id)
+        .order_by(AgentCheckpoint.checkpoint_index.asc())
+        .all()
+    )
+    return [_checkpoint_record(checkpoint) for checkpoint in checkpoints]
+
+
+def mark_run_waiting_approval(
+    db: Session,
+    *,
+    run_id: str,
+    approval_id: str,
+    current_step_name: str,
+    response: AgentRunResponse | None = None,
+) -> None:
+    run = db.query(AgentRun).filter(AgentRun.id == run_id).first()
+    if run is None:
+        raise DataBoxError("Agent run not found.", code="RUN_NOT_FOUND")
+    run.status = "waiting_approval"
+    run.current_step_name = current_step_name
+    run.waiting_approval_id = approval_id
+    run.error = None
+    run.completed_at = None
+    run.updated_at = datetime.now(UTC)
+    if response is not None:
+        run.response_json = _safe_json(_redact_response(response))
+        run.context_summary = response.context_summary
+    db.flush()
+
+
+def mark_run_resumed(db: Session, *, run_id: str, current_step_name: str | None = "execute_sql") -> None:
+    run = db.query(AgentRun).filter(AgentRun.id == run_id).first()
+    if run is None:
+        raise DataBoxError("Agent run not found.", code="RUN_NOT_FOUND")
+    run.status = "running"
+    run.current_step_name = current_step_name
+    run.waiting_approval_id = None
+    run.error = None
+    run.completed_at = None
+    run.updated_at = datetime.now(UTC)
+    db.flush()
+
+
+def get_latest_runtime_event_sequence(db: Session, run_id: str) -> int:
+    latest = (
+        db.query(func.max(AgentRuntimeEventRecord.sequence))
+        .filter(AgentRuntimeEventRecord.run_id == run_id)
+        .scalar()
+        or 0
+    )
+    return int(latest)
 
 
 def get_run(db: Session, run_id: str) -> AgentRunResponse | None:
@@ -432,6 +659,54 @@ def restore_runtime_event(db: Session, event_id: str) -> dict[str, Any] | None:
         "event": _parse_json(record.event_json) or {},
         "created_at_ms": record.created_at_ms,
     }
+
+
+def _latest_checkpoint_model(db: Session, run_id: str) -> AgentCheckpoint | None:
+    return (
+        db.query(AgentCheckpoint)
+        .filter(AgentCheckpoint.run_id == run_id)
+        .order_by(AgentCheckpoint.checkpoint_index.desc(), AgentCheckpoint.created_at.desc())
+        .first()
+    )
+
+
+def _approval_record(approval: AgentApproval) -> AgentApprovalRecord:
+    return AgentApprovalRecord(
+        id=approval.id,
+        run_id=approval.run_id,
+        session_id=approval.session_id,
+        step_name=approval.step_name,
+        tool_name=approval.tool_name,
+        status=approval.status,  # type: ignore[arg-type]
+        risk_level=_normalize_risk_level(approval.risk_level),  # type: ignore[arg-type]
+        reason=approval.reason,
+        policy_decision=_parse_json(approval.policy_decision_json) or {},
+        requested_action=_parse_json(approval.requested_action_json),
+        created_at=approval.created_at,
+        expires_at=approval.expires_at,
+        decided_at=approval.decided_at,
+        decided_by=approval.decided_by,
+        decision_note=approval.decision_note,
+    )
+
+
+def _checkpoint_record(checkpoint: AgentCheckpoint) -> AgentCheckpointRecord:
+    return AgentCheckpointRecord(
+        id=checkpoint.id,
+        run_id=checkpoint.run_id,
+        session_id=checkpoint.session_id,
+        checkpoint_index=checkpoint.checkpoint_index,
+        status=checkpoint.status,
+        current_step_name=checkpoint.current_step_name,
+        next_step_name=checkpoint.next_step_name,
+        created_at=checkpoint.created_at,
+    )
+
+
+def _normalize_risk_level(risk_level: str | None) -> str:
+    if risk_level in {"safe", "warning", "danger"}:
+        return risk_level
+    return "warning"
 
 
 def _redact_trace_event(
