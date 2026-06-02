@@ -8,8 +8,10 @@ from pydantic import BaseModel, Field
 
 AgentStepStatus = Literal["success", "failed", "skipped"]
 AgentArtifactType = Literal[
+    "agent_plan",
     "query_plan",
     "sql",
+    "sql_suggestion",
     "safety",
     "table",
     "chart",
@@ -36,6 +38,18 @@ AgentRuntimeEventType = Literal[
 AgentApprovalStatus = Literal["pending", "approved", "rejected", "expired"]
 AgentApprovalDecision = Literal["approved", "rejected"]
 AgentApprovalRiskLevel = Literal["safe", "warning", "danger"]
+AgentPlannerIntent = Literal[
+    "analysis",
+    "explain_sql",
+    "fix_sql",
+    "optimize_sql",
+    "rewrite_sql",
+    "explain_result",
+    "continue_from_artifact",
+    "explain_schema",
+    "unknown",
+]
+AgentPlanConfidence = Literal["low", "medium", "high"]
 
 
 class AgentApprovalRecord(BaseModel):
@@ -92,6 +106,50 @@ class AgentFollowUpContext(BaseModel):
     artifacts: list[AgentContextArtifact] = Field(default_factory=list)
 
 
+class AgentWorkspaceContext(BaseModel):
+    project_id: str | None = None
+    datasource_id: str
+    active_sql: str | None = None
+    selected_sql: str | None = None
+    last_query_result_preview: dict[str, Any] | None = None
+    last_error: str | None = None
+    selected_table_ids: list[str] = Field(default_factory=list)
+    selected_table_names: list[str] = Field(default_factory=list)
+    selected_column_refs: list[str] = Field(default_factory=list)
+    selected_artifact_id: str | None = None
+    recent_agent_run_id: str | None = None
+    open_sql_tabs: list[dict[str, Any]] = Field(default_factory=list)
+    editor_annotations: list[dict[str, Any]] = Field(default_factory=list)
+    semantic_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentIntentPlan(BaseModel):
+    intent: AgentPlannerIntent = "analysis"
+    confidence: AgentPlanConfidence = "medium"
+    rationale: str | None = None
+    requires_context: list[str] = Field(default_factory=list)
+
+
+class AgentPlanStep(BaseModel):
+    id: str
+    tool_name: str
+    title: str | None = None
+    args: dict[str, Any] = Field(default_factory=dict)
+    depends_on: list[str] = Field(default_factory=list)
+    required: bool = True
+
+
+class AgentPlanDraft(BaseModel):
+    version: str = "agent-plan-draft/v1"
+    intent: AgentIntentPlan
+    steps: list[AgentPlanStep] = Field(default_factory=list)
+    should_execute_sql: bool = False
+    context_summary: str | None = None
+    safety_notes: list[str] = Field(default_factory=list)
+    model: str | None = None
+    raw_response: dict[str, Any] | None = None
+
+
 class AgentRunRequest(BaseModel):
     datasource_id: str
     question: str
@@ -101,6 +159,7 @@ class AgentRunRequest(BaseModel):
     api_key: str | None = None
     api_base: str | None = None
     model_name: str | None = None
+    workspace_context: AgentWorkspaceContext | None = None
     optimize_rag: bool = True
     execute: bool = True
     max_steps: int = Field(default=12, ge=1, le=20)
