@@ -1,0 +1,76 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
+
+from engine.agent_kernel.tool_registry import ToolRegistry
+
+
+class PolicyDecision(BaseModel):
+    status: Literal["allowed", "blocked", "approval_required"]
+    reason: str
+    safe_args: dict[str, Any] = Field(default_factory=dict)
+    risk_level: Literal["safe", "warning", "danger"] = "safe"
+
+
+class PolicyGate:
+    def __init__(self, registry: ToolRegistry):
+        self.registry = registry
+
+    def check(self, state: dict[str, Any], tool_name: str, args: dict[str, Any]) -> PolicyDecision:
+        tool = self.registry.get(tool_name)
+        if tool is None:
+            return PolicyDecision(
+                status="blocked",
+                reason=f"Unknown tool: {tool_name}",
+                risk_level="danger",
+            )
+
+        policy = tool.spec.policy
+        if policy.side_effect in {"write", "destructive"}:
+            return PolicyDecision(
+                status="blocked",
+                reason=f"Tool {tool_name} has forbidden side effects for Agent Kernel.",
+                risk_level="danger",
+            )
+
+        if policy.requires_validated_sql:
+            raw_safety = state.get("safety")
+            safety: dict[str, Any] = raw_safety if isinstance(raw_safety, dict) else {}
+            can_execute = bool(safety.get("can_execute"))
+            safe_sql = str(safety.get("safe_sql") or "").strip()
+            if not can_execute or not safe_sql:
+                return PolicyDecision(
+                    status="blocked",
+                    reason="SQL execution requires a previous successful sql.validate result.",
+                    risk_level="danger",
+                )
+            if safety.get("requires_confirmation"):
+                return PolicyDecision(
+                    status="approval_required",
+                    reason="This SQL execution requires human approval.",
+                    risk_level="warning",
+                    safe_args={"sql": safe_sql},
+                )
+            return PolicyDecision(
+                status="allowed",
+                reason="SQL was validated by TrustGate.",
+                risk_level="safe",
+                safe_args={"sql": safe_sql},
+            )
+
+        if policy.requires_approval:
+            return PolicyDecision(
+                status="approval_required",
+                reason=f"Tool {tool_name} requires approval.",
+                risk_level=policy.risk_level,
+                safe_args=args,
+            )
+
+        return PolicyDecision(
+            status="allowed",
+            reason=f"Tool {tool_name} is allowed by policy.",
+            risk_level=policy.risk_level,
+            safe_args=args,
+        )
