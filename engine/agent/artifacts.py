@@ -51,7 +51,7 @@ def build_agent_artifacts(
         artifacts.append(build_chart_artifact(chart_suggestion, safety=safety, identity=identity))
 
     if result_profile:
-        artifacts.append(build_profile_artifact(result_profile, safety=safety, identity=identity))
+        artifacts.append(build_profile_artifact(result_profile, execution=execution, safety=safety, identity=identity))
 
     if answer and answer.recommendations:
         artifacts.append(build_recommendations_artifact(answer, identity=identity))
@@ -167,23 +167,28 @@ def build_safety_artifact(
     )
 
 
-def build_table_artifact(
-    execution: dict[str, Any],
+def build_profile_artifact(
+    result_profile: ResultProfile,
     *,
-    safety: dict[str, Any] | None,
+    execution: dict[str, Any] | None = None,
+    safety: dict[str, Any] | None = None,
     identity: AgentArtifactIdentity | None = None,
 ) -> AgentArtifact:
+    # Only depend on result_table when an execution result/table exists.
+    depends: list[str] = []
+    if execution and execution.get("success"):
+        depends = ["result_table"]
     return _artifact(
-        "result_table",
-        "table",
-        "Result table",
-        {
-            "columns": execution.get("columns", []),
-            "rows": execution.get("rows", []),
-            "rowCount": execution.get("rowCount", len(execution.get("rows", []) or [])),
-            "latencyMs": execution.get("latencyMs", 0),
-            "safety_state": _safety_state(safety),
-        },
+        "result_profile",
+        "insight",
+        "Result profile",
+        {**result_profile.model_dump(), "safety_state": _safety_state(safety)},
+        mode="both",
+        priority=10,
+        identity=identity,
+        produced_by_step="profile_result",
+        depends_on=depends,
+    )
         mode="both",
         priority=20,
         identity=identity,

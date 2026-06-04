@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_7b59486f_1_agent_run_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_1_agent_run_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 1,
-    "created_at_ms": 1780588431929,
+    "created_at_ms": 1780591212325,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-concert-singer",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_7b59486f_2_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_2_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 2,
-    "created_at_ms": 1780588435930,
+    "created_at_ms": 1780591215384,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_3_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_3_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 3,
-    "created_at_ms": 1780588435930,
+    "created_at_ms": 1780591215385,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 2
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_4_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_4_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 4,
-    "created_at_ms": 1780588443382,
+    "created_at_ms": 1780591223968,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_5_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_5_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 5,
-    "created_at_ms": 1780588443383,
+    "created_at_ms": 1780591223969,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 4089
+      "latency_ms": 4373
     },
     "artifact": null,
     "answer": null,
@@ -97,16 +97,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_6_agent_artifact_created",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_6_agent_artifact_created",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 6,
-    "created_at_ms": 1780588443383,
+    "created_at_ms": 1780591223970,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/001/query_plan",
+      "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
@@ -188,10 +188,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_7b59486f_7_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_7_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 7,
-    "created_at_ms": 1780588447458,
+    "created_at_ms": 1780591227238,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -206,10 +206,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_8_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_8_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 8,
-    "created_at_ms": 1780588447459,
+    "created_at_ms": 1780591227239,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
@@ -227,10 +227,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_9_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_9_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 9,
-    "created_at_ms": 1780588452899,
+    "created_at_ms": 1780591231214,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -245,17 +245,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_10_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_10_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 10,
-    "created_at_ms": 1780588452901,
+    "created_at_ms": 1780591231215,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 6
+      "latency_ms": 7
     },
     "artifact": null,
     "answer": null,
@@ -266,16 +266,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_11_agent_artifact_created",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_11_agent_artifact_created",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 11,
-    "created_at_ms": 1780588452902,
+    "created_at_ms": 1780591231217,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/002/sql_candidate",
+      "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
@@ -298,7 +298,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/001/query_plan"
+        "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -309,16 +309,16 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_7b59486f_12_agent_artifact_created",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_12_agent_artifact_created",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 12,
-    "created_at_ms": 1780588452903,
+    "created_at_ms": 1780591231218,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/003/safety_report",
+      "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
@@ -353,7 +353,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-10b2b971-9b2c-45c3-bd30-38c0b67e1a90",
+          "decision_id": "safety-a0a3bd6c-0bc4-4daa-be70-7fc4025474c8",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
           "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer ORDER BY ARRAY(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100",
@@ -382,7 +382,7 @@
           "messages": [
             "SQL passed schema validation and guardrail checks."
           ],
-          "created_at": "2026-06-04T15:54:12.899754Z"
+          "created_at": "2026-06-04T16:40:31.214958Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -399,7 +399,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/002/sql_candidate"
+        "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -410,10 +410,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_7b59486f_13_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_13_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 13,
-    "created_at_ms": 1780588456013,
+    "created_at_ms": 1780591234349,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -428,10 +428,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_14_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_14_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 14,
-    "created_at_ms": 1780588456014,
+    "created_at_ms": 1780591234350,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
@@ -449,10 +449,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_15_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_15_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 15,
-    "created_at_ms": 1780588461345,
+    "created_at_ms": 1780591242027,
     "type": "agent.step.started",
     "step": {
       "name": "revise_sql",
@@ -467,10 +467,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_16_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_16_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 16,
-    "created_at_ms": 1780588461345,
+    "created_at_ms": 1780591242029,
     "type": "agent.step.completed",
     "step": {
       "name": "revise_sql",
@@ -488,10 +488,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_17_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_17_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 17,
-    "created_at_ms": 1780588467636,
+    "created_at_ms": 1780591248078,
     "type": "agent.step.started",
     "step": {
       "name": "profile_result",
@@ -506,10 +506,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_18_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_18_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 18,
-    "created_at_ms": 1780588467637,
+    "created_at_ms": 1780591248079,
     "type": "agent.step.completed",
     "step": {
       "name": "profile_result",
@@ -527,16 +527,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_19_agent_artifact_created",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_19_agent_artifact_created",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 19,
-    "created_at_ms": 1780588467638,
+    "created_at_ms": 1780591248079,
     "type": "agent.artifact.created",
     "step": {
       "name": "profile_result"
     },
     "artifact": {
-      "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/004/result_profile",
+      "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/004/result_profile",
       "semantic_id": "result_profile",
       "type": "insight",
       "title": "Result profile",
@@ -579,10 +579,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_7b59486f_20_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_20_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 20,
-    "created_at_ms": 1780588476194,
+    "created_at_ms": 1780591254340,
     "type": "agent.step.started",
     "step": {
       "name": "suggest_chart",
@@ -597,10 +597,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_21_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_21_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 21,
-    "created_at_ms": 1780588476196,
+    "created_at_ms": 1780591254341,
     "type": "agent.step.completed",
     "step": {
       "name": "suggest_chart",
@@ -618,10 +618,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_22_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_22_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 22,
-    "created_at_ms": 1780588481604,
+    "created_at_ms": 1780591260557,
     "type": "agent.step.started",
     "step": {
       "name": "suggest_followups",
@@ -636,10 +636,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_23_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_23_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 23,
-    "created_at_ms": 1780588481606,
+    "created_at_ms": 1780591260559,
     "type": "agent.step.completed",
     "step": {
       "name": "suggest_followups",
@@ -657,10 +657,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_24_agent_step_started",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_24_agent_step_started",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 24,
-    "created_at_ms": 1780588503490,
+    "created_at_ms": 1780591266562,
     "type": "agent.step.started",
     "step": {
       "name": "answer_synthesizer",
@@ -675,10 +675,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_7b59486f_25_agent_step_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_25_agent_step_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 25,
-    "created_at_ms": 1780588503492,
+    "created_at_ms": 1780591266562,
     "type": "agent.step.completed",
     "step": {
       "name": "answer_synthesizer",
@@ -696,14 +696,14 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_7b59486f_26_agent_artifact_created",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_26_agent_artifact_created",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 26,
-    "created_at_ms": 1780588508656,
+    "created_at_ms": 1780591272069,
     "type": "agent.artifact.created",
     "step": null,
     "artifact": {
-      "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/005/agent_error",
+      "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/005/agent_error",
       "semantic_id": "agent_error",
       "type": "error",
       "title": "Agent stopped",
@@ -727,7 +727,7 @@
       "refs": {},
       "produced_by_step": "agent_finalize",
       "depends_on": [
-        "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/003/safety_report"
+        "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/003/safety_report"
       ]
     },
     "answer": null,
@@ -738,10 +738,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_7b59486f_27_agent_answer_completed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_27_agent_answer_completed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 27,
-    "created_at_ms": 1780588508659,
+    "created_at_ms": 1780591272071,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
@@ -760,22 +760,22 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_7b59486f_28_agent_run_failed",
-    "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
+    "event_id": "runtime_0515447c_28_agent_run_failed",
+    "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
     "sequence": 28,
-    "created_at_ms": 1780588508659,
+    "created_at_ms": 1780591272072,
     "type": "agent.run.failed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "7b59486f-46e0-45cf-9342-7f412e9f9a70",
-      "session_id": "457cd2f5-858c-496c-b7d2-89ec350dc429",
+      "run_id": "0515447c-44fe-45b7-a50f-637f27664805",
+      "session_id": "90216706-cd75-497f-ad57-33d248ce5fd7",
       "parent_run_id": null,
       "success": false,
       "status": "completed",
       "question": "Show name, country, age for all singers ordered by age from the oldest to the youngest.",
-      "context_summary": "Question: Show name, country, age for all singers ordered by age from the oldest to the youngest. Answer: I could not complete the analysis because: 执行 SQL 遇到错误: (1064, \"You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100' at line 1\") Artifacts: - agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/001/query_plan (query_plan, Query plan): analysis_goal=retrieve_singer_details_ordered_by_age, metrics=[], dimensions=[{'name': 'name', 'column': 'Name', 'transform': None}, {'name': 'country', 'column': 'Country', 'transform': None}, {'name': 'age', 'column': 'Age', 'transform': None}], filters=[], time_range=None, candidate_tables=['singer'] - agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/002/sql_candidate (sql, Validated SQL): SELECT Name AS name, Country AS country, Age AS age FROM singer ORDER BY ARRAY(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100 - agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.'] - agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/004/result_profile (insight, Result profile): - agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/005/agent_error (error, Agent stopped): 执行 SQL 遇到错误: (1064, \"You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100' at line 1\")",
+      "context_summary": "Question: Show name, country, age for all singers ordered by age from the oldest to the youngest. Answer: I could not complete the analysis because: 执行 SQL 遇到错误: (1064, \"You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100' at line 1\") Artifacts: - agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/001/query_plan (query_plan, Query plan): analysis_goal=retrieve_singer_details_ordered_by_age, metrics=[], dimensions=[{'name': 'name', 'column': 'Name', 'transform': None}, {'name': 'country', 'column': 'Country', 'transform': None}, {'name': 'age', 'column': 'Age', 'transform': None}], filters=[], time_range=None, candidate_tables=['singer'] - agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/002/sql_candidate (sql, Validated SQL): SELECT Name AS name, Country AS country, Age AS age FROM singer ORDER BY ARRAY(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100 - agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.'] - agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/004/result_profile (insight, Result profile): - agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/005/agent_error (error, Agent stopped): 执行 SQL 遇到错误: (1064, \"You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100' at line 1\")",
       "referenced_artifact_ids": [],
       "query_plan": {
         "analysis_goal": "retrieve_singer_details_ordered_by_age",
@@ -870,7 +870,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-10b2b971-9b2c-45c3-bd30-38c0b67e1a90",
+          "decision_id": "safety-a0a3bd6c-0bc4-4daa-be70-7fc4025474c8",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
           "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer ORDER BY ARRAY(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100",
@@ -899,7 +899,7 @@
           "messages": [
             "SQL passed schema validation and guardrail checks."
           ],
-          "created_at": "2026-06-04T15:54:12.899754Z"
+          "created_at": "2026-06-04T16:40:31.214958Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -950,7 +950,7 @@
       ],
       "artifacts": [
         {
-          "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/001/query_plan",
+          "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
@@ -1025,7 +1025,7 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/002/sql_candidate",
+          "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
@@ -1048,11 +1048,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/001/query_plan"
+            "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/003/safety_report",
+          "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
@@ -1087,7 +1087,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-10b2b971-9b2c-45c3-bd30-38c0b67e1a90",
+              "decision_id": "safety-a0a3bd6c-0bc4-4daa-be70-7fc4025474c8",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
               "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer ORDER BY ARRAY(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100",
@@ -1116,7 +1116,7 @@
               "messages": [
                 "SQL passed schema validation and guardrail checks."
               ],
-              "created_at": "2026-06-04T15:54:12.899754Z"
+              "created_at": "2026-06-04T16:40:31.214958Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1133,11 +1133,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/002/sql_candidate"
+            "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/004/result_profile",
+          "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/004/result_profile",
           "semantic_id": "result_profile",
           "type": "insight",
           "title": "Result profile",
@@ -1173,7 +1173,7 @@
           ]
         },
         {
-          "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/005/agent_error",
+          "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/005/agent_error",
           "semantic_id": "agent_error",
           "type": "error",
           "title": "Agent stopped",
@@ -1197,7 +1197,7 @@
           "refs": {},
           "produced_by_step": "agent_finalize",
           "depends_on": [
-            "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/003/safety_report"
+            "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/003/safety_report"
           ]
         }
       ],
@@ -1217,7 +1217,7 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/004/result_profile",
+          "artifact_id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/004/result_profile",
           "display": "full",
           "answer": null,
           "suggestions": []
@@ -1227,7 +1227,7 @@
           "sequence": 3,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/005/agent_error",
+          "artifact_id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/005/agent_error",
           "display": "full",
           "answer": null,
           "suggestions": []
@@ -1271,7 +1271,7 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780588508652,
+          "created_at_ms": 1780591272067,
           "type": "agent.narration.completed",
           "content": "I started from the trusted schema and safety checks, but stopped before a complete answer: 执行 SQL 遇到错误: (1064, \"You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100' at line 1\")",
           "artifact": null,
@@ -1281,11 +1281,11 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780588508653,
+          "created_at_ms": 1780591272068,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/004/result_profile",
+            "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/004/result_profile",
             "semantic_id": "result_profile",
             "type": "insight",
             "title": "Result profile",
@@ -1326,11 +1326,11 @@
         {
           "event_id": "visible_3_agent_artifact_created",
           "sequence": 3,
-          "created_at_ms": 1780588508654,
+          "created_at_ms": 1780591272069,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/005/agent_error",
+            "id": "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/005/agent_error",
             "semantic_id": "agent_error",
             "type": "error",
             "title": "Agent stopped",
@@ -1354,7 +1354,7 @@
             "refs": {},
             "produced_by_step": "agent_finalize",
             "depends_on": [
-              "agent/run/7b59486f-46e0-45cf-9342-7f412e9f9a70/artifact/003/safety_report"
+              "agent/run/0515447c-44fe-45b7-a50f-637f27664805/artifact/003/safety_report"
             ]
           },
           "answer": null,
@@ -1363,7 +1363,7 @@
         {
           "event_id": "visible_4_agent_answer_completed",
           "sequence": 4,
-          "created_at_ms": 1780588508655,
+          "created_at_ms": 1780591272070,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
@@ -1380,7 +1380,7 @@
         {
           "event_id": "visible_5_agent_suggestions_created",
           "sequence": 5,
-          "created_at_ms": 1780588508656,
+          "created_at_ms": 1780591272071,
           "type": "agent.suggestions.created",
           "content": null,
           "artifact": null,
@@ -1399,7 +1399,7 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780588508654,
+          "created_at_ms": 1780591272067,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1417,7 +1417,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780588508655,
+          "created_at_ms": 1780591272068,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1769,12 +1769,12 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 2
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780588508656,
+          "created_at_ms": 1780591272069,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1797,7 +1797,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780588508657,
+          "created_at_ms": 1780591272070,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1875,12 +1875,12 @@
             }
           },
           "error": null,
-          "latency_ms": 4089
+          "latency_ms": 4373
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780588508658,
+          "created_at_ms": 1780591272071,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1905,7 +1905,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780588508659,
+          "created_at_ms": 1780591272072,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -2064,7 +2064,7 @@
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780588508660,
+          "created_at_ms": 1780591272073,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -2080,7 +2080,7 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780588508661,
+          "created_at_ms": 1780591272074,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -2120,7 +2120,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-10b2b971-9b2c-45c3-bd30-38c0b67e1a90",
+              "decision_id": "safety-a0a3bd6c-0bc4-4daa-be70-7fc4025474c8",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
               "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer ORDER BY ARRAY(STRUCT('[REDACTED_LITERAL]' AS `column`, '[REDACTED_LITERAL]' AS direction)) LIMIT 100",
@@ -2149,7 +2149,7 @@
               "messages": [
                 "SQL passed schema validation and guardrail checks."
               ],
-              "created_at": "2026-06-04T15:54:12.899754Z"
+              "created_at": "2026-06-04T16:40:31.214958Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2159,12 +2159,12 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 6
+          "latency_ms": 7
         },
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780588508662,
+          "created_at_ms": 1780591272075,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -2180,7 +2180,7 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780588508663,
+          "created_at_ms": 1780591272076,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -2200,7 +2200,7 @@
         {
           "event_id": "trace_11_step_6_revise_sql_started",
           "sequence": 11,
-          "created_at_ms": 1780588508664,
+          "created_at_ms": 1780591272077,
           "type": "agent.trace.step_started",
           "step_id": "step_6_revise_sql",
           "name": "revise_sql",
@@ -2216,7 +2216,7 @@
         {
           "event_id": "trace_12_step_6_revise_sql_completed",
           "sequence": 12,
-          "created_at_ms": 1780588508665,
+          "created_at_ms": 1780591272078,
           "type": "agent.trace.step_completed",
           "step_id": "step_6_revise_sql",
           "name": "revise_sql",
@@ -2242,7 +2242,7 @@
         {
           "event_id": "trace_13_step_7_profile_result_started",
           "sequence": 13,
-          "created_at_ms": 1780588508666,
+          "created_at_ms": 1780591272079,
           "type": "agent.trace.step_started",
           "step_id": "step_7_profile_result",
           "name": "profile_result",
@@ -2259,7 +2259,7 @@
         {
           "event_id": "trace_14_step_7_profile_result_completed",
           "sequence": 14,
-          "created_at_ms": 1780588508667,
+          "created_at_ms": 1780591272080,
           "type": "agent.trace.step_completed",
           "step_id": "step_7_profile_result",
           "name": "profile_result",
@@ -2287,7 +2287,7 @@
         {
           "event_id": "trace_15_step_8_suggest_chart_started",
           "sequence": 15,
-          "created_at_ms": 1780588508668,
+          "created_at_ms": 1780591272081,
           "type": "agent.trace.step_started",
           "step_id": "step_8_suggest_chart",
           "name": "suggest_chart",
@@ -2302,7 +2302,7 @@
         {
           "event_id": "trace_16_step_8_suggest_chart_completed",
           "sequence": 16,
-          "created_at_ms": 1780588508669,
+          "created_at_ms": 1780591272082,
           "type": "agent.trace.step_completed",
           "step_id": "step_8_suggest_chart",
           "name": "suggest_chart",
@@ -2322,7 +2322,7 @@
         {
           "event_id": "trace_17_step_9_suggest_followups_started",
           "sequence": 17,
-          "created_at_ms": 1780588508670,
+          "created_at_ms": 1780591272083,
           "type": "agent.trace.step_started",
           "step_id": "step_9_suggest_followups",
           "name": "suggest_followups",
@@ -2339,7 +2339,7 @@
         {
           "event_id": "trace_18_step_9_suggest_followups_completed",
           "sequence": 18,
-          "created_at_ms": 1780588508671,
+          "created_at_ms": 1780591272084,
           "type": "agent.trace.step_completed",
           "step_id": "step_9_suggest_followups",
           "name": "suggest_followups",
@@ -2365,7 +2365,7 @@
         {
           "event_id": "trace_19_step_10_answer_synthesizer_started",
           "sequence": 19,
-          "created_at_ms": 1780588508672,
+          "created_at_ms": 1780591272085,
           "type": "agent.trace.step_started",
           "step_id": "step_10_answer_synthesizer",
           "name": "answer_synthesizer",
@@ -2383,7 +2383,7 @@
         {
           "event_id": "trace_20_step_10_answer_synthesizer_completed",
           "sequence": 20,
-          "created_at_ms": 1780588508673,
+          "created_at_ms": 1780591272086,
           "type": "agent.trace.step_completed",
           "step_id": "step_10_answer_synthesizer",
           "name": "answer_synthesizer",
@@ -2777,7 +2777,7 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 2
         },
         {
           "name": "build_query_plan",
@@ -2855,7 +2855,7 @@
             }
           },
           "error": null,
-          "latency_ms": 4089
+          "latency_ms": 4373
         },
         {
           "name": "generate_sql_candidate",
@@ -3047,7 +3047,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-10b2b971-9b2c-45c3-bd30-38c0b67e1a90",
+              "decision_id": "safety-a0a3bd6c-0bc4-4daa-be70-7fc4025474c8",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
               "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer ORDER BY ARRAY(STRUCT('Age' AS `column`, 'DESC' AS direction)) LIMIT 100",
@@ -3076,7 +3076,7 @@
               "messages": [
                 "SQL passed schema validation and guardrail checks."
               ],
-              "created_at": "2026-06-04T15:54:12.899754Z"
+              "created_at": "2026-06-04T16:40:31.214958Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -3086,7 +3086,7 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 6
+          "latency_ms": 7
         },
         {
           "name": "execute_sql",

@@ -778,6 +778,8 @@ def main() -> None:
             if gold_err:
                 reason = f"Gold SQL execution failed: {gold_err}"
                 print(f"  [GOLD ERR] Gold SQL error: {gold_err}")
+                # Mark environment/eval error separately so agent is not penalized
+                status = "eval_env_failed"
             else:
                 print(f"  Gold rows: {len(gold_rows)} cols={gold_cols}")
 
@@ -785,7 +787,8 @@ def main() -> None:
         execute_this_case = case_execute and bool(sql_for_exec)
 
         if gold_err:
-            status = "fail"
+            # Gold SQL could not be executed in the evaluation environment
+            status = "eval_env_failed"
         elif stream_error and not sql_for_exec:
             status = "fail"
             reason = f"Agent stream error: {stream_error}"

@@ -287,7 +287,40 @@ def guardrail_check(sql_str: str, dialect: str = "mysql") -> GuardrailResult:
             pass
             
     safe_sql = safe_expression.sql(dialect=sqlglot_dialect)
-    
+
+    # 6. Post-generation syntax sanity — catch patterns that are valid in
+    #    sqlglot's AST but produce invalid MySQL (BigQuery/Spark-isms).
+    _SAFE_SQL_UPPER = safe_sql.upper()
+    _BROKEN_TOKENS = (
+        "ORDER BY ARRAY(", "ORDER BY STRUCT(", "ORDER BY []",
+        "ARRAY(", "STRUCT(",
+    )
+    for token in _BROKEN_TOKENS:
+        if token in _SAFE_SQL_UPPER:
+            import logging
+            logging.getLogger("databox.guardrail").warning(
+                "guardrail_check: detected broken MySQL syntax token=%r in safe_sql=%r",
+                token, safe_sql,
+            )
+            checks.append({
+                "rule": "mysql_syntax_invalid",
+                "level": "reject",
+                "message": (
+                    f"SQL 包含 MySQL 不支持的语法: '{token}'. "
+                    "请使用标准 MySQL ORDER BY column [ASC|DESC] 语法。"
+                ),
+            })
+            has_errors = True
+
+    if has_errors:
+        return {
+            "result": "reject",
+            "originalSql": sql_str,
+            "safeSql": "",
+            "checks": checks,
+            "message": "拒绝执行：检测到 MySQL 不支持的语法，已被 Guardrail 拦截。",
+        }
+
     # If warnings exist, the overall result is "warn", otherwise "pass"
     warn_count = sum(1 for c in checks if c["level"] == "warn")
     result_status = "warn" if warn_count > 0 else "pass"

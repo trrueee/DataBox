@@ -49,7 +49,7 @@ class ArtifactEmitter:
 
         if step_name == "profile_result" and state.result_profile:
             parsed_profile = ResultProfile.model_validate(state.result_profile)
-            return [build_profile_artifact(parsed_profile, safety=state.safety, identity=identity)]
+            return [build_profile_artifact(parsed_profile, execution=state.execution, safety=state.safety, identity=identity)]
 
         if (
             step_name == "suggest_chart"

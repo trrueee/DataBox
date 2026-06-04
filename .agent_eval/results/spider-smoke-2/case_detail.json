@@ -51,7 +51,7 @@
     "error"
   ],
   "approval": null,
-  "latency_seconds": 76.94,
+  "latency_seconds": 59.96,
   "gold_rows_count": 6,
   "agent_rows_count": 0,
   "gold_error": null,

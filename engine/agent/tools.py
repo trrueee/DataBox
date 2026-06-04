@@ -677,6 +677,9 @@ def _render_sql_from_query_plan(
         joined_tables.add(right_table.lower())
 
     where_clauses = [_filter_expression(item) for item in filters]
+    # If any filter expression signals 'unsupported', bail out to let LLM generation run
+    if any(item == "unsupported" for item in where_clauses):
+        return None
     where_clauses = [item for item in where_clauses if item]
     if where_clauses:
         sql_parts.append(f"WHERE {' AND '.join(where_clauses)}")
@@ -684,7 +687,13 @@ def _render_sql_from_query_plan(
     if metrics and group_by:
         sql_parts.append(f"GROUP BY {', '.join(group_by)}")
 
-    order_by = str(raw_plan.get("order_by") or "").strip()
+    order_by_raw = raw_plan.get("order_by")
+    order_by = _coerce_order_by(order_by_raw)
+    if order_by_raw:
+        import logging
+        logging.getLogger("databox.agent.tools").info(
+            "render_sql: order_by raw=%r -> coerced=%r", order_by_raw, order_by
+        )
     if order_by:
         sql_parts.append(f"ORDER BY {order_by}")
 
@@ -717,6 +726,16 @@ def _prepare_generated_sql(db: Session, datasource_id: str, sql: str) -> tuple[s
         return cleaned, [], {}
 
     notes: list[str] = []
+    # Strip ORDER BY ARRAY() / ORDER BY [] patterns that escape the renderer
+    # (renderer already filters via _coerce_order_by; this is the safety net)
+    stripped = _strip_broken_order_by(cleaned)
+    if stripped != cleaned:
+        import logging
+        logging.getLogger("databox.agent.tools").warning(
+            "_strip_broken_order_by: stripped broken ORDER BY\n  before=%r\n  after=%r",
+            cleaned, stripped,
+        )
+    cleaned = stripped
     rewritten, rewrote_star, star_metadata = _rewrite_select_star(db, datasource_id, cleaned)
     if rewrote_star:
         notes.append("select_star_rewritten_to_explicit_columns")
@@ -730,6 +749,68 @@ def _prepare_generated_sql(db: Session, datasource_id: str, sql: str) -> tuple[s
         notes.append("limit_added_by_guardrail")
 
     return rewritten, notes, star_metadata
+
+
+def _strip_broken_order_by(sql: str) -> str:
+    """Remove ORDER BY fragments that are known to produce invalid MySQL.
+
+    Cases covered:
+      ORDER BY ARRAY()
+      ORDER BY ARRAY(STRUCT(...))
+      ORDER BY []
+      ORDER BY ARRAY(STRUCT('col', 'desc'))
+    Primary defense is _coerce_order_by in the renderer;
+    this is a safety net for other code paths.
+    """
+    _SQL_CLAUSE_KW = {"SELECT", "FROM", "WHERE", "GROUP", "HAVING",
+                      "LIMIT", "OFFSET", "UNION", "INTERSECT", "EXCEPT",
+                      "ORDER"}  # ORDER included so nested ORDER BY triggers stop
+
+    import re as _re
+
+    pos = 0
+    while True:
+        m = _re.search(r"\bORDER\s+BY\s+", sql[pos:], _re.IGNORECASE)
+        if not m:
+            break
+        ob_start = pos + m.start()
+        tail_start = pos + m.end()
+        tail = sql[tail_start:].lstrip()
+
+        # Only strip if it starts with a known-broken token
+        upper_tail = tail.upper()
+        if not (upper_tail.startswith("ARRAY") or upper_tail.startswith("STRUCT")
+                or upper_tail.startswith("[")):
+            pos = tail_start  # skip this ORDER BY, it's legitimate
+            continue
+
+        # Walk forward through balanced parentheses
+        depth = 0
+        end = tail_start
+        for i, ch in enumerate(sql[tail_start:], start=tail_start):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            # Stop when parens are balanced AND we hit a SQL clause keyword
+            if depth == 0 and not (ch.isalnum() or ch in ("_", ".")):
+                # Look ahead to see if we're at a clause boundary
+                remaining = sql[i:].lstrip()
+                first_word = _re.match(r"(\w+)", remaining)
+                if first_word and first_word.group(1).upper() in _SQL_CLAUSE_KW:
+                    end = i
+                    break
+            if depth < 0:
+                end = i
+                break
+        else:
+            # Reached end of string; strip to end
+            end = len(sql)
+
+        sql = sql[:ob_start] + sql[end:]
+        pos = ob_start  # restart from this position
+
+    return sql.strip()
 
 
 def _rewrite_select_star(db: Session, datasource_id: str, sql: str) -> tuple[str, bool, dict[str, Any]]:
@@ -977,12 +1058,26 @@ def _filter_expression(item: dict[str, Any]) -> str:
     value = item.get("value")
     if not column:
         return ""
-    allowed = {"=", "!=", "<>", ">", ">=", "<", "<=", "LIKE", "IN"}
+    # Support explicit IS NULL / IS NOT NULL semantics and do not silently fallback
+    allowed = {"=", "!=", "<>", ">", ">=", "<", "<=", "LIKE", "IN", "IS NULL", "IS NOT NULL"}
+
     if operator not in allowed:
-        operator = "="
+        # Signal unsupported operator to caller so rendering can bail and let LLM generate
+        return "unsupported"
+
+    # Normalize NULL comparisons: prefer IS NULL / IS NOT NULL
+    if value is None:
+        if operator in ("=", "=="):
+            return f"{column} IS NULL"
+        if operator in ("!=", "<>"):
+            return f"{column} IS NOT NULL"
+        if operator in ("IS NULL", "IS NOT NULL"):
+            return f"{column} {operator}"
+
     if operator == "IN" and isinstance(value, list):
         rendered = ", ".join(_quote_filter_value(v) for v in value[:20])
         return f"{column} IN ({rendered})"
+
     return f"{column} {operator} {_quote_filter_value(value)}"
 
 
@@ -1002,7 +1097,24 @@ def _quote_filter_value(value: Any) -> str:
         return text
     if (text.startswith("'") and text.endswith("'")) or (text.startswith('"') and text.endswith('"')):
         return text
+    # Don't quote subqueries or expression-like values.
+    # Patterns: (SELECT ...), NOT IN (...), IN (...), bare function calls.
+    if re.match(r"\(\s*SELECT\b", text, re.IGNORECASE):
+        return text
+    if re.match(r"\(.+\)$", text) and _looks_like_expression(text):
+        return text
     return "'" + text.replace("'", "''") + "'"
+
+
+def _looks_like_expression(text: str) -> bool:
+    """Heuristic: does *text* contain tokens that suggest it's SQL, not a literal?"""
+    upper = text.upper()
+    indicators = (
+        "SELECT ", " AVG(", " COUNT(", " SUM(", " MAX(", " MIN(",
+        " AS ", " FROM ", " WHERE ", " AND ", " OR ",
+        " + ", " - ", " * ", " / ",
+    )
+    return any(ind in upper for ind in indicators)
 
 
 def _safe_alias(value: str) -> str:
@@ -1011,6 +1123,29 @@ def _safe_alias(value: str) -> str:
     if alias[0].isdigit():
         alias = f"c_{alias}"
     return alias
+
+
+def _coerce_order_by(value: Any) -> str | None:
+    """Normalize order_by from a query plan into a safe SQL ORDER BY clause.
+
+    Rejects:
+      - empty / null / missing values
+      - JSON array representations (``[]``, ``"[]"``)
+      - BigQuery struct/array wrappers that are illegal in MySQL
+    """
+    if value is None:
+        return None
+    if isinstance(value, (list, tuple)):
+        return None if len(value) == 0 else ", ".join(str(v) for v in value)
+    raw = str(value).strip()
+    if not raw or raw in ("[]", "{}", "null", "None", '""', "''"):
+        return None
+    # Guard against BigQuery-style struct/array literals injected by LLM
+    lowered = raw.lower()
+    for token in ("array(", "struct(", "[]"):
+        if token in lowered:
+            return None
+    return raw
 
 
 def _coerce_limit(value: Any) -> int:
