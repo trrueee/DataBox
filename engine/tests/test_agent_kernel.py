@@ -461,15 +461,27 @@ def test_agent_kernel_fallback_execute_false_returns_review_response(db_session,
     assert res.steps[4].status == "skipped"
 
 
-def test_agent_kernel_fallback_explains_workspace_sql_without_schema_restart(
+def test_agent_kernel_controller_final_answer_uses_workspace_sql_without_schema_restart(
     db_session,
     demo_datasource,
     monkeypatch,
 ) -> None:
     def fail_schema_context(*_args, **_kwargs):
-        raise AssertionError("SQL explanation follow-up should not restart schema context building.")
+        raise AssertionError("SQL follow-up final_answer should not restart schema context building.")
 
     monkeypatch.setattr("engine.agent_kernel.databox_tools.build_schema_context_tool", fail_schema_context)
+    monkeypatch.setattr(
+        "engine.agent_kernel.service.decide_next_action",
+        lambda **_kwargs: AgentDecision(
+            action="final_answer",
+            final_answer=(
+                "This uses the SQL already selected in the workspace.\n\n"
+                "SQL:\n```sql\nSELECT id, username FROM users LIMIT 3\n```"
+            ),
+            confidence="high",
+            reasoning_summary="Answer from workspace SQL context.",
+        ),
+    )
 
     res = AgentKernelService(db_session).run(
         AgentRunRequest(
@@ -508,6 +520,18 @@ def test_agent_kernel_pending_approval_followup_explains_sql_without_schema_rest
         raise AssertionError("Pending approval SQL follow-up should not restart schema context building.")
 
     monkeypatch.setattr("engine.agent_kernel.databox_tools.build_schema_context_tool", fail_schema_context)
+    monkeypatch.setattr(
+        "engine.agent_kernel.service.decide_next_action",
+        lambda **_kwargs: AgentDecision(
+            action="final_answer",
+            final_answer=(
+                "This pending approval would run the current SQL after approval.\n\n"
+                "SQL:\n```sql\nSELECT id, username FROM users LIMIT 3\n```"
+            ),
+            confidence="high",
+            reasoning_summary="Answer pending approval SQL question from current state.",
+        ),
+    )
 
     res = AgentKernelService(db_session).run(
         AgentRunRequest(

@@ -345,15 +345,6 @@ def _row_count(value: dict[str, Any]) -> int | None:
 
 
 def _fallback_decision(state: KernelState) -> AgentDecision:
-    sql_to_explain = _sql_to_explain_from_context(state)
-    if sql_to_explain and _is_sql_explanation_request(state):
-        return AgentDecision(
-            action="final_answer",
-            final_answer=_sql_explanation_answer(sql_to_explain),
-            confidence="high",
-            reasoning_summary="Explain the SQL already selected in the workspace context without restarting data discovery.",
-        )
-
     if state.get("error") and not state.get("revision_attempted") and state.get("sql"):
         return _call("sql.revise", {"sql": state.get("sql"), "error": state.get("error")}, "Revise SQL after the current error.")
 
@@ -416,43 +407,6 @@ def _fallback_decision(state: KernelState) -> AgentDecision:
         return _call("followup.suggest", {}, "Suggest useful follow-up questions.")
 
     return _call("answer.synthesize", {}, "Synthesize the final answer from artifacts.")
-
-
-def _is_sql_explanation_request(state: KernelState) -> bool:
-    text = f"{state.get('goal') or ''}\n{latest_user_message(state)}".lower()
-    asks_to_explain = any(token in text for token in ("explain", "describe", "what does", "解释", "说明"))
-    mentions_sql = "sql" in text or "query" in text or "查询" in text
-    return asks_to_explain and mentions_sql
-
-
-def _sql_to_explain_from_context(state: KernelState) -> str | None:
-    existing_sql = _preview_text(state.get("sql"), limit=TEXT_PREVIEW_LIMIT)
-    if existing_sql:
-        return existing_sql
-
-    workspace_context = _as_dict(state.get("workspace_context"))
-    workspace_sql = _preview_text(workspace_context.get("selected_sql") or workspace_context.get("active_sql"), limit=TEXT_PREVIEW_LIMIT)
-    if workspace_sql:
-        return workspace_sql
-
-    for context_key in ("follow_up_context", "followup_context"):
-        context = _as_dict(state.get(context_key))
-        for artifact in _latest_mappings(context.get("artifacts")):
-            payload = _as_dict(artifact.get("payload"))
-            artifact_sql = _preview_text(payload.get("sql") or payload.get("safe_sql") or artifact.get("summary"), limit=TEXT_PREVIEW_LIMIT)
-            if artifact_sql and "select" in artifact_sql.lower():
-                return artifact_sql
-    return None
-
-
-def _sql_explanation_answer(sql: str) -> str:
-    return (
-        "This request is asking about the SQL already selected in the current thread, so no new schema discovery or "
-        "query execution is needed.\n\n"
-        f"SQL:\n```sql\n{sql}\n```\n\n"
-        "At a high level, this is a read-only query. It selects the requested columns or expressions from the referenced "
-        "table(s), then applies any filtering, grouping, ordering, or limit clauses shown in the statement."
-    )
 
 
 def _call(tool_name: str, args: dict[str, Any], reason: str) -> AgentDecision:
