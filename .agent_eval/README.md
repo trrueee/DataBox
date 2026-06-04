@@ -27,6 +27,10 @@ This downloads the full Spider dataset (200 databases, 10,181 questions) from Go
 python .agent_eval/spider_import_mysql.py
 ```
 
+After import, resync the DataBox datasource schema before running eval. The
+setup script in the next step recreates or updates the Spider datasources and
+calls schema sync for both smoke-test databases.
+
 ### 4. Register Datasources in DataBox
 
 With DataBox backend running:

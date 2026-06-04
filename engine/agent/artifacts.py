@@ -167,28 +167,23 @@ def build_safety_artifact(
     )
 
 
-def build_profile_artifact(
-    result_profile: ResultProfile,
+def build_table_artifact(
+    execution: dict[str, Any],
     *,
-    execution: dict[str, Any] | None = None,
     safety: dict[str, Any] | None = None,
     identity: AgentArtifactIdentity | None = None,
 ) -> AgentArtifact:
-    # Only depend on result_table when an execution result/table exists.
-    depends: list[str] = []
-    if execution and execution.get("success"):
-        depends = ["result_table"]
     return _artifact(
-        "result_profile",
-        "insight",
-        "Result profile",
-        {**result_profile.model_dump(), "safety_state": _safety_state(safety)},
-        mode="both",
-        priority=10,
-        identity=identity,
-        produced_by_step="profile_result",
-        depends_on=depends,
-    )
+        "result_table",
+        "table",
+        "Result table",
+        {
+            "columns": execution.get("columns", []),
+            "rows": execution.get("rows", []),
+            "rowCount": execution.get("rowCount", len(execution.get("rows", []) or [])),
+            "latencyMs": execution.get("latencyMs", 0),
+            "safety_state": _safety_state(safety),
+        },
         mode="both",
         priority=20,
         identity=identity,
@@ -200,9 +195,11 @@ def build_profile_artifact(
 def build_profile_artifact(
     result_profile: ResultProfile,
     *,
-    safety: dict[str, Any] | None,
+    execution: dict[str, Any] | None = None,
+    safety: dict[str, Any] | None = None,
     identity: AgentArtifactIdentity | None = None,
 ) -> AgentArtifact:
+    depends = ["result_table"] if execution and execution.get("success") else []
     return _artifact(
         "result_profile",
         "insight",
@@ -212,7 +209,7 @@ def build_profile_artifact(
         priority=10,
         identity=identity,
         produced_by_step="profile_result",
-        depends_on=["result_table"],
+        depends_on=depends,
     )
 
 

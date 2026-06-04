@@ -144,6 +144,7 @@ def import_database(db_id, sqlite_path, mysql_conn):
     mysql_cursor.close()
     sqlite_conn.close()
     print(f"Database spider_{db_id} imported successfully.\n")
+    print("You must resync DataBox datasource schema before running eval.\n")
 
 def main():
     # Connect to MySQL on port 3307

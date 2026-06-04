@@ -726,16 +726,8 @@ def _prepare_generated_sql(db: Session, datasource_id: str, sql: str) -> tuple[s
         return cleaned, [], {}
 
     notes: list[str] = []
-    # Strip ORDER BY ARRAY() / ORDER BY [] patterns that escape the renderer
-    # (renderer already filters via _coerce_order_by; this is the safety net)
-    stripped = _strip_broken_order_by(cleaned)
-    if stripped != cleaned:
-        import logging
-        logging.getLogger("databox.agent.tools").warning(
-            "_strip_broken_order_by: stripped broken ORDER BY\n  before=%r\n  after=%r",
-            cleaned, stripped,
-        )
-    cleaned = stripped
+    cleaned, invalid_order_notes = _strip_invalid_order_by(cleaned)
+    notes.extend(invalid_order_notes)
     rewritten, rewrote_star, star_metadata = _rewrite_select_star(db, datasource_id, cleaned)
     if rewrote_star:
         notes.append("select_star_rewritten_to_explicit_columns")
@@ -748,69 +740,92 @@ def _prepare_generated_sql(db: Session, datasource_id: str, sql: str) -> tuple[s
         rewritten = safe_sql
         notes.append("limit_added_by_guardrail")
 
+    if _has_invalid_order_by(rewritten):
+        notes.append("invalid_order_by_blocked")
+        return "", notes, star_metadata
+
     return rewritten, notes, star_metadata
 
 
-def _strip_broken_order_by(sql: str) -> str:
-    """Remove ORDER BY fragments that are known to produce invalid MySQL.
-
-    Cases covered:
-      ORDER BY ARRAY()
-      ORDER BY ARRAY(STRUCT(...))
-      ORDER BY []
-      ORDER BY ARRAY(STRUCT('col', 'desc'))
-    Primary defense is _coerce_order_by in the renderer;
-    this is a safety net for other code paths.
-    """
-    _SQL_CLAUSE_KW = {"SELECT", "FROM", "WHERE", "GROUP", "HAVING",
-                      "LIMIT", "OFFSET", "UNION", "INTERSECT", "EXCEPT",
-                      "ORDER"}  # ORDER included so nested ORDER BY triggers stop
-
-    import re as _re
-
+def _strip_invalid_order_by(sql: str) -> tuple[str, list[str]]:
+    notes: list[str] = []
     pos = 0
     while True:
-        m = _re.search(r"\bORDER\s+BY\s+", sql[pos:], _re.IGNORECASE)
-        if not m:
+        match = re.search(r"\bORDER\s+BY\s+", sql[pos:], re.IGNORECASE)
+        if not match:
             break
-        ob_start = pos + m.start()
-        tail_start = pos + m.end()
-        tail = sql[tail_start:].lstrip()
+        order_start = pos + match.start()
+        expression_start = pos + match.end()
+        while expression_start < len(sql) and sql[expression_start].isspace():
+            expression_start += 1
 
-        # Only strip if it starts with a known-broken token
-        upper_tail = tail.upper()
-        if not (upper_tail.startswith("ARRAY") or upper_tail.startswith("STRUCT")
-                or upper_tail.startswith("[")):
-            pos = tail_start  # skip this ORDER BY, it's legitimate
+        invalid = _invalid_order_by_expression(sql[expression_start:])
+        if not invalid:
+            pos = expression_start
             continue
 
-        # Walk forward through balanced parentheses
-        depth = 0
-        end = tail_start
-        for i, ch in enumerate(sql[tail_start:], start=tail_start):
-            if ch == "(":
-                depth += 1
-            elif ch == ")":
-                depth -= 1
-            # Stop when parens are balanced AND we hit a SQL clause keyword
-            if depth == 0 and not (ch.isalnum() or ch in ("_", ".")):
-                # Look ahead to see if we're at a clause boundary
-                remaining = sql[i:].lstrip()
-                first_word = _re.match(r"(\w+)", remaining)
-                if first_word and first_word.group(1).upper() in _SQL_CLAUSE_KW:
-                    end = i
-                    break
-            if depth < 0:
-                end = i
-                break
-        else:
-            # Reached end of string; strip to end
-            end = len(sql)
+        expression_end = _order_by_expression_end(sql, expression_start)
+        sql = (sql[:order_start].rstrip() + " " + sql[expression_end:].lstrip()).strip()
+        notes.append("invalid_order_by_removed")
+        pos = max(order_start - 1, 0)
 
-        sql = sql[:ob_start] + sql[end:]
-        pos = ob_start  # restart from this position
+    return re.sub(r"\s+", " ", sql).strip(), notes
 
-    return sql.strip()
+
+def _invalid_order_by_expression(text: str) -> bool:
+    upper = text.lstrip().upper()
+    return (
+        upper.startswith("[]")
+        or upper.startswith("()")
+        or upper.startswith("ARRAY(")
+        or upper.startswith("STRUCT(")
+        or upper.startswith("JSON_ARRAY(")
+    )
+
+
+def _order_by_expression_end(sql: str, expression_start: int) -> int:
+    depth = 0
+    quote: str | None = None
+    i = expression_start
+    while i < len(sql):
+        ch = sql[i]
+        if quote:
+            if ch == quote:
+                quote = None
+            i += 1
+            continue
+        if ch in {"'", '"'}:
+            quote = ch
+            i += 1
+            continue
+        if ch in "([":
+            depth += 1
+        elif ch in ")]" and depth > 0:
+            depth -= 1
+        if depth == 0:
+            clause = re.match(
+                r"\s+\b(LIMIT|OFFSET|FETCH|UNION|INTERSECT|EXCEPT|FOR)\b",
+                sql[i:],
+                re.IGNORECASE,
+            )
+            if clause:
+                return i
+        i += 1
+    return len(sql)
+
+
+def _has_invalid_order_by(sql: str) -> bool:
+    pos = 0
+    while True:
+        match = re.search(r"\bORDER\s+BY\s+", sql[pos:], re.IGNORECASE)
+        if not match:
+            return False
+        expression_start = pos + match.end()
+        while expression_start < len(sql) and sql[expression_start].isspace():
+            expression_start += 1
+        if _invalid_order_by_expression(sql[expression_start:]):
+            return True
+        pos = expression_start
 
 
 def _rewrite_select_star(db: Session, datasource_id: str, sql: str) -> tuple[str, bool, dict[str, Any]]:

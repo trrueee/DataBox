@@ -323,6 +323,82 @@ def test_agent_kernel_policy_uses_state_safe_sql_for_execution() -> None:
     assert decision.safe_args == {"sql": "SELECT id FROM users LIMIT 3"}
 
 
+def test_agent_kernel_does_not_execute_when_validation_blocks_sql(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    sync_schema(db_session, demo_datasource.id)
+    decisions = iter([
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.validate",
+                args={"sql": "SELECT id FROM users ORDER BY ARRAY() LIMIT 10"},
+                reason="Validate SQL before execution.",
+            ),
+            confidence="high",
+            reasoning_summary="Validate first.",
+        ),
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.execute_readonly",
+                args={"sql": "SELECT id FROM users ORDER BY ARRAY() LIMIT 10"},
+                reason="Try execution after validation.",
+            ),
+            confidence="high",
+            reasoning_summary="PolicyGate should block this.",
+        ),
+        AgentDecision(
+            action="final_answer",
+            final_answer="Validation blocked execution.",
+            confidence="high",
+            reasoning_summary="Stop after PolicyGate blocked execution.",
+        ),
+    ])
+
+    def fake_validate_sql_tool(_db, datasource_id: str, sql: str) -> ToolObservation:
+        return ToolObservation(
+            name="validate_sql",
+            status="success",
+            input={"datasource_id": datasource_id, "sql_preview": sql},
+            output={
+                "passed": False,
+                "can_execute": False,
+                "safe_sql": None,
+                "original_sql": sql,
+                "schema_warnings": [],
+                "guardrail": {"result": "reject", "originalSql": sql, "safeSql": None, "checks": [], "message": "Syntax error."},
+                "requires_confirmation": False,
+                "messages": ["EXPLAIN dry-run failed: syntax error"],
+                "blocked_reasons": ["syntax_error"],
+                "revise_suggestion": "Fix SQL syntax.",
+            },
+            latency_ms=0,
+        )
+
+    monkeypatch.setattr("engine.agent_kernel.service.decide_next_action", lambda **_kwargs: next(decisions))
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.validate_sql_tool", fake_validate_sql_tool)
+    monkeypatch.setattr(
+        "engine.agent_kernel.databox_tools.execute_sql_tool",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("blocked SQL must not execute")),
+    )
+
+    res = AgentKernelService(db_session).run(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="run invalid SQL",
+            execute=True,
+            session_id="kernel-blocked-validation-no-execute",
+        )
+    )
+
+    assert "validate_sql" in [step.name for step in res.steps]
+    assert "execute_sql" not in [step.name for step in res.steps]
+    assert res.execution is None
+
+
 def test_agent_kernel_response_binds_artifact_dependencies_and_answer_evidence() -> None:
     response = AgentKernelResponseAssembler().build_response(
         req=AgentRunRequest(datasource_id="ds-1", question="list users"),

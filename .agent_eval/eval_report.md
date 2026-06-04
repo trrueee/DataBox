@@ -1,6 +1,6 @@
 # DataBox Agent Text-to-SQL Evaluation Report
 
-*Generated at: 2026-06-04T17:08:24.332985+00:00*
+*Generated at: 2026-06-04T17:43:06.066705+00:00*
 
 ## 📊 Overall Performance Summary
 
@@ -10,16 +10,16 @@
 | **Passed Cases** | 0 |
 | **Failed Cases** | 3 |
 | **Pass Rate** | **0.0%** |
-| **Average Latency** | 0.31s |
-| **Total Duration** | 1.1s |
+| **Average Latency** | 0.82s |
+| **Total Duration** | 2.48s |
 
 ## 📋 Case-by-Case Breakdown
 
 | Case ID | DB | Difficulty | Status | Score | Latency | Reason |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `spider-smoke-1` | `concert_singer` | simple | **🔴 FAIL** | 3/5 | 0.4s | Agent SQL execution failed: (1146, "Table 'spider_concert_singer.products' doesn't exist") |
-| `spider-smoke-6` | `pets_1` | medium | **🔴 FAIL** | 3/5 | 0.3s | Agent SQL execution failed: (1146, "Table 'spider_pets_1.products' doesn't exist") |
-| `spider-smoke-7` | `pets_1` | medium | **🔴 FAIL** | 3/5 | 0.3s | Agent SQL execution failed: (1146, "Table 'spider_pets_1.products' doesn't exist") |
+| `spider-smoke-1` | `concert_singer` | simple | **🔴 FAIL** | 3/5 | 0.9s | Validation blocked agent SQL: schema_validation, select_star |
+| `spider-smoke-6` | `pets_1` | medium | **🔴 FAIL** | 3/5 | 0.8s | Validation blocked agent SQL: schema_validation, select_star |
+| `spider-smoke-7` | `pets_1` | medium | **🔴 FAIL** | 3/5 | 0.8s | Validation blocked agent SQL: schema_validation, select_star |
 
 ## 🔍 Deep Dive Details
 
@@ -38,9 +38,8 @@
 - **Agent Answer:** I do not have a successful result set to analyze yet.
 - **Steps:** build_schema_context, build_query_plan, generate_sql_candidate, validate_sql, revise_sql, answer_synthesizer
 - **Artifacts:** query_plan, sql, safety
-- **Result:** Agent SQL execution failed: (1146, "Table 'spider_concert_singer.products' doesn't exist")
-- **Error:** `(1146, "Table 'spider_concert_singer.products' doesn't exist")`
-- **Quality Score:** 3/5 (checks: {"completed": false, "sql_generated": true, "execution_match": false, "has_safety": true, "has_answer": true, "has_query_plan": true, "has_table": false, "has_error": true, "flow_complete": true})
+- **Result:** Validation blocked agent SQL: schema_validation, select_star
+- **Quality Score:** 3/5 (checks: {"completed": false, "sql_generated": true, "execution_match": false, "has_safety": true, "has_answer": true, "has_query_plan": true, "has_table": false, "has_error": false, "flow_complete": true})
 
 <details>
 <summary>💬 Agent SSE Event Stream</summary>
@@ -194,9 +193,8 @@
 - **Agent Answer:** I do not have a successful result set to analyze yet.
 - **Steps:** build_schema_context, build_query_plan, generate_sql_candidate, validate_sql, revise_sql, answer_synthesizer
 - **Artifacts:** query_plan, sql, safety
-- **Result:** Agent SQL execution failed: (1146, "Table 'spider_pets_1.products' doesn't exist")
-- **Error:** `(1146, "Table 'spider_pets_1.products' doesn't exist")`
-- **Quality Score:** 3/5 (checks: {"completed": false, "sql_generated": true, "execution_match": false, "has_safety": true, "has_answer": true, "has_query_plan": true, "has_table": false, "has_error": true, "flow_complete": true})
+- **Result:** Validation blocked agent SQL: schema_validation, select_star
+- **Quality Score:** 3/5 (checks: {"completed": false, "sql_generated": true, "execution_match": false, "has_safety": true, "has_answer": true, "has_query_plan": true, "has_table": false, "has_error": false, "flow_complete": true})
 
 <details>
 <summary>💬 Agent SSE Event Stream</summary>
@@ -350,9 +348,8 @@
 - **Agent Answer:** I do not have a successful result set to analyze yet.
 - **Steps:** build_schema_context, build_query_plan, generate_sql_candidate, validate_sql, revise_sql, answer_synthesizer
 - **Artifacts:** query_plan, sql, safety
-- **Result:** Agent SQL execution failed: (1146, "Table 'spider_pets_1.products' doesn't exist")
-- **Error:** `(1146, "Table 'spider_pets_1.products' doesn't exist")`
-- **Quality Score:** 3/5 (checks: {"completed": false, "sql_generated": true, "execution_match": false, "has_safety": true, "has_answer": true, "has_query_plan": true, "has_table": false, "has_error": true, "flow_complete": true})
+- **Result:** Validation blocked agent SQL: schema_validation, select_star
+- **Quality Score:** 3/5 (checks: {"completed": false, "sql_generated": true, "execution_match": false, "has_safety": true, "has_answer": true, "has_query_plan": true, "has_table": false, "has_error": false, "flow_complete": true})
 
 <details>
 <summary>💬 Agent SSE Event Stream</summary>

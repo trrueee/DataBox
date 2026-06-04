@@ -10,8 +10,7 @@ from sqlalchemy.orm import Session
 
 from engine.guardrail import GuardrailResult, guardrail_check
 from engine.models import DataSource
-from engine.datasource import get_mysql_connection_params
-import pymysql
+from engine.sql_dry_run import dry_run_query
 
 
 RiskLevel = Literal["safe", "warning", "danger"]
@@ -114,57 +113,18 @@ class TrustGate:
         requires_confirmation = env == "prod"
         blocked_reasons: list[str] = []
 
-        # Extra safety: attempt a MySQL EXPLAIN dry-run to catch syntax/schema errors
-        dialect = str(datasource.db_type or "mysql") if datasource else "mysql"
-        if datasource and "mysql" in dialect.lower():
+        if datasource and _should_dry_run(sql):
             try:
-                conn_params = get_mysql_connection_params({
-                    "id": datasource.id,
-                    "host": datasource.host,
-                    "port": datasource.port,
-                    "username": datasource.username,
-                    "database_name": datasource.database_name,
-                    "password_ciphertext": datasource.password_ciphertext,
-                    "password_nonce": datasource.password_nonce,
-                    "ssh_enabled": datasource.ssh_enabled,
-                    "ssh_host": datasource.ssh_host,
-                    "ssh_port": datasource.ssh_port,
-                    "ssh_username": datasource.ssh_username,
-                    "ssh_password_ciphertext": datasource.ssh_password_ciphertext,
-                    "ssh_password_nonce": datasource.ssh_password_nonce,
-                    "ssl_enabled": datasource.ssl_enabled,
-                    "ssl_ca_path": datasource.ssl_ca_path,
-                    "ssl_cert_path": datasource.ssl_cert_path,
-                    "ssl_key_path": datasource.ssl_key_path,
-                    "ssl_verify_identity": datasource.ssl_verify_identity,
-                })
-                # If SQL contains clearly-broken ORDER BY patterns, mark as syntax_error
-                up = sql.upper()
-                if "ORDER BY" in up and ("ARRAY(" in up or "STRUCT(" in up or "[]" in up):
-                    blocked_reasons.append("syntax_error")
-                    messages.append("ORDER BY contains unsupported ARRAY/STRUCT literal")
-                else:
-                    # Try EXPLAIN to detect syntax or schema issues
-                    try:
-                        conn = pymysql.connect(**conn_params)
-                        try:
-                            with conn.cursor() as cur:
-                                cur.execute(f"EXPLAIN {sql}")
-                        finally:
-                            conn.close()
-                    except Exception as exc:
-                        msg = str(exc)
-                        messages.append(f"EXPLAIN failed: {msg}")
-                        # Heuristic: classify as syntax vs schema
-                        if "You have an error in your SQL syntax" in msg or "syntax" in msg.lower():
-                            blocked_reasons.append("syntax_error")
-                        elif "unknown column" in msg.lower() or "unknown table" in msg.lower() or "doesn't exist" in msg.lower():
-                            blocked_reasons.append("schema_error")
-                        else:
-                            blocked_reasons.append("syntax_error")
-            except Exception:
-                # If EXPLAIN helper itself fails, don't block here — keep prior reasons
-                pass
+                dry_run = dry_run_query(self.db, datasource_id, sql)
+            except Exception as exc:
+                dry_run = None
+                blocked_reasons.append("explain_unavailable")
+                messages.append(f"EXPLAIN dry-run unavailable: {exc}")
+            if dry_run is not None and not dry_run.ok:
+                reason = dry_run.blocked_reason or "explain_unavailable"
+                blocked_reasons.append(reason)
+                if dry_run.message:
+                    messages.append(f"EXPLAIN dry-run failed: {dry_run.message}")
 
         if not datasource:
             blocked_reasons.append("datasource_scope")
@@ -181,6 +141,7 @@ class TrustGate:
             blocked_reasons.append("select_star")
             messages.append("Agent execution requires explicit projected columns instead of SELECT *.")
 
+        blocked_reasons = list(dict.fromkeys(blocked_reasons))
         can_execute = not blocked_reasons
         safe_sql = str(guardrail.get("safeSql") or "").strip() if can_execute else None
 
@@ -206,3 +167,8 @@ class TrustGate:
             blocked_reasons=blocked_reasons,
             messages=messages,
         )
+
+
+def _should_dry_run(sql: str) -> bool:
+    normalized = sql.strip().lstrip("(").upper()
+    return normalized.startswith("SELECT") or normalized.startswith("WITH")

@@ -60,3 +60,58 @@ def test_trust_gate_prod_datasource_requires_confirmation(db_session, demo_datas
     assert result["requiresConfirmation"] is True
     assert result["canExecute"] is True
     assert any("Production datasource" in message for message in result["messages"])
+
+
+def test_trust_gate_execution_decision_blocks_invalid_order_by_syntax(db_session, demo_datasource) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    decision = TrustGate(db_session, validate_sql_schema).execution_decision(
+        demo_datasource.id,
+        "SELECT id FROM users ORDER BY ARRAY() LIMIT 10",
+        policy="agent_readonly",
+    )
+
+    assert decision.can_execute is False
+    assert decision.passed is False
+    assert decision.safe_sql is None
+    assert "syntax_error" in decision.blocked_reasons
+
+
+def test_trust_gate_execution_decision_blocks_missing_table_schema_error(db_session, demo_datasource) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    decision = TrustGate(db_session, validate_sql_schema).execution_decision(
+        demo_datasource.id,
+        "SELECT id FROM missing_table LIMIT 10",
+        policy="agent_readonly",
+    )
+
+    assert decision.can_execute is False
+    assert decision.passed is False
+    assert decision.safe_sql is None
+    assert "schema_error" in decision.blocked_reasons
+
+
+def test_trust_gate_execution_decision_blocks_when_dry_run_unavailable(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fail_dry_run(*_args, **_kwargs):
+        raise RuntimeError("dry run connection unavailable")
+
+    monkeypatch.setattr("engine.trust_gate.dry_run_query", fail_dry_run)
+
+    decision = TrustGate(db_session, validate_sql_schema).execution_decision(
+        demo_datasource.id,
+        "SELECT id FROM users LIMIT 10",
+        policy="agent_readonly",
+    )
+
+    assert decision.can_execute is False
+    assert decision.passed is False
+    assert decision.safe_sql is None
+    assert "explain_unavailable" in decision.blocked_reasons
+    assert any("dry run connection unavailable" in message for message in decision.messages)

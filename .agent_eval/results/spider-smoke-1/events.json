@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_c5aedca1_1_agent_run_started",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_1_agent_run_started",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 1,
-    "created_at_ms": 1780592903528,
+    "created_at_ms": 1780594984381,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-concert-singer",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_c5aedca1_2_agent_step_started",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_2_agent_step_started",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 2,
-    "created_at_ms": 1780592903553,
+    "created_at_ms": 1780594984434,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c5aedca1_3_agent_step_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_3_agent_step_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 3,
-    "created_at_ms": 1780592903553,
+    "created_at_ms": 1780594984437,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 7
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c5aedca1_4_agent_step_started",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_4_agent_step_started",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 4,
-    "created_at_ms": 1780592903562,
+    "created_at_ms": 1780594984446,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c5aedca1_5_agent_step_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_5_agent_step_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 5,
-    "created_at_ms": 1780592903563,
+    "created_at_ms": 1780594984446,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 4
+      "latency_ms": 5
     },
     "artifact": null,
     "answer": null,
@@ -97,16 +97,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c5aedca1_6_agent_artifact_created",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_6_agent_artifact_created",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 6,
-    "created_at_ms": 1780592903564,
+    "created_at_ms": 1780594984448,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/001/query_plan",
+      "id": "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
@@ -171,10 +171,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_c5aedca1_7_agent_step_started",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_7_agent_step_started",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 7,
-    "created_at_ms": 1780592903588,
+    "created_at_ms": 1780594984482,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -189,17 +189,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c5aedca1_8_agent_step_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_8_agent_step_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 8,
-    "created_at_ms": 1780592903590,
+    "created_at_ms": 1780594984484,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 21
+      "latency_ms": 29
     },
     "artifact": null,
     "answer": null,
@@ -210,10 +210,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c5aedca1_9_agent_step_started",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_9_agent_step_started",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 9,
-    "created_at_ms": 1780592903598,
+    "created_at_ms": 1780594984494,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -228,17 +228,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c5aedca1_10_agent_step_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_10_agent_step_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 10,
-    "created_at_ms": 1780592903599,
+    "created_at_ms": 1780594984496,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 4
+      "latency_ms": 5
     },
     "artifact": null,
     "answer": null,
@@ -249,16 +249,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c5aedca1_11_agent_artifact_created",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_11_agent_artifact_created",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 11,
-    "created_at_ms": 1780592903601,
+    "created_at_ms": 1780594984497,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/002/sql_candidate",
+      "id": "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
@@ -281,7 +281,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/001/query_plan"
+        "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -292,16 +292,16 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_c5aedca1_12_agent_artifact_created",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_12_agent_artifact_created",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 12,
-    "created_at_ms": 1780592903602,
+    "created_at_ms": 1780594984498,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/003/safety_report",
+      "id": "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
@@ -353,7 +353,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-3e10c55e-25e3-4c5e-8315-d46b5c659a4f",
+          "decision_id": "safety-7ed73550-d575-4115-9551-f44dda3dda21",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
           "original_sql": "SELECT * FROM products LIMIT 10",
@@ -396,7 +396,7 @@
             "Execution blocked until schema validation warnings are resolved.",
             "Agent execution requires explicit projected columns instead of SELECT *."
           ],
-          "created_at": "2026-06-04T17:08:23.598117Z"
+          "created_at": "2026-06-04T17:43:04.493006Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -419,7 +419,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/002/sql_candidate"
+        "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -430,10 +430,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_c5aedca1_13_agent_step_started",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_13_agent_step_started",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 13,
-    "created_at_ms": 1780592903610,
+    "created_at_ms": 1780594984510,
     "type": "agent.step.started",
     "step": {
       "name": "revise_sql",
@@ -448,17 +448,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c5aedca1_14_agent_step_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_14_agent_step_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 14,
-    "created_at_ms": 1780592903612,
+    "created_at_ms": 1780594984511,
     "type": "agent.step.completed",
     "step": {
       "name": "revise_sql",
       "tool_name": "sql.revise",
       "status": "success",
       "error": null,
-      "latency_ms": 5
+      "latency_ms": 7
     },
     "artifact": null,
     "answer": null,
@@ -469,10 +469,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c5aedca1_15_agent_step_started",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_15_agent_step_started",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 15,
-    "created_at_ms": 1780592903615,
+    "created_at_ms": 1780594984515,
     "type": "agent.step.started",
     "step": {
       "name": "answer_synthesizer",
@@ -487,10 +487,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c5aedca1_16_agent_step_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_16_agent_step_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 16,
-    "created_at_ms": 1780592903616,
+    "created_at_ms": 1780594984515,
     "type": "agent.step.completed",
     "step": {
       "name": "answer_synthesizer",
@@ -508,10 +508,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c5aedca1_17_agent_answer_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_17_agent_answer_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 17,
-    "created_at_ms": 1780592903621,
+    "created_at_ms": 1780594984522,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
@@ -530,22 +530,22 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_c5aedca1_18_agent_run_completed",
-    "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
+    "event_id": "runtime_83af78c2_18_agent_run_completed",
+    "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
     "sequence": 18,
-    "created_at_ms": 1780592903621,
+    "created_at_ms": 1780594984522,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2",
-      "session_id": "8f28f729-4bc6-459b-a318-01a6c34d559b",
+      "run_id": "83af78c2-f6d1-43f4-afe9-50cbbd6db021",
+      "session_id": "5366e6b8-f44f-4000-83cf-7f07c12d1d9c",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
       "question": "How many singers do we have?",
-      "context_summary": "Question: How many singers do we have? Answer: I do not have a successful result set to analyze yet. Artifacts: - agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/001/query_plan (query_plan, Query plan): analysis_goal=answer_question, metrics=[], dimensions=[], filters=[], time_range=None, candidate_tables=['concert', 'singer', 'singer_in_concert'] - agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/002/sql_candidate (sql, Validated SQL): SELECT * FROM products LIMIT 10 - agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/003/safety_report (safety, Safety report): can_execute=False; messages=['Schema validation found unknown tables or columns.', 'SQL 审核通过，但包含优化建议。', 'Execution blocked until schema validation warnings are resolved.', 'Agent execution requires explicit projected columns instead of SELECT *.']",
+      "context_summary": "Question: How many singers do we have? Answer: I do not have a successful result set to analyze yet. Artifacts: - agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/001/query_plan (query_plan, Query plan): analysis_goal=answer_question, metrics=[], dimensions=[], filters=[], time_range=None, candidate_tables=['concert', 'singer', 'singer_in_concert'] - agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/002/sql_candidate (sql, Validated SQL): SELECT * FROM products LIMIT 10 - agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/003/safety_report (safety, Safety report): can_execute=False; messages=['Schema validation found unknown tables or columns.', 'SQL 审核通过，但包含优化建议。', 'Execution blocked until schema validation warnings are resolved.', 'Agent execution requires explicit projected columns instead of SELECT *.']",
       "referenced_artifact_ids": [],
       "query_plan": {
         "analysis_goal": "answer_question",
@@ -640,7 +640,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-3e10c55e-25e3-4c5e-8315-d46b5c659a4f",
+          "decision_id": "safety-7ed73550-d575-4115-9551-f44dda3dda21",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
           "original_sql": "SELECT * FROM products LIMIT 10",
@@ -683,7 +683,7 @@
             "Execution blocked until schema validation warnings are resolved.",
             "Agent execution requires explicit projected columns instead of SELECT *."
           ],
-          "created_at": "2026-06-04T17:08:23.598117Z"
+          "created_at": "2026-06-04T17:43:04.493006Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -713,7 +713,7 @@
       "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/001/query_plan",
+          "id": "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
@@ -771,7 +771,7 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/002/sql_candidate",
+          "id": "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
@@ -794,11 +794,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/001/query_plan"
+            "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/003/safety_report",
+          "id": "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
@@ -850,7 +850,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-3e10c55e-25e3-4c5e-8315-d46b5c659a4f",
+              "decision_id": "safety-7ed73550-d575-4115-9551-f44dda3dda21",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
               "original_sql": "SELECT * FROM products LIMIT 10",
@@ -893,7 +893,7 @@
                 "Execution blocked until schema validation warnings are resolved.",
                 "Agent execution requires explicit projected columns instead of SELECT *."
               ],
-              "created_at": "2026-06-04T17:08:23.598117Z"
+              "created_at": "2026-06-04T17:43:04.493006Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -916,7 +916,7 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/c5aedca1-6bf8-45fb-b0d3-1a0a2d4a6af2/artifact/002/sql_candidate"
+            "agent/run/83af78c2-f6d1-43f4-afe9-50cbbd6db021/artifact/002/sql_candidate"
           ]
         }
       ],
@@ -953,7 +953,7 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780592903619,
+          "created_at_ms": 1780594984520,
           "type": "agent.narration.completed",
           "content": "I used the trusted schema context around concert, singer, singer_in_concert, stadium to answer: How many singers do we have?",
           "artifact": null,
@@ -963,7 +963,7 @@
         {
           "event_id": "visible_2_agent_answer_completed",
           "sequence": 2,
-          "created_at_ms": 1780592903620,
+          "created_at_ms": 1780594984521,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
@@ -982,7 +982,7 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780592903619,
+          "created_at_ms": 1780594984520,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1000,7 +1000,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780592903620,
+          "created_at_ms": 1780594984521,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1282,12 +1282,12 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 7
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780592903621,
+          "created_at_ms": 1780594984522,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1310,7 +1310,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780592903622,
+          "created_at_ms": 1780594984523,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1371,12 +1371,12 @@
             }
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 5
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780592903623,
+          "created_at_ms": 1780594984524,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1403,7 +1403,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780592903624,
+          "created_at_ms": 1780594984525,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1428,7 +1428,7 @@
             "raw_sql": null,
             "model": "databox-local-heuristic",
             "mode": "offline",
-            "latency_ms": 7,
+            "latency_ms": 6,
             "schema_validation_warnings": [
               "生成 SQL 包含不存在的表: `products`"
             ],
@@ -1542,12 +1542,12 @@
             }
           },
           "error": null,
-          "latency_ms": 21
+          "latency_ms": 29
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780592903625,
+          "created_at_ms": 1780594984526,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1563,7 +1563,7 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780592903626,
+          "created_at_ms": 1780594984527,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1620,7 +1620,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-3e10c55e-25e3-4c5e-8315-d46b5c659a4f",
+              "decision_id": "safety-7ed73550-d575-4115-9551-f44dda3dda21",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
               "original_sql": "SELECT * FROM products LIMIT 10",
@@ -1663,7 +1663,7 @@
                 "Execution blocked until schema validation warnings are resolved.",
                 "Agent execution requires explicit projected columns instead of SELECT *."
               ],
-              "created_at": "2026-06-04T17:08:23.598117Z"
+              "created_at": "2026-06-04T17:43:04.493006Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1679,12 +1679,12 @@
             "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 5
         },
         {
           "event_id": "trace_9_step_5_revise_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780592903627,
+          "created_at_ms": 1780594984528,
           "type": "agent.trace.step_started",
           "step_id": "step_5_revise_sql",
           "name": "revise_sql",
@@ -1700,7 +1700,7 @@
         {
           "event_id": "trace_10_step_5_revise_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780592903628,
+          "created_at_ms": 1780594984529,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_revise_sql",
           "name": "revise_sql",
@@ -1722,12 +1722,12 @@
             "blocked_sql": "SELECT * FROM products LIMIT 10"
           },
           "error": null,
-          "latency_ms": 5
+          "latency_ms": 7
         },
         {
           "event_id": "trace_11_step_6_answer_synthesizer_started",
           "sequence": 11,
-          "created_at_ms": 1780592903629,
+          "created_at_ms": 1780594984530,
           "type": "agent.trace.step_started",
           "step_id": "step_6_answer_synthesizer",
           "name": "answer_synthesizer",
@@ -1745,7 +1745,7 @@
         {
           "event_id": "trace_12_step_6_answer_synthesizer_completed",
           "sequence": 12,
-          "created_at_ms": 1780592903630,
+          "created_at_ms": 1780594984531,
           "type": "agent.trace.step_completed",
           "step_id": "step_6_answer_synthesizer",
           "name": "answer_synthesizer",
@@ -2062,7 +2062,7 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 7
         },
         {
           "name": "build_query_plan",
@@ -2123,7 +2123,7 @@
             }
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 5
         },
         {
           "name": "generate_sql_candidate",
@@ -2148,7 +2148,7 @@
             "raw_sql": null,
             "model": "databox-local-heuristic",
             "mode": "offline",
-            "latency_ms": 7,
+            "latency_ms": 6,
             "schema_validation_warnings": [
               "生成 SQL 包含不存在的表: `products`"
             ],
@@ -2260,7 +2260,7 @@
             }
           },
           "error": null,
-          "latency_ms": 21
+          "latency_ms": 29
         },
         {
           "name": "validate_sql",
@@ -2317,7 +2317,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-3e10c55e-25e3-4c5e-8315-d46b5c659a4f",
+              "decision_id": "safety-7ed73550-d575-4115-9551-f44dda3dda21",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
               "original_sql": "SELECT * FROM products LIMIT 10",
@@ -2360,7 +2360,7 @@
                 "Execution blocked until schema validation warnings are resolved.",
                 "Agent execution requires explicit projected columns instead of SELECT *."
               ],
-              "created_at": "2026-06-04T17:08:23.598117Z"
+              "created_at": "2026-06-04T17:43:04.493006Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2376,7 +2376,7 @@
             "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 5
         },
         {
           "name": "revise_sql",
@@ -2398,7 +2398,7 @@
             "blocked_sql": "SELECT * FROM products LIMIT 10"
           },
           "error": null,
-          "latency_ms": 5
+          "latency_ms": 7
         },
         {
           "name": "answer_synthesizer",

@@ -42,6 +42,14 @@ EVAL_DIR = PROJECT_ROOT / ".agent_eval"
 RESULTS_DIR = EVAL_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
+STATUS_BUCKETS = [
+    "pass",
+    "eval_env_failed",
+    "validation_blocked",
+    "agent_execution_failed",
+    "execution_mismatch",
+]
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -122,6 +130,154 @@ def execute_mysql_query(
             conn.close()
     except Exception as exc:
         return None, None, str(exc)
+
+
+def fetch_mysql_tables(
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    db_name: str,
+) -> tuple[list[str] | None, str | None]:
+    """Return physical MySQL table names for the eval database."""
+    try:
+        conn = pymysql.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=db_name,
+            cursorclass=pymysql.cursors.Cursor,
+        )
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SHOW TABLES")
+                return [str(row[0]) for row in cursor.fetchall()], None
+        finally:
+            conn.close()
+    except Exception as exc:
+        return None, str(exc)
+
+
+def fetch_databox_schema_tables(
+    *,
+    base_url: str,
+    token: str,
+    datasource_id: str,
+) -> tuple[list[str] | None, str | None]:
+    """Read DataBox's synced schema metadata for a datasource."""
+    url = f"{base_url.rstrip('/')}/api/v1/schema/tables"
+    headers = {"X-Local-Token": token}
+    try:
+        resp = httpx.get(
+            url,
+            params={"datasource_id": datasource_id},
+            headers=headers,
+            timeout=15.0,
+        )
+        if resp.status_code != 200:
+            return None, f"HTTP {resp.status_code}: {resp.text[:300]}"
+        payload = resp.json()
+        if not isinstance(payload, list):
+            return None, "DataBox schema tables response was not a list."
+        table_names: list[str] = []
+        for item in payload:
+            if isinstance(item, dict) and item.get("table_name"):
+                table_names.append(str(item["table_name"]))
+        return table_names, None
+    except Exception as exc:
+        return None, str(exc)
+
+
+def _normalized_table_set(tables: list[str] | set[str] | tuple[str, ...]) -> set[str]:
+    return {str(table).strip().lower() for table in tables if str(table).strip()}
+
+
+def schema_metadata_stale_reason(
+    mysql_tables: list[str] | set[str] | tuple[str, ...],
+    databox_tables: list[str] | set[str] | tuple[str, ...],
+) -> str | None:
+    """Return a stale metadata reason when DataBox schema diverges from MySQL."""
+    mysql_normalized = _normalized_table_set(mysql_tables)
+    databox_normalized = _normalized_table_set(databox_tables)
+
+    reasons: list[str] = []
+    non_lowercase = sorted(
+        str(table).strip()
+        for table in databox_tables
+        if str(table).strip() and str(table).strip() != str(table).strip().lower()
+    )
+    if non_lowercase:
+        reasons.append(
+            "DataBox schema metadata has non-lowercase table names: "
+            + ", ".join(non_lowercase[:8])
+        )
+
+    missing = sorted(mysql_normalized - databox_normalized)
+    extra = sorted(databox_normalized - mysql_normalized)
+    if missing:
+        reasons.append("missing DataBox metadata for MySQL tables: " + ", ".join(missing[:8]))
+    if extra:
+        reasons.append("DataBox metadata contains stale tables: " + ", ".join(extra[:8]))
+
+    return "; ".join(reasons) if reasons else None
+
+
+def preflight_schema_metadata(
+    *,
+    base_url: str,
+    token: str,
+    datasource_id: str,
+    mysql_host: str,
+    mysql_port: int,
+    mysql_user: str,
+    mysql_password: str,
+    mysql_db: str,
+) -> dict[str, Any]:
+    """Verify DataBox schema metadata matches the imported Spider MySQL schema."""
+    mysql_tables, mysql_err = fetch_mysql_tables(
+        mysql_host,
+        mysql_port,
+        mysql_user,
+        mysql_password,
+        mysql_db,
+    )
+    if mysql_err:
+        return {
+            "ok": False,
+            "reason": f"MySQL schema preflight failed: {mysql_err}",
+            "mysql_tables": mysql_tables or [],
+            "databox_tables": [],
+        }
+
+    databox_tables, databox_err = fetch_databox_schema_tables(
+        base_url=base_url,
+        token=token,
+        datasource_id=datasource_id,
+    )
+    if databox_err:
+        return {
+            "ok": False,
+            "reason": f"DataBox schema preflight failed: {databox_err}",
+            "mysql_tables": mysql_tables or [],
+            "databox_tables": databox_tables or [],
+        }
+
+    stale_reason = schema_metadata_stale_reason(mysql_tables or [], databox_tables or [])
+    if stale_reason:
+        return {
+            "ok": False,
+            "reason": f"schema_metadata_stale: {stale_reason}",
+            "mysql_tables": mysql_tables or [],
+            "databox_tables": databox_tables or [],
+        }
+
+    return {
+        "ok": True,
+        "reason": "",
+        "mysql_tables": mysql_tables or [],
+        "databox_tables": databox_tables or [],
+    }
 
 
 def clean_val(v: Any) -> Any:
@@ -255,10 +411,74 @@ def extract_safe_sql(events: list[dict]) -> str | None:
             safety = data.get("safety") or {}
             if isinstance(safety, dict) and safety.get("safe_sql"):
                 return safety["safe_sql"]
-            # Fallback: use raw sql from response
-            if data.get("sql"):
-                return data["sql"]
     return None
+
+
+def extract_final_safety(events: list[dict]) -> dict[str, Any] | None:
+    """Extract the final safety payload from the event stream."""
+    for event in reversed(events):
+        data = event.get("response") or event
+        if not isinstance(data, dict):
+            continue
+        safety = data.get("safety")
+        if isinstance(safety, dict):
+            return safety
+    return None
+
+
+def agent_execution_plan(
+    *,
+    case_execute: bool,
+    agent_sql: str | None,
+    safe_sql: str | None,
+    final_safety: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not agent_sql:
+        return {
+            "status": "agent_execution_failed",
+            "sql_for_exec": None,
+            "execution_match": None,
+            "reason": "No SQL generated by agent",
+        }
+
+    if not case_execute:
+        return {
+            "status": "pass",
+            "sql_for_exec": None,
+            "execution_match": None,
+            "reason": "SQL generated (execute=false)",
+        }
+
+    if final_safety is not None:
+        can_execute = bool(final_safety.get("can_execute"))
+        if not can_execute or not safe_sql:
+            reasons = final_safety.get("blocked_reasons")
+            reason_text = ", ".join(str(item) for item in reasons) if isinstance(reasons, list) else "TrustGate blocked execution"
+            return {
+                "status": "validation_blocked",
+                "sql_for_exec": None,
+                "execution_match": None,
+                "reason": f"Validation blocked agent SQL: {reason_text}",
+            }
+
+    if not safe_sql:
+        return {
+            "status": "validation_blocked",
+            "sql_for_exec": None,
+            "execution_match": None,
+            "reason": "Validation did not produce safe_sql.",
+        }
+
+    return {
+        "status": "ready",
+        "sql_for_exec": safe_sql,
+        "execution_match": None,
+        "reason": "",
+    }
+
+
+def build_status_summary(results: list[dict[str, Any]]) -> dict[str, int]:
+    return {bucket: sum(1 for item in results if item.get("status") == bucket) for bucket in STATUS_BUCKETS}
 
 
 def extract_answer(events: list[dict]) -> str | None:
@@ -629,6 +849,22 @@ def generate_markdown_report(
     return md_path
 
 
+def write_case_outputs(case_id: str, record: dict[str, Any]) -> None:
+    """Write per-case detail and event stream files."""
+    case_dir = RESULTS_DIR / case_id
+    case_dir.mkdir(parents=True, exist_ok=True)
+    detail_for_file = {k: v for k, v in record.items() if k != "events_log"}
+    detail_for_file["event_count"] = len(record.get("events_log", []))
+    (case_dir / "case_detail.json").write_text(
+        json.dumps(detail_for_file, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    (case_dir / "events.json").write_text(
+        json.dumps(record.get("events_log", []), indent=2, ensure_ascii=False, default=str),
+        encoding="utf-8",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -733,6 +969,85 @@ def main() -> None:
         print(f"  Gold SQL: {gold_sql}")
 
         case_start = time.time()
+        gold_rows, gold_cols, gold_err = None, None, None
+        agent_rows, agent_cols, agent_exec_err = None, None, None
+        execution_match: bool | None = None
+        reason = ""
+        schema_preflight: dict[str, Any] | None = None
+
+        # --- Eval environment preflight ---
+        if gold_sql:
+            gold_rows, gold_cols, gold_err = execute_mysql_query(
+                mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, gold_sql
+            )
+            if gold_err:
+                reason = f"Gold SQL execution failed: {gold_err}"
+                print(f"  [GOLD ERR] Gold SQL error: {gold_err}")
+            else:
+                print(f"  Gold rows: {len(gold_rows)} cols={gold_cols}")
+
+        if not gold_err:
+            schema_preflight = preflight_schema_metadata(
+                base_url=base_url,
+                token=token,
+                datasource_id=datasource_id,
+                mysql_host=mysql_host,
+                mysql_port=mysql_port,
+                mysql_user=mysql_user,
+                mysql_password=mysql_password,
+                mysql_db=mysql_db,
+            )
+            if not schema_preflight.get("ok"):
+                reason = str(schema_preflight.get("reason") or "schema_metadata_stale")
+                print(f"  [SCHEMA ERR] {reason}")
+            else:
+                print(
+                    "  Schema preflight: "
+                    f"MySQL={len(schema_preflight.get('mysql_tables', []))} "
+                    f"DataBox={len(schema_preflight.get('databox_tables', []))}"
+                )
+
+        if gold_err or (schema_preflight and not schema_preflight.get("ok")):
+            case_latency = time.time() - case_start
+            quality = score_case(
+                status="failed",
+                success=False,
+                agent_sql=None,
+                execution_match=None,
+                steps=[],
+                artifacts=[],
+                answer=None,
+                sql_error=gold_err,
+                agent_error=reason,
+            )
+            record = {
+                "case_id": case_id,
+                "db_id": db_id,
+                "question": question,
+                "difficulty": difficulty,
+                "gold_sql": gold_sql,
+                "agent_sql": None,
+                "safe_sql": None,
+                "agent_answer": None,
+                "status": "eval_env_failed",
+                "final_status": None,
+                "execution_match": None,
+                "reason": reason,
+                "quality": quality,
+                "steps": [],
+                "artifacts": [],
+                "approval": None,
+                "latency_seconds": round(case_latency, 2),
+                "gold_rows_count": len(gold_rows) if gold_rows is not None else 0,
+                "agent_rows_count": 0,
+                "gold_error": gold_err,
+                "agent_error": None,
+                "schema_preflight": schema_preflight,
+                "events_log": [],
+            }
+            results.append(record)
+            write_case_outputs(case_id, record)
+            continue
 
         # --- Run agent ---
         events, agent_error, final_status, approval_info = run_agent_case(
@@ -750,13 +1065,15 @@ def main() -> None:
 
         # --- Extract from events ---
         agent_sql = extract_agent_sql(events)
-        safe_sql = extract_safe_sql(events) or agent_sql
+        safe_sql = extract_safe_sql(events)
+        final_safety = extract_final_safety(events)
         answer = extract_answer(events)
         steps = extract_steps(events)
         artifacts = extract_artifacts(events)
         stream_error = extract_error(events) or agent_error
 
         print(f"  Agent SQL:  {agent_sql}")
+        print(f"  Safe SQL:   {safe_sql}")
         print(f"  Steps:      {steps}")
         print(f"  Artifacts:  {artifacts}")
         print(f"  Latency:    {case_latency:.1f}s")
@@ -766,41 +1083,34 @@ def main() -> None:
             print(f"  Error:      {stream_error}")
 
         # --- Execute & compare ---
-        gold_rows, gold_cols, gold_err = None, None, None
-        agent_rows, agent_cols, agent_exec_err = None, None, None
-        execution_match: bool | None = None
-        reason = ""
-
-        if gold_sql:
-            gold_rows, gold_cols, gold_err = execute_mysql_query(
-                mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, gold_sql
-            )
-            if gold_err:
-                reason = f"Gold SQL execution failed: {gold_err}"
-                print(f"  [GOLD ERR] Gold SQL error: {gold_err}")
-                # Mark environment/eval error separately so agent is not penalized
-                status = "eval_env_failed"
-            else:
-                print(f"  Gold rows: {len(gold_rows)} cols={gold_cols}")
-
-        sql_for_exec: str | None = safe_sql or agent_sql
-        execute_this_case = case_execute and bool(sql_for_exec)
+        execution_plan = agent_execution_plan(
+            case_execute=case_execute,
+            agent_sql=agent_sql,
+            safe_sql=safe_sql,
+            final_safety=final_safety,
+        )
+        sql_for_exec = execution_plan["sql_for_exec"]
 
         if gold_err:
             # Gold SQL could not be executed in the evaluation environment
             status = "eval_env_failed"
-        elif stream_error and not sql_for_exec:
-            status = "fail"
+        elif execution_plan["status"] == "validation_blocked":
+            status = "validation_blocked"
+            execution_match = None
+            reason = str(execution_plan["reason"])
+            print(f"  [VALIDATION BLOCKED] {reason}")
+        elif stream_error and not agent_sql:
+            status = "agent_execution_failed"
             reason = f"Agent stream error: {stream_error}"
-        elif not sql_for_exec:
-            status = "fail"
-            reason = "No SQL generated by agent"
-        elif execute_this_case:
+        elif execution_plan["status"] == "agent_execution_failed":
+            status = "agent_execution_failed"
+            reason = str(execution_plan["reason"])
+        elif execution_plan["status"] == "ready" and sql_for_exec:
             agent_rows, agent_cols, agent_exec_err = execute_mysql_query(
                 mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, sql_for_exec
             )
             if agent_exec_err:
-                status = "fail"
+                status = "agent_execution_failed"
                 reason = f"Agent SQL execution failed: {agent_exec_err}"
                 print(f"  [AGENT ERR] Agent SQL error: {agent_exec_err}")
             elif gold_rows is not None:
@@ -813,16 +1123,19 @@ def main() -> None:
                     passed_count += 1
                     print(f"  [MATCH] Execution MATCH")
                 else:
-                    status = "fail"
+                    status = "execution_mismatch"
                     reason = f"Result mismatch: {match_reason}"
                     print(f"  [MISMATCH] Execution MISMATCH: {match_reason}")
             else:
                 status = "pass"  # No gold to compare against — just check it ran
                 reason = "Agent SQL executed (no gold comparison)"
+                passed_count += 1
         else:
             # execute=false — just check SQL was generated
-            status = "pass"
-            reason = "SQL generated (execute=false)"
+            status = str(execution_plan["status"])
+            reason = str(execution_plan["reason"])
+            if status == "pass":
+                passed_count += 1
             print(f"  [INFO] SQL generated (not executed)")
 
         # --- Quality scoring ---
@@ -861,25 +1174,13 @@ def main() -> None:
             "agent_rows_count": len(agent_rows) if agent_rows is not None else 0,
             "gold_error": gold_err,
             "agent_error": stream_error or agent_exec_err,
+            "schema_preflight": schema_preflight,
             "events_log": events,
         }
         results.append(record)
 
         # Save per-case detail
-        case_dir = RESULTS_DIR / case_id
-        case_dir.mkdir(parents=True, exist_ok=True)
-        # Write detail without full events_log (too large)
-        detail_for_file = {k: v for k, v in record.items() if k != "events_log"}
-        detail_for_file["event_count"] = len(events)
-        (case_dir / "case_detail.json").write_text(
-            json.dumps(detail_for_file, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
-        # Write full events separately
-        (case_dir / "events.json").write_text(
-            json.dumps(events, indent=2, ensure_ascii=False, default=str),
-            encoding="utf-8",
-        )
+        write_case_outputs(case_id, record)
 
     # --- Summary ---
     eval_latency = time.time() - eval_start
@@ -898,6 +1199,7 @@ def main() -> None:
         "pass_rate": round(pass_rate * 100, 2),
         "average_latency_seconds": round(avg_latency, 2),
         "total_duration_seconds": round(eval_latency, 2),
+        "status_counts": build_status_summary(results),
         "model": model,
         "cases": [
             {

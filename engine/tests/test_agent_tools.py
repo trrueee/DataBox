@@ -6,6 +6,7 @@ import pytest
 
 from engine.agent import AgentRunRequest
 from engine.agent.tools import (
+    _prepare_generated_sql,
     build_query_plan_tool,
     generate_sql_tool,
     revise_sql_tool,
@@ -87,6 +88,62 @@ def test_generate_sql_tool_uses_query_plan_before_fallback(db_session, demo_data
     assert obs.output["metadata"]["generation_source"] == "query_plan_rendered"
     assert "COUNT(*) AS total_users" in obs.output["sql"]
     assert "FROM users" in obs.output["sql"]
+
+
+def test_generate_sql_tool_omits_empty_raw_plan_order_by(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fail_generate_sql(*_args, **_kwargs):
+        raise AssertionError("generate_sql fallback should not run for a renderable plan")
+
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fail_generate_sql)
+    req = AgentRunRequest(datasource_id=demo_datasource.id, question="count users")
+    metric = {"name": "total_users", "expression": "COUNT(*)"}
+    query_plan = {
+        "analysis_goal": "count users",
+        "candidate_tables": ["users"],
+        "raw_plan": {
+            "intent": "aggregate",
+            "tables": ["users"],
+            "metrics": [metric],
+            "dimensions": [],
+            "filters": [],
+            "joins": [],
+            "order_by": "[]",
+            "limit": 100,
+        },
+    }
+
+    obs = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
+
+    assert obs.status == "success"
+    assert obs.output is not None
+    assert "ORDER BY" not in obs.output["sql"].upper()
+
+
+@pytest.mark.parametrize(
+    "raw_sql",
+    [
+        "SELECT id FROM users ORDER BY [] LIMIT 100",
+        "SELECT id FROM users ORDER BY ARRAY() LIMIT 100",
+        "SELECT id FROM users ORDER BY ARRAY(STRUCT('id', 'desc')) LIMIT 100",
+        "SELECT id FROM users ORDER BY STRUCT() LIMIT 100",
+        "SELECT id FROM users ORDER BY STRUCT('id', 'desc') LIMIT 100",
+        "SELECT id FROM users ORDER BY JSON_ARRAY(id) LIMIT 100",
+        "SELECT id FROM users ORDER BY () LIMIT 100",
+    ],
+)
+def test_prepare_generated_sql_removes_invalid_order_by(db_session, demo_datasource, raw_sql: str) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    prepared, notes, _metadata = _prepare_generated_sql(db_session, demo_datasource.id, raw_sql)
+
+    assert "ORDER BY []" not in prepared.upper()
+    assert "ORDER BY ARRAY" not in prepared.upper()
+    assert "ORDER BY STRUCT" not in prepared.upper()
+    assert "ORDER BY JSON_ARRAY" not in prepared.upper()
+    assert "ORDER BY ()" not in prepared.upper()
+    assert "invalid_order_by_removed" in notes
 
 
 def test_generate_sql_tool_no_key_uses_offline_fallback(db_session, demo_datasource) -> None:
