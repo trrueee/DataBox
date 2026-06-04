@@ -4,6 +4,7 @@ import { ErrorArtifactView } from "./artifacts/ErrorArtifactView";
 import { InsightArtifactView } from "./artifacts/InsightArtifactView";
 import { PlanArtifactView } from "./artifacts/PlanArtifactView";
 import { QueryPlanArtifactView } from "./artifacts/QueryPlanArtifactView";
+import { RecommendationArtifactView } from "./artifacts/RecommendationArtifactView";
 import { SafetyArtifactView } from "./artifacts/SafetyArtifactView";
 import { SqlArtifactView } from "./artifacts/SqlArtifactView";
 import { TableArtifactView } from "./artifacts/TableArtifactView";
@@ -115,7 +116,7 @@ export function ArtifactInspector({
             </button>
           </div>
         ) : null}
-        <ArtifactView artifact={active} onOpenSql={onOpenSql} />
+        <ArtifactView artifact={active} onOpenSql={onOpenSql} onAsk={onAsk} workspaceContext={sqlActionContext} />
       </div>
     </section>
   );
@@ -201,7 +202,17 @@ function csvCell(value: unknown): string {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-function ArtifactView({ artifact, onOpenSql }: { artifact: AgentArtifact; onOpenSql?: (sql: string) => void }) {
+function ArtifactView({
+  artifact,
+  onOpenSql,
+  onAsk,
+  workspaceContext,
+}: {
+  artifact: AgentArtifact;
+  onOpenSql?: (sql: string) => void;
+  onAsk?: (question: string, workspaceContext?: AgentWorkspaceContext | null) => void;
+  workspaceContext?: AgentWorkspaceContext | null;
+}) {
   if (artifact.type === "agent_plan") return <PlanArtifactView artifact={artifact} />;
   if (artifact.type === "table") return <TableArtifactView artifact={artifact} />;
   if (artifact.type === "chart") return <ChartArtifactView artifact={artifact} />;
@@ -209,6 +220,9 @@ function ArtifactView({ artifact, onOpenSql }: { artifact: AgentArtifact; onOpen
   if (artifact.type === "safety") return <SafetyArtifactView artifact={artifact} />;
   if (artifact.type === "query_plan") return <QueryPlanArtifactView artifact={artifact} />;
   if (artifact.type === "insight") return <InsightArtifactView artifact={artifact} />;
+  if (artifact.type === "recommendation") {
+    return <RecommendationArtifactView artifact={artifact} onAsk={onAsk} workspaceContext={workspaceContext} />;
+  }
   if (artifact.type === "error") return <ErrorArtifactView artifact={artifact} />;
 
   return (

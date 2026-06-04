@@ -34,7 +34,7 @@ from engine.agent_kernel.databinding import apply_tool_result_to_state, merge_st
 from engine.agent_kernel.databox_tools import register_databox_tools
 from engine.agent_kernel.event_bridge import events_from_graph_update
 from engine.agent_kernel.graph import build_agent_kernel_graph
-from engine.agent_kernel.plan_state import apply_plan_patches
+from engine.agent_kernel.plan_state import apply_plan_patches, plan_patches_for_tool_execution
 from engine.agent_kernel.policy import PolicyGate
 from engine.agent_kernel.response import AgentKernelResponseAssembler
 from engine.agent_kernel.state import KernelState, latest_user_message
@@ -205,6 +205,14 @@ class AgentKernelService:
                 if not isinstance(update, dict):
                     continue
                 merge_state(state, update)
+                if str(node_name) != "execute_tool" and isinstance(update.get("plan"), dict):
+                    yield from self._plan_artifact_events(
+                        emit,
+                        state,
+                        agent_state,
+                        artifact_identity,
+                        emitted_artifact_ids,
+                    )
                 yield from events_from_graph_update(
                     emit=emit,
                     node_name=str(node_name),
@@ -219,6 +227,14 @@ class AgentKernelService:
                         emitted_artifact_ids,
                     ),
                 )
+                if str(node_name) == "execute_tool" and isinstance(update.get("plan"), dict):
+                    yield from self._plan_artifact_events(
+                        emit,
+                        state,
+                        agent_state,
+                        artifact_identity,
+                        emitted_artifact_ids,
+                    )
 
         approval = self._approval_from_state(state)
         waiting_approval = state.get("status") == "waiting_approval"
@@ -328,6 +344,14 @@ class AgentKernelService:
                     if not isinstance(update, dict):
                         continue
                     merge_state(state, update)
+                    if str(node_name) != "execute_tool" and isinstance(update.get("plan"), dict):
+                        yield from self._plan_artifact_events(
+                            emit,
+                            state,
+                            agent_state,
+                            artifact_identity,
+                            emitted_artifact_ids,
+                        )
                     yield from events_from_graph_update(
                         emit=emit,
                         node_name=str(node_name),
@@ -342,6 +366,14 @@ class AgentKernelService:
                             emitted_artifact_ids,
                         ),
                     )
+                    if str(node_name) == "execute_tool" and isinstance(update.get("plan"), dict):
+                        yield from self._plan_artifact_events(
+                            emit,
+                            state,
+                            agent_state,
+                            artifact_identity,
+                            emitted_artifact_ids,
+                        )
 
         yield from stream_graph_updates(
             app.stream(
@@ -489,6 +521,14 @@ class AgentKernelService:
             ),
         )
         self._expire_superseded_approval(dict(graph_state), tool_name, observation)
+        plan_patches = plan_patches_for_tool_execution(
+            graph_state.get("plan"),
+            tool_name=tool_name,
+            status=observation.status,
+        )
+        if plan_patches:
+            update["plan_events"] = [patch.model_dump(mode="json") for patch in plan_patches]
+            update["plan"] = apply_plan_patches(graph_state.get("plan"), plan_patches)
         update["pending_tool_call"] = None
         update["last_tool_name"] = tool_name
         update["last_observation"] = observation.model_dump(mode="json")
@@ -749,6 +789,48 @@ class AgentKernelService:
                 agent_state.artifacts.append(bound)
             else:
                 agent_state.artifacts[existing_index] = bound
+
+    def _plan_artifact_events(
+        self,
+        emit: Any,
+        state: dict[str, Any],
+        agent_state: AgentState,
+        artifact_identity: AgentArtifactIdentity,
+        emitted_artifact_ids: set[str],
+    ) -> Iterator[AgentRuntimeEvent]:
+        plan = state.get("plan")
+        if not isinstance(plan, dict):
+            return
+        for artifact in self.artifact_emitter.from_plan(plan, artifact_identity):
+            bound = self.artifact_emitter.bind_dependencies(agent_state.artifacts, artifact)
+            existing_index = next(
+                (
+                    index
+                    for index, existing in enumerate(agent_state.artifacts)
+                    if (existing.semantic_id or existing.id) == (bound.semantic_id or bound.id)
+                ),
+                None,
+            )
+            if existing_index is None:
+                agent_state.artifacts.append(bound)
+            else:
+                agent_state.artifacts[existing_index] = bound
+            first_emit = bound.id not in emitted_artifact_ids
+            emitted_artifact_ids.add(bound.id)
+            yield emit("agent.artifact.created", artifact=bound)
+            if not first_emit:
+                continue
+            try:
+                agent_persistence.record_artifact(
+                    self.db,
+                    agent_state.session_id or "",
+                    agent_state.run_id,
+                    bound,
+                    len(agent_state.artifacts),
+                )
+            except Exception:
+                logger.warning("Agent kernel persistence: failed to save plan artifact %s", bound.id)
+                self._rollback_quietly()
 
     def _execute_tool(
         self,

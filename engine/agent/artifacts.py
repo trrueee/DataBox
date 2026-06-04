@@ -16,6 +16,11 @@ class AgentArtifactIdentity:
         self._counter += 1
         return f"agent/run/{self.run_id}/artifact/{self._counter:03d}/{semantic_id}"
 
+    def stable_id(self, semantic_id: str) -> str:
+        if not self.run_id:
+            return semantic_id
+        return f"agent/run/{self.run_id}/artifact/{semantic_id}"
+
 
 def build_agent_artifacts(
     query_plan: dict[str, Any] | None,
@@ -83,12 +88,13 @@ def build_agent_plan_artifact(
     return _artifact(
         "agent_plan_draft",
         "agent_plan",
-        "Agent plan draft",
+        "Agent plan",
         plan,
         mode="dock",
         priority=90,
         collapsed=True,
         identity=identity,
+        artifact_id=identity.stable_id("agent_plan_draft") if identity else None,
         produced_by_step="plan_agent",
     )
 
@@ -304,11 +310,12 @@ def _artifact(
     priority: int,
     collapsed: bool = False,
     identity: AgentArtifactIdentity | None = None,
+    artifact_id: str | None = None,
     produced_by_step: str | None = None,
     depends_on: list[str] | None = None,
 ) -> AgentArtifact:
     return AgentArtifact(
-        id=identity.next_id(semantic_id) if identity else semantic_id,
+        id=artifact_id or (identity.next_id(semantic_id) if identity else semantic_id),
         semantic_id=semantic_id,
         type=artifact_type,  # type: ignore[arg-type]
         title=title,

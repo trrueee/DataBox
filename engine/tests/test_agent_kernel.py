@@ -389,6 +389,57 @@ def test_agent_kernel_response_binds_artifact_dependencies_and_answer_evidence()
         assert artifact.produced_by_step
 
 
+def test_agent_kernel_recommendation_artifact_avoids_dangling_dependency_without_profile() -> None:
+    response = AgentKernelResponseAssembler().build_response(
+        req=AgentRunRequest(datasource_id="ds-1", question="list users"),
+        success=True,
+        steps=[],
+        query_plan={"analysis_goal": "list users", "candidate_tables": ["users"]},
+        sql="SELECT id FROM users LIMIT 3",
+        safety={
+            "passed": True,
+            "can_execute": True,
+            "requires_confirmation": False,
+            "safe_sql": "SELECT id FROM users LIMIT 3",
+            "messages": [],
+            "blocked_reasons": [],
+        },
+        execution={
+            "success": True,
+            "columns": ["id"],
+            "rows": [{"id": 1}],
+            "rowCount": 1,
+            "latencyMs": 1,
+        },
+        explanation=None,
+        chart_suggestion=None,
+        result_profile=None,
+        answer={
+            "answer": "1 row returned.",
+            "key_findings": ["1 row returned."],
+            "evidence": [
+                {"artifact_id": "result_table", "label": "Rows returned", "value": 1},
+                {"artifact_id": "sql_candidate", "label": "SQL", "value": "validated candidate"},
+            ],
+            "caveats": [],
+            "recommendations": ["Compare by region."],
+            "follow_up_questions": ["Show by region"],
+        },
+        suggestions=[],
+        error=None,
+        run_id="run-recommendations",
+        session_id="session-recommendations",
+    )
+
+    artifact_ids = {artifact.id for artifact in response.artifacts}
+    recommendation = next(artifact for artifact in response.artifacts if artifact.type == "recommendation")
+
+    assert recommendation.semantic_id == "recommendations"
+    assert recommendation.produced_by_step == "answer_synthesizer"
+    assert recommendation.depends_on
+    assert set(recommendation.depends_on).issubset(artifact_ids)
+
+
 def test_agent_kernel_stream_emits_run_step_artifact_and_completion_events(
     db_session,
     demo_datasource,
@@ -1095,6 +1146,220 @@ def test_agent_kernel_pending_approval_revision_revalidates_and_expires_old_appr
     assert expired_approval is not None
     assert expired_approval.status == "expired"
     assert expired_approval.decision_note == "Superseded by user SQL revision before approval."
+
+
+def test_agent_kernel_pending_approval_revision_without_fixed_sql_keeps_old_approval_valid(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    response, approval, _events = _kernel_waiting_run(
+        db_session,
+        demo_datasource,
+        monkeypatch,
+        session_id="kernel-pending-revise-no-fixed-sql",
+    )
+    decisions = iter([
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.revise",
+                args={"instruction": "Only explain the risk; do not change SQL."},
+                reason="Attempt a revision, but no SQL change is available.",
+            ),
+            confidence="high",
+            reasoning_summary="Try revise without producing fixed SQL.",
+        ),
+        AgentDecision(
+            action="final_answer",
+            final_answer="I did not modify the SQL, so the existing approval remains valid.",
+            confidence="high",
+            reasoning_summary="Old pending approval remains valid because no fixed SQL was produced.",
+        ),
+    ])
+
+    def fake_revise_sql_tool(*, sql, error, safety, db, datasource_id):
+        return ToolObservation(
+            name="revise_sql",
+            status="success",
+            input={"sql_preview": sql, "error": error},
+            output={
+                "can_fix": False,
+                "fixed_sql": "",
+                "reason": error,
+                "changes": [],
+                "remaining_risks": ["No SQL modification was produced."],
+                "revise_suggestion": "The existing approval can still be reviewed.",
+                "blocked_sql": sql,
+            },
+            latency_ms=0,
+        )
+
+    monkeypatch.setattr("engine.agent_kernel.service.decide_next_action", lambda **_kwargs: next(decisions))
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.revise_sql_tool", fake_revise_sql_tool)
+    monkeypatch.setattr(
+        "engine.agent_kernel.databox_tools.execute_sql_tool",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should not execute while approval is pending")),
+    )
+
+    res = AgentKernelService(db_session).run(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="Only explain the risk; do not change SQL",
+            execute=False,
+            session_id=response.session_id,
+            parent_run_id=response.run_id,
+            workspace_context={
+                "datasource_id": demo_datasource.id,
+                "pending_approval_id": approval.id,
+            },
+        )
+    )
+
+    persisted_approval = agent_persistence.get_approval(db_session, approval.id)
+
+    assert res.status == "completed"
+    assert res.sql == response.sql
+    assert res.approval is not None
+    assert res.approval.id == approval.id
+    assert res.approval.status == "pending"
+    assert res.answer is not None
+    assert "existing approval remains valid" in res.answer.answer
+    assert persisted_approval is not None
+    assert persisted_approval.status == "pending"
+
+
+def test_agent_kernel_pending_approval_revised_sql_needing_confirmation_creates_new_approval(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    response, approval, _events = _kernel_waiting_run(
+        db_session,
+        demo_datasource,
+        monkeypatch,
+        session_id="kernel-pending-revise-new-approval",
+    )
+    revised_sql = "SELECT id, username FROM users LIMIT 10"
+    decisions = iter([
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.revise",
+                args={"instruction": "Change the limit to 10 before execution."},
+                reason="Revise pending SQL before approval.",
+            ),
+            confidence="high",
+            reasoning_summary="Revise pending approval SQL.",
+        ),
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.validate",
+                args={"sql": revised_sql},
+                reason="Validate revised SQL before execution.",
+            ),
+            confidence="high",
+            reasoning_summary="Validate revised SQL.",
+        ),
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.execute_readonly",
+                args={"sql": revised_sql},
+                reason="Execution still requires approval.",
+            ),
+            confidence="high",
+            reasoning_summary="Policy should create a new approval before execution.",
+        ),
+    ])
+
+    def fake_revise_sql_tool(*, sql, error, safety, db, datasource_id):
+        return ToolObservation(
+            name="revise_sql",
+            status="success",
+            input={"sql_preview": sql, "error": error},
+            output={
+                "can_fix": True,
+                "fixed_sql": revised_sql,
+                "reason": error,
+                "changes": ["Changed LIMIT 3 to LIMIT 10."],
+                "remaining_risks": [],
+                "revise_suggestion": "Validate the revised SQL before execution.",
+                "blocked_sql": sql,
+            },
+            latency_ms=0,
+        )
+
+    def fake_validate_sql_tool(_db, datasource_id: str, sql: str) -> ToolObservation:
+        return ToolObservation(
+            name="validate_sql",
+            status="success",
+            input={"datasource_id": datasource_id, "sql_preview": sql},
+            output={
+                "passed": True,
+                "can_execute": True,
+                "safe_sql": sql,
+                "original_sql": sql,
+                "schema_warnings": [],
+                "guardrail": {
+                    "result": "pass",
+                    "originalSql": sql,
+                    "safeSql": sql,
+                    "checks": [],
+                    "message": "SQL passed.",
+                },
+                "trust_gate": {
+                    "riskLevel": "warning",
+                    "requiresConfirmation": True,
+                    "canExecute": True,
+                    "messages": ["Production datasource requires manual confirmation."],
+                },
+                "requires_confirmation": True,
+                "messages": ["Production datasource requires manual confirmation."],
+                "blocked_reasons": ["requires_confirmation"],
+                "revise_suggestion": None,
+            },
+            latency_ms=0,
+        )
+
+    monkeypatch.setattr("engine.agent_kernel.service.decide_next_action", lambda **_kwargs: next(decisions))
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.revise_sql_tool", fake_revise_sql_tool)
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.validate_sql_tool", fake_validate_sql_tool)
+    monkeypatch.setattr(
+        "engine.agent_kernel.databox_tools.execute_sql_tool",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should wait for approval before execution")),
+    )
+
+    res = AgentKernelService(db_session).run(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="Change the limit to 10 before executing",
+            execute=True,
+            session_id=response.session_id,
+            parent_run_id=response.run_id,
+            workspace_context={
+                "datasource_id": demo_datasource.id,
+                "pending_approval_id": approval.id,
+            },
+        )
+    )
+
+    expired_approval = agent_persistence.get_approval(db_session, approval.id)
+    new_approval = agent_persistence.get_pending_approval_for_run(db_session, res.run_id)
+
+    assert res.status == "waiting_approval"
+    assert res.sql == revised_sql
+    assert res.execution is None
+    assert expired_approval is not None
+    assert expired_approval.status == "expired"
+    assert new_approval is not None
+    assert new_approval.id != approval.id
+    assert new_approval.requested_action is not None
+    assert new_approval.requested_action["args"]["sql"] == revised_sql
+    assert res.approval is not None
+    assert res.approval.id == new_approval.id
+    assert res.approval.status == "pending"
 
 
 def test_agent_kernel_service_uses_graph_factory(db_session, demo_datasource, monkeypatch) -> None:

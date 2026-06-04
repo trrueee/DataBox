@@ -189,8 +189,31 @@ class AgentKernelResponseAssembler:
 
     def _bind_artifact_dependencies(self, artifacts: list[AgentArtifact]) -> None:
         semantic_to_id = {artifact.semantic_id or artifact.id: artifact.id for artifact in artifacts}
+        artifact_ids = {artifact.id for artifact in artifacts}
         for artifact in artifacts:
-            artifact.depends_on = [semantic_to_id.get(dependency, dependency) for dependency in artifact.depends_on]
+            dependencies = artifact.depends_on
+            if artifact.type == "recommendation":
+                dependencies = self._recommendation_dependency_keys(dependencies, semantic_to_id, artifact_ids)
+            artifact.depends_on = [semantic_to_id.get(dependency, dependency) for dependency in dependencies]
+
+    def _recommendation_dependency_keys(
+        self,
+        dependencies: list[str],
+        semantic_to_id: dict[str, str],
+        artifact_ids: set[str],
+    ) -> list[str]:
+        existing_dependencies = [
+            dependency
+            for dependency in dependencies
+            if dependency in semantic_to_id or dependency in artifact_ids
+        ]
+        if existing_dependencies:
+            return existing_dependencies
+
+        for semantic_id in ("result_profile", "result_table", "sql_candidate", "safety_report"):
+            if semantic_id in semantic_to_id:
+                return [semantic_id]
+        return []
 
     def _session_id(self, req: AgentRunRequest) -> str:
         if req.session_id:

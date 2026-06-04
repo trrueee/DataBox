@@ -100,6 +100,18 @@ const tableArtifact: AgentArtifact = {
   presentation: { mode: "both", priority: 20 },
 };
 
+const recommendationArtifact: AgentArtifact = {
+  id: "artifact-recommendation",
+  semantic_id: "recommendations",
+  type: "recommendation",
+  title: "Recommended next steps",
+  payload: {
+    recommendations: ["Compare the same metric by region."],
+    followUpQuestions: ["Show this by region"],
+  },
+  presentation: { mode: "inline", priority: 40 },
+};
+
 const response: AgentRunResponse = {
   run_id: "run-1",
   session_id: "session-1",
@@ -326,6 +338,48 @@ describe("AgentWorkspace workspace context", () => {
     expect(screen.getAllByText("username").length).toBeGreaterThan(0);
     expect(screen.getAllByText("alice").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Safety: executable").length).toBeGreaterThan(0);
+  });
+
+  it("shows recommendation artifacts and asks follow-up questions with artifact context", () => {
+    const onAsk = vi.fn();
+
+    render(
+      <AgentWorkspace
+        result={{ ...response, artifacts: [recommendationArtifact] }}
+        workspaceContext={workspaceContext}
+        onAsk={onAsk}
+      />,
+    );
+
+    expect(screen.getAllByText("Recommended next steps").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Compare the same metric by region.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Show this by region").length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByLabelText("Ask follow-up: Show this by region"));
+
+    expect(onAsk).toHaveBeenCalledWith(
+      "Show this by region",
+      expect.objectContaining({ selected_artifact_id: "artifact-recommendation" }),
+    );
+  });
+
+  it("shows an empty recommendation artifact state", () => {
+    render(
+      <AgentWorkspace
+        result={{
+          ...response,
+          artifacts: [
+            {
+              ...recommendationArtifact,
+              payload: { recommendations: [], followUpQuestions: [] },
+            },
+          ],
+        }}
+        workspaceContext={workspaceContext}
+      />,
+    );
+
+    expect(screen.getAllByText("No recommendations yet.").length).toBeGreaterThan(0);
   });
 
   it("shows running steps from streamed draft events", () => {

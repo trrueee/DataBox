@@ -5,6 +5,13 @@ from typing import Any
 from engine.agent_kernel.schemas import PlanPatch, PlanState, PlanStep
 
 
+TOOL_FINAL_STATUS_OPERATION = {
+    "success": ("mark_completed", "Tool execution completed."),
+    "failed": ("mark_failed", "Tool execution failed."),
+    "skipped": ("skip_step", "Tool execution skipped."),
+}
+
+
 def apply_plan_patches(
     plan: dict[str, Any] | PlanState | None,
     patches: list[PlanPatch],
@@ -52,6 +59,40 @@ def apply_plan_patches(
     return PlanState(steps=[steps_by_id[step_id] for step_id in ordered_ids]).model_dump(mode="json")
 
 
+def plan_patches_for_tool_execution(
+    plan: dict[str, Any] | PlanState | None,
+    *,
+    tool_name: str,
+    status: str,
+) -> list[PlanPatch]:
+    step = _matching_tool_step(plan, tool_name)
+    if step is None:
+        return []
+
+    patches: list[PlanPatch] = []
+    if step.status != "running":
+        patches.append(
+            PlanPatch(
+                operation="mark_running",
+                step_id=step.id,
+                reason="Tool execution started.",
+            )
+        )
+
+    final_operation = TOOL_FINAL_STATUS_OPERATION.get(status)
+    if final_operation is None:
+        return patches
+    operation, reason = final_operation
+    patches.append(
+        PlanPatch(
+            operation=operation,  # type: ignore[arg-type]
+            step_id=step.id,
+            reason=reason,
+        )
+    )
+    return patches
+
+
 def _plan_state(plan: dict[str, Any] | PlanState | None) -> PlanState:
     if isinstance(plan, PlanState):
         return plan
@@ -71,3 +112,22 @@ def _merge_step(current: PlanStep | None, patch: PlanStep) -> PlanStep:
         return patch
     update = patch.model_dump(exclude_unset=True)
     return current.model_copy(update=update)
+
+
+def _matching_tool_step(plan: dict[str, Any] | PlanState | None, tool_name: str) -> PlanStep | None:
+    if not tool_name:
+        return None
+    state = _plan_state(plan)
+    candidates = _candidate_tool_names(tool_name)
+    for candidate in candidates:
+        for status in ("pending", "running"):
+            for step in state.steps:
+                if step.tool_name == candidate and step.status == status:
+                    return step
+    return None
+
+
+def _candidate_tool_names(tool_name: str) -> list[str]:
+    if tool_name == "sql.skip_execution":
+        return ["sql.skip_execution", "sql.execute_readonly"]
+    return [tool_name]
