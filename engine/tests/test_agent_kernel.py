@@ -12,10 +12,13 @@ from engine.agent.state import AgentState
 from engine.agent import persistence as agent_persistence
 from engine.agent.runtime import DataBoxAgentRuntime
 from engine.agent_kernel.controller import CONTROLLER_SYSTEM_PROMPT, _controller_state_view
+from engine.agent_kernel.databinding import apply_tool_result_to_state
 from engine.agent_kernel.databox_tools import register_databox_tools
 from engine.agent_kernel.graph import build_agent_kernel_graph, langgraph_available
 from engine.agent_kernel.policy import PolicyGate
+from engine.agent_kernel.schemas import AgentDecision, ToolCallDecision
 from engine.agent_kernel.service import AgentKernelService
+from engine.agent_kernel.tool_registry import ToolContext
 from engine.schema_sync import sync_schema
 
 
@@ -241,6 +244,110 @@ def test_agent_kernel_controller_prompt_teaches_followup_artifact_and_approval_p
     assert "approval" in prompt
     assert "resume" in prompt
     assert "update_plan" in prompt
+    assert "pending_approval" in prompt
+    assert "sql.revise" in prompt
+    assert "execute=false" in prompt
+    assert "never call sql.execute_readonly while pending approval is unresolved" in prompt
+    assert "approval api flow" in prompt
+    assert "never invent execution results" in prompt
+
+
+def test_agent_kernel_sql_revise_accepts_instruction_and_pending_approval_sql(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_revise_sql_tool(*, sql, error, safety, db, datasource_id):
+        captured.update({
+            "sql": sql,
+            "error": error,
+            "safety": safety,
+            "db": db,
+            "datasource_id": datasource_id,
+        })
+        return ToolObservation(
+            name="revise_sql",
+            status="success",
+            input={"sql_preview": sql, "error": error},
+            output={
+                "can_fix": False,
+                "fixed_sql": None,
+                "reason": error,
+                "changes": [],
+                "remaining_risks": [],
+                "revise_suggestion": "Apply the user's requested SQL change.",
+                "blocked_sql": sql,
+            },
+            latency_ms=0,
+        )
+
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.revise_sql_tool", fake_revise_sql_tool)
+
+    registry = register_databox_tools()
+    tool = registry.require("sql.revise")
+    ctx = ToolContext(
+        db=db_session,
+        request=AgentRunRequest(datasource_id=demo_datasource.id, question="Change the limit to 10"),
+        state={
+            "pending_approval": {
+                "id": "approval_1",
+                "requested_action": {
+                    "tool_name": "sql.execute_readonly",
+                    "args": {"safe_sql": "SELECT id, username FROM users LIMIT 100"},
+                },
+            },
+            "safety": {"requires_confirmation": True},
+        },
+    )
+
+    obs = tool.handler(ctx, {"instruction": "Change the limit to 10 before execution."})
+
+    assert obs.status == "success"
+    assert captured["sql"] == "SELECT id, username FROM users LIMIT 100"
+    assert captured["error"] == "Change the limit to 10 before execution."
+    assert captured["safety"] == {"requires_confirmation": True}
+    assert captured["datasource_id"] == demo_datasource.id
+
+
+def test_agent_kernel_sql_revise_state_clears_stale_execution_approval_and_safety() -> None:
+    observation = ToolObservation(
+        name="revise_sql",
+        status="success",
+        input={"sql_preview": "SELECT id FROM users LIMIT 100"},
+        output={
+            "can_fix": True,
+            "fixed_sql": "SELECT id FROM users LIMIT 10",
+            "reason": "Change the limit to 10.",
+            "changes": ["Changed LIMIT 100 to LIMIT 10."],
+            "remaining_risks": [],
+            "revise_suggestion": "Validate the revised SQL before execution.",
+            "blocked_sql": "SELECT id FROM users LIMIT 100",
+        },
+        latency_ms=0,
+    )
+
+    update = apply_tool_result_to_state(
+        state={
+            "sql": "SELECT id FROM users LIMIT 100",
+            "safety": {
+                "safe_sql": "SELECT id FROM users LIMIT 100",
+                "can_execute": True,
+                "requires_confirmation": False,
+            },
+            "execution": {"success": True, "rowCount": 3},
+            "pending_approval": {"id": "approval_1", "status": "pending"},
+        },
+        tool_name="sql.revise",
+        observation=observation,
+    )
+
+    assert update["sql"] == "SELECT id FROM users LIMIT 10"
+    assert update["safety"] is None
+    assert update["execution"] is None
+    assert update["pending_approval"] is None
+    assert update["trace_events"][-1]["type"] == "approval.superseded"
 
 
 def test_agent_kernel_event_bridge_emits_approval_required_event() -> None:
@@ -383,6 +490,130 @@ def test_agent_kernel_fallback_explains_workspace_sql_without_schema_restart(
     assert res.answer is not None
     assert "SELECT id, username FROM users LIMIT 3" in res.answer.answer
     assert res.steps == []
+
+
+def test_agent_kernel_pending_approval_followup_explains_sql_without_schema_restart(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    response, approval, _events = _kernel_waiting_run(
+        db_session,
+        demo_datasource,
+        monkeypatch,
+        session_id="kernel-pending-explain-followup",
+    )
+
+    def fail_schema_context(*_args, **_kwargs):
+        raise AssertionError("Pending approval SQL follow-up should not restart schema context building.")
+
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.build_schema_context_tool", fail_schema_context)
+
+    res = AgentKernelService(db_session).run(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="Can you explain what this SQL will do before I approve?",
+            execute=False,
+            session_id=response.session_id,
+            parent_run_id=response.run_id,
+            workspace_context={
+                "datasource_id": demo_datasource.id,
+                "selected_sql": response.sql,
+                "pending_approval_id": approval.id,
+            },
+        )
+    )
+
+    assert res.success is True, res.model_dump()
+    assert res.status == "completed"
+    assert res.answer is not None
+    assert "SELECT id, username FROM users LIMIT 3" in res.answer.answer
+    assert "build_schema_context" not in [step.name for step in res.steps]
+
+
+def test_agent_kernel_pending_approval_modify_calls_revise_not_execute(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    response, approval, _events = _kernel_waiting_run(
+        db_session,
+        demo_datasource,
+        monkeypatch,
+        session_id="kernel-pending-modify-followup",
+    )
+    captured_revise: dict[str, object] = {}
+
+    decisions = iter([
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.revise",
+                args={
+                    "sql": response.sql,
+                    "instruction": "Change the limit to 10 before execution.",
+                },
+                reason="User wants to modify pending SQL before approval.",
+            ),
+            confidence="high",
+            reasoning_summary="Revise pending SQL before approval.",
+        ),
+        AgentDecision(
+            action="final_answer",
+            final_answer="I revised the SQL for review. It still needs validation before execution.",
+            confidence="high",
+            reasoning_summary="Stop after revision; do not execute unvalidated SQL.",
+        ),
+    ])
+
+    def fake_decide_next_action(**_kwargs):
+        return next(decisions)
+
+    def fake_revise_sql_tool(*, sql, error, safety, db, datasource_id):
+        captured_revise.update({"sql": sql, "error": error, "safety": safety, "datasource_id": datasource_id})
+        return ToolObservation(
+            name="revise_sql",
+            status="success",
+            input={"sql_preview": sql, "error": error},
+            output={
+                "can_fix": True,
+                "fixed_sql": "SELECT id, username FROM users LIMIT 10",
+                "reason": error,
+                "changes": ["Changed LIMIT 3 to LIMIT 10."],
+                "remaining_risks": [],
+                "revise_suggestion": "Validate the revised SQL before execution.",
+                "blocked_sql": sql,
+            },
+            latency_ms=0,
+        )
+
+    def fail_execute_sql(*_args, **_kwargs):
+        raise AssertionError("Pending approval SQL revision must not execute directly.")
+
+    monkeypatch.setattr("engine.agent_kernel.service.decide_next_action", fake_decide_next_action)
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.revise_sql_tool", fake_revise_sql_tool)
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.execute_sql_tool", fail_execute_sql)
+
+    res = AgentKernelService(db_session).run(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="Change the limit to 10 before executing",
+            execute=False,
+            session_id=response.session_id,
+            parent_run_id=response.run_id,
+            workspace_context={
+                "datasource_id": demo_datasource.id,
+                "selected_sql": response.sql,
+                "pending_approval_id": approval.id,
+            },
+        )
+    )
+
+    assert captured_revise["sql"] == response.sql
+    assert captured_revise["error"] == "Change the limit to 10 before execution."
+    assert res.sql == "SELECT id, username FROM users LIMIT 10"
+    assert "execute_sql" not in [step.name for step in res.steps if step.status == "success"]
+    assert res.status == "completed"
 
 
 def test_agent_kernel_service_uses_graph_factory(db_session, demo_datasource, monkeypatch) -> None:

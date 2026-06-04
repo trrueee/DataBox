@@ -118,6 +118,9 @@ class AgentWorkspaceContext(BaseModel):
     selected_column_refs: list[str] = Field(default_factory=list)
     selected_artifact_id: str | None = None
     recent_agent_run_id: str | None = None
+    pending_approval_id: str | None = None
+    pending_approval_status: str | None = None
+    pending_approval_reason: str | None = None
     open_sql_tabs: list[dict[str, Any]] = Field(default_factory=list)
     editor_annotations: list[dict[str, Any]] = Field(default_factory=list)
     semantic_context: dict[str, Any] = Field(default_factory=dict)

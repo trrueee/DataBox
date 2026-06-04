@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentWorkspace } from "../AgentWorkspace";
-import type { AgentArtifact, AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentWorkspaceContext } from "../types";
+import type { AgentApproval, AgentArtifact, AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentWorkspaceContext } from "../types";
 
 const workspaceContext: AgentWorkspaceContext = {
   datasource_id: "ds-1",
@@ -37,8 +37,31 @@ const response: AgentRunResponse = {
   success: true,
   status: "success",
   question: "Explain this SQL",
+  sql: "SELECT id FROM users LIMIT 5",
   artifacts: [sqlSuggestion],
   steps: [],
+};
+
+const pendingApproval: AgentApproval = {
+  id: "approval-1",
+  run_id: "run-1",
+  session_id: "session-1",
+  step_name: "execute_sql",
+  tool_name: "sql.execute_readonly",
+  status: "pending",
+  risk_level: "warning",
+  reason: "Production datasource requires manual confirmation.",
+  policy_decision: {
+    messages: ["Production datasource requires manual confirmation."],
+    blocked_reasons: ["requires_confirmation"],
+  },
+  requested_action: {
+    tool_name: "sql.execute_readonly",
+    args: {
+      safe_sql: "SELECT id FROM users LIMIT 3",
+    },
+  },
+  created_at: "2026-06-02T00:00:00Z",
 };
 
 afterEach(() => {
@@ -87,6 +110,36 @@ describe("AgentWorkspace workspace context", () => {
     fireEvent.click(screen.getByText("Ask"));
 
     expect(onAsk).toHaveBeenCalledWith("continue", workspaceContext);
+  });
+
+  it("allows approval follow-up questions with approval-aware workspace context", () => {
+    const onAsk = vi.fn();
+
+    render(
+      <AgentWorkspace
+        result={{ ...response, success: false, status: "waiting_approval", approval: pendingApproval }}
+        workspaceContext={workspaceContext}
+        onAsk={onAsk}
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("Ask about this pending approval, SQL, or risk"), {
+      target: { value: "Why does this need approval?" },
+    });
+    fireEvent.click(screen.getByText("Ask"));
+
+    expect(onAsk).toHaveBeenCalledWith(
+      "Why does this need approval?",
+      expect.objectContaining({
+        datasource_id: "ds-1",
+        pending_approval_id: "approval-1",
+        pending_approval_status: "pending",
+        pending_approval_reason: "Production datasource requires manual confirmation.",
+        selected_sql: "SELECT id FROM users LIMIT 3",
+        active_sql: "SELECT id FROM users LIMIT 3",
+        selected_artifact_id: "artifact-suggestion",
+      }),
+    );
   });
 
   it("shows a compact step timeline for completed Agent runs", () => {

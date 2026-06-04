@@ -65,6 +65,19 @@ def apply_tool_result_to_state(
         fixed_sql = str(output.get("fixed_sql") or "").strip()
         if fixed_sql:
             update["sql"] = fixed_sql
+            update["safety"] = None
+            update["execution"] = None
+            update["result_profile"] = None
+            update["chart_suggestion"] = None
+            update["suggestions"] = []
+            if state.get("pending_approval"):
+                update["pending_approval"] = None
+                update["trace_events"].append(
+                    {
+                        "type": "approval.superseded",
+                        "payload": {"reason": "User requested SQL revision before approval."},
+                    }
+                )
 
     elif tool_name == "result.profile":
         update["result_profile"] = output

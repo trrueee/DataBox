@@ -119,9 +119,23 @@ def _sql_skip_execution(_ctx: ToolContext, _args: dict[str, Any]) -> ToolObserva
 
 
 def _sql_revise(ctx: ToolContext, args: dict[str, Any]) -> ToolObservation:
+    instruction = (
+        args.get("instruction")
+        or args.get("user_instruction")
+        or args.get("reason")
+        or args.get("error")
+        or ctx.state.get("error")
+        or "Revise the SQL according to the latest user request."
+    )
+    sql = (
+        args.get("sql")
+        or args.get("safe_sql")
+        or ctx.state.get("sql")
+        or _pending_approval_sql(ctx.state)
+    )
     return revise_sql_tool(
-        sql=str(args.get("sql") or ctx.state.get("sql") or ""),
-        error=str(args.get("error") or ctx.state.get("error") or "SQL needs revision."),
+        sql=str(sql or ""),
+        error=str(instruction),
         safety=ctx.state.get("safety") if isinstance(ctx.state.get("safety"), dict) else None,
         db=ctx.db,
         datasource_id=ctx.request.datasource_id,
@@ -158,3 +172,30 @@ def _answer_synthesize(ctx: ToolContext, args: dict[str, Any]) -> ToolObservatio
         suggestions=ctx.state.get("suggestions"),
         error=ctx.state.get("error"),
     )
+
+
+def _pending_approval_sql(state: dict[str, Any]) -> str | None:
+    approval = state.get("pending_approval")
+    if not isinstance(approval, dict):
+        return None
+
+    requested = approval.get("requested_action")
+    if not isinstance(requested, dict):
+        return None
+
+    direct_sql = _string_arg(requested.get("safe_sql")) or _string_arg(requested.get("sql"))
+    if direct_sql:
+        return direct_sql
+
+    args = requested.get("args")
+    if not isinstance(args, dict):
+        return None
+
+    return _string_arg(args.get("safe_sql")) or _string_arg(args.get("sql"))
+
+
+def _string_arg(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
