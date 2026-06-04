@@ -104,6 +104,8 @@ export function AgentWorkspace({
         onActiveArtifactChange={setSelectedArtifactId}
         onOpenSql={onOpenSql}
         onApplySql={onApplySql}
+        onAsk={onAsk}
+        workspaceContext={composerWorkspaceContext}
       />
       {onAsk && responseForContext ? (
         <AgentComposer

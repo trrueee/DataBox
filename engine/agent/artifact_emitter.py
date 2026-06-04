@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from typing import Any
+
 from engine.agent.artifacts import (
     AgentArtifactIdentity,
+    build_agent_plan_artifact,
     build_chart_artifact,
     build_sql_suggestion_artifact,
     build_profile_artifact,
@@ -15,6 +18,13 @@ from engine.agent.types import AgentArtifact, ResultProfile, ToolObservation
 
 
 class ArtifactEmitter:
+    def from_plan(
+        self,
+        plan: dict[str, Any],
+        identity: AgentArtifactIdentity,
+    ) -> list[AgentArtifact]:
+        return [build_agent_plan_artifact(plan, identity=identity)]
+
     def from_observation(
         self,
         step_name: str,

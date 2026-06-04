@@ -16,6 +16,7 @@ from engine.agent_kernel.databinding import apply_tool_result_to_state
 from engine.agent_kernel.databox_tools import register_databox_tools
 from engine.agent_kernel.graph import build_agent_kernel_graph, langgraph_available
 from engine.agent_kernel.policy import PolicyGate
+from engine.agent_kernel.response import AgentKernelResponseAssembler
 from engine.agent_kernel.schemas import AgentDecision, ToolCallDecision
 from engine.agent_kernel.service import AgentKernelService
 from engine.agent_kernel.tool_registry import ToolContext
@@ -127,12 +128,290 @@ def test_agent_kernel_registry_exposes_domain_tools() -> None:
     assert execute_spec.policy.side_effect == "read"
 
 
+def test_agent_kernel_tool_registry_schema_snapshot() -> None:
+    registry = register_databox_tools()
+    snapshot = {
+        spec.name: {
+            "input_props": sorted((spec.input_schema.get("properties") or {}).keys()),
+            "input_required": spec.input_schema.get("required", []),
+            "output_props": sorted((spec.output_schema.get("properties") or {}).keys()),
+            "output_required": spec.output_schema.get("required", []),
+        }
+        for spec in registry.list_specs()
+    }
+
+    assert snapshot == {
+        "answer.synthesize": {
+            "input_props": ["question"],
+            "input_required": [],
+            "output_props": [
+                "answer",
+                "caveats",
+                "evidence",
+                "follow_up_questions",
+                "key_findings",
+                "recommendations",
+            ],
+            "output_required": ["answer"],
+        },
+        "chart.suggest": {
+            "input_props": [],
+            "input_required": [],
+            "output_props": ["reason", "type", "x", "y"],
+            "output_required": ["type", "reason"],
+        },
+        "followup.load_context": {
+            "input_props": ["question"],
+            "input_required": [],
+            "output_props": [
+                "analysis_question",
+                "context_summary",
+                "referenced_artifact_ids",
+                "schema_linking_question",
+            ],
+            "output_required": ["context_summary", "analysis_question", "schema_linking_question"],
+        },
+        "followup.suggest": {
+            "input_props": ["question"],
+            "input_required": [],
+            "output_props": ["suggestions"],
+            "output_required": ["suggestions"],
+        },
+        "query_plan.build": {
+            "input_props": ["question"],
+            "input_required": [],
+            "output_props": [
+                "analysis_goal",
+                "assumptions",
+                "candidate_tables",
+                "dimensions",
+                "filters",
+                "metrics",
+                "raw_plan",
+                "risk_notes",
+                "time_range",
+            ],
+            "output_required": ["analysis_goal"],
+        },
+        "result.profile": {
+            "input_props": ["question"],
+            "input_required": [],
+            "output_props": [
+                "anomalies",
+                "column_profiles",
+                "detected_patterns",
+                "limitations",
+                "notable_facts",
+                "row_count",
+            ],
+            "output_required": ["row_count"],
+        },
+        "schema.build_context": {
+            "input_props": ["question"],
+            "input_required": [],
+            "output_props": [
+                "candidate_columns",
+                "candidate_tables",
+                "mode",
+                "original_schema_table_count",
+                "schema_context",
+                "schema_context_size",
+                "schema_linking_reasons",
+                "selected_schema_table_count",
+                "selected_tables",
+            ],
+            "output_required": ["schema_context", "selected_tables", "mode"],
+        },
+        "sql.execute_readonly": {
+            "input_props": ["question", "sql"],
+            "input_required": [],
+            "output_props": [
+                "columns",
+                "error_type",
+                "executionId",
+                "historyId",
+                "latencyMs",
+                "revise_suggestion",
+                "rowCount",
+                "rows",
+                "safetyDecision",
+                "success",
+                "timing",
+                "truncated",
+                "warnings",
+            ],
+            "output_required": ["success"],
+        },
+        "sql.generate": {
+            "input_props": ["question"],
+            "input_required": [],
+            "output_props": [
+                "latency_ms",
+                "metadata",
+                "mode",
+                "model",
+                "raw_sql",
+                "rewrite_notes",
+                "schema_validation_warnings",
+                "sql",
+            ],
+            "output_required": ["sql"],
+        },
+        "sql.revise": {
+            "input_props": ["error", "instruction", "reason", "safe_sql", "sql", "user_instruction"],
+            "input_required": [],
+            "output_props": [
+                "blocked_sql",
+                "can_fix",
+                "changes",
+                "fixed_sql",
+                "reason",
+                "remaining_risks",
+                "revise_suggestion",
+            ],
+            "output_required": ["can_fix", "reason", "revise_suggestion"],
+        },
+        "sql.skip_execution": {
+            "input_props": [],
+            "input_required": [],
+            "output_props": ["reason"],
+            "output_required": ["reason"],
+        },
+        "sql.validate": {
+            "input_props": ["sql"],
+            "input_required": [],
+            "output_props": [
+                "blocked_reasons",
+                "can_execute",
+                "execution_safety_decision",
+                "guardrail",
+                "messages",
+                "original_sql",
+                "passed",
+                "requires_confirmation",
+                "revise_suggestion",
+                "safe_sql",
+                "schema_warnings",
+                "trust_gate",
+            ],
+            "output_required": ["passed", "can_execute", "safe_sql", "requires_confirmation"],
+        },
+    }
+
+    for spec in registry.list_specs():
+        assert spec.input_schema != {"type": "object"}
+        assert spec.output_schema != {"type": "object"}
+
+
 def test_agent_kernel_policy_blocks_execution_without_validated_sql() -> None:
     registry = register_databox_tools()
     decision = PolicyGate(registry).check({}, "sql.execute_readonly", {})
 
     assert decision.status == "blocked"
     assert "sql.validate" in decision.reason
+
+
+def test_agent_kernel_policy_uses_state_safe_sql_for_execution() -> None:
+    registry = register_databox_tools()
+    decision = PolicyGate(registry).check(
+        {"safety": {"can_execute": True, "safe_sql": "SELECT id FROM users LIMIT 3"}},
+        "sql.execute_readonly",
+        {"sql": "SELECT * FROM secrets"},
+    )
+
+    assert decision.status == "allowed"
+    assert decision.safe_args == {"sql": "SELECT id FROM users LIMIT 3"}
+
+
+def test_agent_kernel_response_binds_artifact_dependencies_and_answer_evidence() -> None:
+    response = AgentKernelResponseAssembler().build_response(
+        req=AgentRunRequest(datasource_id="ds-1", question="list users"),
+        success=True,
+        steps=[],
+        query_plan={"analysis_goal": "list users", "candidate_tables": ["users"]},
+        sql="SELECT id FROM users LIMIT 3",
+        safety={
+            "passed": True,
+            "can_execute": True,
+            "requires_confirmation": False,
+            "safe_sql": "SELECT id FROM users LIMIT 3",
+            "messages": [],
+            "blocked_reasons": [],
+        },
+        execution={
+            "success": True,
+            "columns": ["id"],
+            "rows": [{"id": 1}],
+            "rowCount": 1,
+            "latencyMs": 1,
+        },
+        explanation=None,
+        chart_suggestion=None,
+        result_profile={
+            "row_count": 1,
+            "column_profiles": {},
+            "detected_patterns": [],
+            "notable_facts": ["1 row returned."],
+            "anomalies": [],
+            "limitations": [],
+        },
+        answer={
+            "answer": "1 row returned.",
+            "key_findings": ["1 row returned."],
+            "evidence": [
+                {"artifact_id": "sql_candidate", "label": "SQL", "value": "validated candidate"},
+                {"artifact_id": "safety_report", "label": "Safety", "value": "passed"},
+                {"artifact_id": "result_table", "label": "Rows returned", "value": 1},
+                {"artifact_id": "result_profile", "label": "Result profile", "value": "1 rows profiled"},
+            ],
+            "caveats": [],
+            "recommendations": [],
+            "follow_up_questions": [],
+        },
+        suggestions=[],
+        error=None,
+        run_id="run-artifacts",
+        session_id="session-artifacts",
+    )
+
+    artifact_ids = {artifact.id for artifact in response.artifacts}
+    semantic_to_id = {artifact.semantic_id: artifact.id for artifact in response.artifacts}
+
+    assert {evidence.artifact_id for evidence in response.answer.evidence}.issubset(artifact_ids)
+    assert response.answer.evidence[0].artifact_id == semantic_to_id["sql_candidate"]
+    result_table = next(artifact for artifact in response.artifacts if artifact.semantic_id == "result_table")
+    result_profile = next(artifact for artifact in response.artifacts if artifact.semantic_id == "result_profile")
+    assert semantic_to_id["sql_candidate"] in result_table.depends_on
+    assert semantic_to_id["safety_report"] in result_table.depends_on
+    assert result_table.id in result_profile.depends_on
+    for artifact in response.artifacts:
+        assert artifact.semantic_id
+        assert artifact.produced_by_step
+
+
+def test_agent_kernel_stream_emits_run_step_artifact_and_completion_events(
+    db_session,
+    demo_datasource,
+) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    events = list(AgentKernelService(db_session).run_iter(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="list users",
+            execute=False,
+            session_id="kernel-stream-regression",
+        )
+    ))
+    event_types = [event.type for event in events]
+
+    assert event_types[0] == "agent.run.started"
+    assert "agent.step.started" in event_types
+    assert "agent.step.completed" in event_types
+    assert "agent.artifact.created" in event_types
+    assert event_types[-1] == "agent.run.completed"
+    assert events[-1].response is not None
+    assert events[-1].response.status == "completed"
 
 
 def test_agent_kernel_graph_factory_builds_langgraph_shape() -> None:
@@ -555,6 +834,68 @@ def test_agent_kernel_pending_approval_followup_explains_sql_without_schema_rest
     assert "build_schema_context" not in [step.name for step in res.steps]
 
 
+def test_agent_kernel_pending_approval_followup_hydrates_approval_context(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    response, approval, _events = _kernel_waiting_run(
+        db_session,
+        demo_datasource,
+        monkeypatch,
+        session_id="kernel-pending-hydrate-followup",
+    )
+    captured_state: dict[str, object] = {}
+
+    def capture_decision(**kwargs):
+        state = kwargs["state"]
+        captured_state.update({
+            "pending_approval": state.get("pending_approval"),
+            "sql": state.get("sql"),
+            "safety": state.get("safety"),
+        })
+        return AgentDecision(
+            action="final_answer",
+            final_answer="Answered from hydrated pending approval context.",
+            confidence="high",
+            reasoning_summary="Use hydrated pending approval context.",
+        )
+
+    monkeypatch.setattr("engine.agent_kernel.service.decide_next_action", capture_decision)
+    monkeypatch.setattr(
+        "engine.agent_kernel.databox_tools.build_schema_context_tool",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should not rebuild schema")),
+    )
+    monkeypatch.setattr(
+        "engine.agent_kernel.databox_tools.execute_sql_tool",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should not execute SQL")),
+    )
+
+    res = AgentKernelService(db_session).run(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="Why does this need approval?",
+            execute=False,
+            session_id=response.session_id,
+            parent_run_id=response.run_id,
+            workspace_context={
+                "datasource_id": demo_datasource.id,
+                "pending_approval_id": approval.id,
+            },
+        )
+    )
+
+    hydrated_approval = captured_state["pending_approval"]
+    hydrated_safety = captured_state["safety"]
+    assert res.status == "completed"
+    assert isinstance(hydrated_approval, dict)
+    assert hydrated_approval["id"] == approval.id
+    assert captured_state["sql"] == response.sql
+    assert isinstance(hydrated_safety, dict)
+    assert hydrated_safety["safe_sql"] == response.sql
+    assert hydrated_safety["requires_confirmation"] is True
+
+
 def test_agent_kernel_pending_approval_modify_calls_revise_not_execute(
     db_session,
     demo_datasource,
@@ -638,6 +979,122 @@ def test_agent_kernel_pending_approval_modify_calls_revise_not_execute(
     assert res.sql == "SELECT id, username FROM users LIMIT 10"
     assert "execute_sql" not in [step.name for step in res.steps if step.status == "success"]
     assert res.status == "completed"
+
+
+def test_agent_kernel_pending_approval_revision_revalidates_and_expires_old_approval(
+    db_session,
+    demo_datasource,
+    monkeypatch,
+) -> None:
+    response, approval, _events = _kernel_waiting_run(
+        db_session,
+        demo_datasource,
+        monkeypatch,
+        session_id="kernel-pending-revise-validate",
+    )
+    captured: dict[str, object] = {}
+    decisions = iter([
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.revise",
+                args={"instruction": "Change the limit to 10 before execution."},
+                reason="Revise pending SQL before approval.",
+            ),
+            confidence="high",
+            reasoning_summary="Revise pending approval SQL.",
+        ),
+        AgentDecision(
+            action="call_tool",
+            tool_call=ToolCallDecision(
+                tool_name="sql.validate",
+                args={"sql": "SELECT id, username FROM users LIMIT 10"},
+                reason="Validate revised SQL before execution.",
+            ),
+            confidence="high",
+            reasoning_summary="Validate revised SQL.",
+        ),
+        AgentDecision(
+            action="final_answer",
+            final_answer="The revised SQL has been validated for review.",
+            confidence="high",
+            reasoning_summary="Stop before execution.",
+        ),
+    ])
+
+    def fake_revise_sql_tool(*, sql, error, safety, db, datasource_id):
+        captured["revised_from_sql"] = sql
+        captured["revision_instruction"] = error
+        return ToolObservation(
+            name="revise_sql",
+            status="success",
+            input={"sql_preview": sql, "error": error},
+            output={
+                "can_fix": True,
+                "fixed_sql": "SELECT id, username FROM users LIMIT 10",
+                "reason": error,
+                "changes": ["Changed LIMIT 3 to LIMIT 10."],
+                "remaining_risks": [],
+                "revise_suggestion": "Validate the revised SQL before execution.",
+                "blocked_sql": sql,
+            },
+            latency_ms=0,
+        )
+
+    def fake_validate_sql_tool(_db, datasource_id: str, sql: str) -> ToolObservation:
+        captured["validated_sql"] = sql
+        return ToolObservation(
+            name="validate_sql",
+            status="success",
+            input={"datasource_id": datasource_id, "sql_preview": sql},
+            output={
+                "passed": True,
+                "can_execute": True,
+                "safe_sql": sql,
+                "original_sql": sql,
+                "schema_warnings": [],
+                "guardrail": {"result": "pass", "originalSql": sql, "safeSql": sql, "checks": [], "message": "SQL passed."},
+                "requires_confirmation": False,
+                "messages": ["SQL passed."],
+                "blocked_reasons": [],
+                "revise_suggestion": None,
+            },
+            latency_ms=0,
+        )
+
+    monkeypatch.setattr("engine.agent_kernel.service.decide_next_action", lambda **_kwargs: next(decisions))
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.revise_sql_tool", fake_revise_sql_tool)
+    monkeypatch.setattr("engine.agent_kernel.databox_tools.validate_sql_tool", fake_validate_sql_tool)
+    monkeypatch.setattr(
+        "engine.agent_kernel.databox_tools.execute_sql_tool",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should not execute revised SQL")),
+    )
+
+    res = AgentKernelService(db_session).run(
+        AgentRunRequest(
+            datasource_id=demo_datasource.id,
+            question="Change the limit to 10 before executing",
+            execute=False,
+            session_id=response.session_id,
+            parent_run_id=response.run_id,
+            workspace_context={
+                "datasource_id": demo_datasource.id,
+                "pending_approval_id": approval.id,
+            },
+        )
+    )
+
+    expired_approval = agent_persistence.get_approval(db_session, approval.id)
+
+    assert captured["revised_from_sql"] == response.sql
+    assert captured["revision_instruction"] == "Change the limit to 10 before execution."
+    assert captured["validated_sql"] == "SELECT id, username FROM users LIMIT 10"
+    assert [step.name for step in res.steps] == ["revise_sql", "validate_sql"]
+    assert "execute_sql" not in [step.name for step in res.steps]
+    assert res.sql == "SELECT id, username FROM users LIMIT 10"
+    assert expired_approval is not None
+    assert expired_approval.status == "expired"
+    assert expired_approval.decision_note == "Superseded by user SQL revision before approval."
 
 
 def test_agent_kernel_service_uses_graph_factory(db_session, demo_datasource, monkeypatch) -> None:

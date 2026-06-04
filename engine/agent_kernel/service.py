@@ -34,6 +34,7 @@ from engine.agent_kernel.databinding import apply_tool_result_to_state, merge_st
 from engine.agent_kernel.databox_tools import register_databox_tools
 from engine.agent_kernel.event_bridge import events_from_graph_update
 from engine.agent_kernel.graph import build_agent_kernel_graph
+from engine.agent_kernel.plan_state import apply_plan_patches
 from engine.agent_kernel.policy import PolicyGate
 from engine.agent_kernel.response import AgentKernelResponseAssembler
 from engine.agent_kernel.state import KernelState, latest_user_message
@@ -397,6 +398,11 @@ class AgentKernelService:
         if decision.plan_patches:
             update["plan_events"] = [patch.model_dump(mode="json") for patch in decision.plan_patches]
 
+        if decision.action == "update_plan":
+            update["plan"] = apply_plan_patches(graph_state.get("plan"), decision.plan_patches)
+            update["status"] = "running"
+            return update
+
         if decision.action == "call_tool" and decision.tool_call:
             update["pending_tool_call"] = decision.tool_call.model_dump(mode="json")
             return update
@@ -482,10 +488,38 @@ class AgentKernelService:
                 observation=observation,
             ),
         )
+        self._expire_superseded_approval(dict(graph_state), tool_name, observation)
         update["pending_tool_call"] = None
         update["last_tool_name"] = tool_name
         update["last_observation"] = observation.model_dump(mode="json")
         return update
+
+    def _expire_superseded_approval(
+        self,
+        graph_state: dict[str, Any],
+        tool_name: str,
+        observation: ToolObservation,
+    ) -> None:
+        if tool_name != "sql.revise" or observation.status != "success":
+            return
+        fixed_sql = str((observation.output or {}).get("fixed_sql") or "").strip()
+        if not fixed_sql:
+            return
+        approval = graph_state.get("pending_approval")
+        if not isinstance(approval, dict):
+            return
+        approval_id = str(approval.get("id") or "").strip()
+        if not approval_id:
+            return
+        try:
+            agent_persistence.expire_approval(
+                self.db,
+                approval_id=approval_id,
+                note="Superseded by user SQL revision before approval.",
+            )
+        except Exception:
+            logger.warning("Agent kernel persistence: failed to expire superseded approval %s", approval_id)
+            self._rollback_quietly()
 
     def _approval_interrupt_node(self, graph_state: KernelState) -> dict[str, Any]:
         approval = graph_state.get("pending_approval") or {}
@@ -692,6 +726,30 @@ class AgentKernelService:
         if isinstance(sql, str):
             agent_state.sql = sql
 
+    def _sync_plan_artifact(
+        self,
+        agent_state: AgentState,
+        state: dict[str, Any],
+        artifact_identity: AgentArtifactIdentity,
+    ) -> None:
+        plan = state.get("plan")
+        if not isinstance(plan, dict):
+            return
+        for artifact in self.artifact_emitter.from_plan(plan, artifact_identity):
+            bound = self.artifact_emitter.bind_dependencies(agent_state.artifacts, artifact)
+            existing_index = next(
+                (
+                    index
+                    for index, existing in enumerate(agent_state.artifacts)
+                    if (existing.semantic_id or existing.id) == (bound.semantic_id or bound.id)
+                ),
+                None,
+            )
+            if existing_index is None:
+                agent_state.artifacts.append(bound)
+            else:
+                agent_state.artifacts[existing_index] = bound
+
     def _execute_tool(
         self,
         req: AgentRunRequest,
@@ -796,6 +854,7 @@ class AgentKernelService:
         checkpoint: AgentCheckpointRecord | None = None,
     ) -> AgentRunResponse:
         self._sync_agent_state_from_graph_state(agent_state, state)
+        self._sync_plan_artifact(agent_state, state, artifact_identity)
         error = state.get("error")
         return self.response_assembler.build_response(
             req=req,
@@ -821,6 +880,9 @@ class AgentKernelService:
         )
 
     def _initial_state(self, req: AgentRunRequest, run_id: str, session_id: str) -> KernelState:
+        pending_approval = self._pending_approval_from_workspace(req)
+        pending_sql = self._approval_sql(pending_approval)
+        pending_safety = self._pending_approval_safety(pending_approval, pending_sql)
         return KernelState(
             thread_id=session_id,
             run_id=run_id,
@@ -835,7 +897,7 @@ class AgentKernelService:
             plan_events=[],
             pending_decision=None,
             pending_tool_call=None,
-            pending_approval=None,
+            pending_approval=pending_approval,
             last_tool_name=None,
             last_observation=None,
             tool_results=[],
@@ -845,8 +907,8 @@ class AgentKernelService:
             schema_context=None,
             query_plan=None,
             sql_candidate=None,
-            sql=None,
-            safety=None,
+            sql=pending_sql,
+            safety=pending_safety,
             execution=None,
             result_profile=None,
             chart_suggestion=None,
@@ -861,6 +923,51 @@ class AgentKernelService:
             api_base=req.api_base,
             model_name=req.model_name,
         )
+
+    def _pending_approval_from_workspace(self, req: AgentRunRequest) -> dict[str, Any] | None:
+        workspace = req.workspace_context
+        approval_id = getattr(workspace, "pending_approval_id", None)
+        if not approval_id:
+            return None
+        approval = agent_persistence.get_approval(self.db, str(approval_id))
+        if approval is None or approval.status != "pending":
+            return None
+        return approval.model_dump(mode="json")
+
+    def _approval_sql(self, approval: dict[str, Any] | None) -> str | None:
+        if not isinstance(approval, dict):
+            return None
+        requested = approval.get("requested_action")
+        if not isinstance(requested, dict):
+            return None
+        args = requested.get("args")
+        direct_sql = _string_value(requested.get("safe_sql")) or _string_value(requested.get("sql"))
+        if direct_sql:
+            return direct_sql
+        if isinstance(args, dict):
+            return _string_value(args.get("safe_sql")) or _string_value(args.get("sql"))
+        return None
+
+    def _pending_approval_safety(
+        self,
+        approval: dict[str, Any] | None,
+        sql: str | None,
+    ) -> dict[str, Any] | None:
+        if not approval or not sql:
+            return None
+        messages = []
+        if approval.get("reason"):
+            messages.append(str(approval["reason"]))
+        return {
+            "passed": True,
+            "can_execute": True,
+            "safe_sql": sql,
+            "original_sql": sql,
+            "requires_confirmation": True,
+            "blocked_reasons": ["requires_confirmation"],
+            "messages": messages,
+            "approval": {"id": approval.get("id"), "status": approval.get("status")},
+        }
 
     def _start_persistence(self, req: AgentRunRequest, run_id: str, session_id: str) -> None:
         try:
@@ -929,3 +1036,10 @@ class AgentKernelService:
 
 def latest_message_for_debug(state: KernelState) -> str:
     return str(latest_user_message(state))
+
+
+def _string_value(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
