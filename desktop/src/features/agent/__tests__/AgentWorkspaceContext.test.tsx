@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentWorkspace } from "../AgentWorkspace";
-import type { AgentArtifact, AgentRunResponse, AgentWorkspaceContext } from "../types";
+import type { AgentArtifact, AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentWorkspaceContext } from "../types";
 
 const workspaceContext: AgentWorkspaceContext = {
   datasource_id: "ds-1",
@@ -89,6 +89,50 @@ describe("AgentWorkspace workspace context", () => {
     expect(onAsk).toHaveBeenCalledWith("continue", workspaceContext);
   });
 
+  it("shows a compact step timeline for completed Agent runs", () => {
+    render(
+      <AgentWorkspace
+        result={{
+          ...response,
+          steps: [
+            { name: "build_schema_context", status: "success", latency_ms: 12 },
+            { name: "validate_sql", status: "failed", error: "invalid sql", latency_ms: 3 },
+          ],
+        }}
+        workspaceContext={workspaceContext}
+      />,
+    );
+
+    expect(screen.getByText("Step timeline")).toBeTruthy();
+    expect(screen.getByText("build_schema_context")).toBeTruthy();
+    expect(screen.getByText("validate_sql")).toBeTruthy();
+    expect(screen.getByText("failed")).toBeTruthy();
+  });
+
+  it("shows running steps from streamed draft events", () => {
+    const draft: AgentRunDraftState = {
+      status: "running",
+      question: "list users",
+      events: [
+        runtimeEvent("agent.step.started", 1, { step: { name: "build_schema_context" } }),
+        runtimeEvent("agent.step.completed", 2, { step: { name: "build_schema_context", status: "success", latency_ms: 12 } }),
+        runtimeEvent("agent.step.started", 3, { step: { name: "validate_sql" } }),
+      ],
+      artifacts: [],
+      answer: null,
+      response: null,
+      approval: null,
+      checkpoint: null,
+      error: null,
+    };
+
+    render(<AgentWorkspace draft={draft} workspaceContext={workspaceContext} />);
+
+    expect(screen.getByText("build_schema_context")).toBeTruthy();
+    expect(screen.getByText("validate_sql")).toBeTruthy();
+    expect(screen.getByText("running")).toBeTruthy();
+  });
+
   it("loads and displays Agent Kernel thread state", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       thread_id: "session-1",
@@ -142,3 +186,14 @@ describe("AgentWorkspace workspace context", () => {
     expect(screen.getByText("Artifact Inspector")).toBeTruthy();
   });
 });
+
+function runtimeEvent(type: AgentRuntimeEvent["type"], sequence: number, patch: Partial<AgentRuntimeEvent>): AgentRuntimeEvent {
+  return {
+    event_id: `${type}_${sequence}`,
+    run_id: "run-1",
+    sequence,
+    created_at_ms: sequence,
+    type,
+    ...patch,
+  };
+}

@@ -3,6 +3,7 @@ import { ArtifactInspector } from "./ArtifactInspector";
 import { AgentComposer } from "./AgentComposer";
 import { AgentNarrativeStream } from "./AgentNarrativeStream";
 import { ApprovalCard } from "./ApprovalCard";
+import { AgentStepTimeline } from "./AgentStepTimeline";
 import { AgentStateInspector } from "./AgentStateInspector";
 import { TraceDrawer } from "./TraceDrawer";
 import type { AgentRunDraftState, AgentRunResponse, AgentRuntimeEvent, AgentStep, AgentVisibleEvent, AgentWorkspaceContext, FollowUpSuggestion } from "./types";
@@ -71,6 +72,8 @@ export function AgentWorkspace({
       />
 
       <WorkspaceContextIndicator context={workspaceContext} />
+
+      <AgentStepTimeline steps={steps} runtimeEvents={draft?.events || []} />
 
       <AgentStateInspector key={threadId || "agent-state"} threadId={threadId} />
 
