@@ -1,46 +1,46 @@
 {
-  "evaluation_time": "2026-06-04T17:43:06.066705+00:00",
+  "evaluation_time": "2026-06-05T06:41:13.688432+00:00",
   "total_cases": 3,
   "passed_cases": 0,
   "failed_cases": 3,
   "pass_rate": 0.0,
-  "average_latency_seconds": 0.82,
-  "total_duration_seconds": 2.48,
+  "average_latency_seconds": 2.29,
+  "total_duration_seconds": 6.88,
   "status_counts": {
     "pass": 0,
-    "eval_env_failed": 0,
-    "validation_blocked": 3,
+    "eval_env_failed": 3,
+    "validation_blocked": 0,
     "agent_execution_failed": 0,
     "execution_mismatch": 0
   },
-  "model": "gpt-4o-mini",
+  "model": "qwen-plus",
   "cases": [
     {
-      "case_id": "spider-smoke-1",
+      "case_id": "spider-smoke-2",
       "db_id": "concert_singer",
       "difficulty": "simple",
-      "status": "validation_blocked",
-      "score": 3,
-      "reason": "Validation blocked agent SQL: schema_validation, select_star",
-      "latency_seconds": 0.95
+      "status": "eval_env_failed",
+      "score": 0,
+      "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
+      "latency_seconds": 2.36
     },
     {
-      "case_id": "spider-smoke-6",
+      "case_id": "spider-smoke-9",
       "db_id": "pets_1",
-      "difficulty": "medium",
-      "status": "validation_blocked",
-      "score": 3,
-      "reason": "Validation blocked agent SQL: schema_validation, select_star",
-      "latency_seconds": 0.76
+      "difficulty": "hard",
+      "status": "eval_env_failed",
+      "score": 0,
+      "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
+      "latency_seconds": 2.26
     },
     {
-      "case_id": "spider-smoke-7",
+      "case_id": "spider-smoke-10",
       "db_id": "pets_1",
-      "difficulty": "medium",
-      "status": "validation_blocked",
-      "score": 3,
-      "reason": "Validation blocked agent SQL: schema_validation, select_star",
-      "latency_seconds": 0.75
+      "difficulty": "extra hard",
+      "status": "eval_env_failed",
+      "score": 0,
+      "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
+      "latency_seconds": 2.25
     }
   ]
 }

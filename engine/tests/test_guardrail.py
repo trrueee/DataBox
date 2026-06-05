@@ -157,6 +157,18 @@ def test_syntax_error() -> None:
     assert any(c["rule"] == "syntax_error" for c in r["checks"])
 
 
+def test_mysql_syntax_invalid_message_does_not_echo_broken_order_tokens() -> None:
+    sql = "SELECT Name FROM singer ORDER BY [{'column': 'Age', 'direction': 'DESC'}] LIMIT 100"
+
+    r = guardrail_check(sql)
+    serialized = str(r).upper()
+
+    assert r["result"] == "reject"
+    assert any(c["rule"] == "mysql_syntax_invalid" for c in r["checks"])
+    assert "ORDER BY ARRAY" not in serialized
+    assert "ORDER BY STRUCT" not in serialized
+
+
 # ============================================================
 # NEW IN SPRINT 1: RECURSIVE CTE, ROW LOCKING, & DYNAMIC DIALECT
 # ============================================================

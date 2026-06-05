@@ -106,6 +106,7 @@ class TrustGate:
         env = str(datasource.env or "dev").lower() if datasource else "unknown"
         guardrail_rejected = guardrail.get("result") == "reject"
         guardrail_checks = list(guardrail.get("checks", []))
+        candidate_safe_sql = str(guardrail.get("safeSql") or "").strip()
         select_star_blocked = (
             policy == "agent_readonly"
             and any(check.get("rule") == "select_star" for check in guardrail_checks)
@@ -113,24 +114,14 @@ class TrustGate:
         requires_confirmation = env == "prod"
         blocked_reasons: list[str] = []
 
-        if datasource and _should_dry_run(sql):
-            try:
-                dry_run = dry_run_query(self.db, datasource_id, sql)
-            except Exception as exc:
-                dry_run = None
-                blocked_reasons.append("explain_unavailable")
-                messages.append(f"EXPLAIN dry-run unavailable: {exc}")
-            if dry_run is not None and not dry_run.ok:
-                reason = dry_run.blocked_reason or "explain_unavailable"
-                blocked_reasons.append(reason)
-                if dry_run.message:
-                    messages.append(f"EXPLAIN dry-run failed: {dry_run.message}")
-
         if not datasource:
             blocked_reasons.append("datasource_scope")
             messages.append("Datasource scope could not be resolved.")
         if guardrail_rejected:
             blocked_reasons.append("guardrail_reject")
+        elif not candidate_safe_sql:
+            blocked_reasons.append("safe_sql_missing")
+            messages.append("Guardrail did not produce safe_sql. Execution is blocked.")
         if schema_warnings:
             blocked_reasons.append("schema_validation")
             messages.append("Execution blocked until schema validation warnings are resolved.")
@@ -141,9 +132,29 @@ class TrustGate:
             blocked_reasons.append("select_star")
             messages.append("Agent execution requires explicit projected columns instead of SELECT *.")
 
+        if (
+            datasource
+            and not guardrail_rejected
+            and candidate_safe_sql
+            and _should_dry_run(candidate_safe_sql)
+        ):
+            try:
+                dry_run = dry_run_query(self.db, datasource_id, candidate_safe_sql)
+            except Exception as exc:
+                dry_run = None
+                blocked_reasons.append("explain_unavailable")
+                messages.append(f"EXPLAIN dry-run unavailable for safe_sql: {exc}")
+            if dry_run is not None and dry_run.ok:
+                messages.append("EXPLAIN dry-run validated safe_sql.")
+            elif dry_run is not None:
+                reason = dry_run.blocked_reason or "explain_unavailable"
+                blocked_reasons.append(reason)
+                if dry_run.message:
+                    messages.append(f"EXPLAIN dry-run failed for safe_sql: {dry_run.message}")
+
         blocked_reasons = list(dict.fromkeys(blocked_reasons))
         can_execute = not blocked_reasons
-        safe_sql = str(guardrail.get("safeSql") or "").strip() if can_execute else None
+        safe_sql = candidate_safe_sql if can_execute else None
 
         return ExecutionSafetyDecision(
             datasource_id=datasource_id,

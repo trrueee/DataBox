@@ -1,13 +1,13 @@
 [
   {
-    "event_id": "runtime_5f7da347_1_agent_run_started",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_1_agent_run_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 1,
-    "created_at_ms": 1780640640268,
+    "created_at_ms": 1780640680795,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-concert-singer",
-      "question": "How many singers do we have?",
+      "question": "Show all countries and the number of singers in each country.",
       "execute": true
     },
     "artifact": null,
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_5f7da347_2_agent_step_started",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_2_agent_step_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 2,
-    "created_at_ms": 1780640642473,
+    "created_at_ms": 1780640682671,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_5f7da347_3_agent_step_completed",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_3_agent_step_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 3,
-    "created_at_ms": 1780640642474,
+    "created_at_ms": 1780640682671,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 7
+      "latency_ms": 3
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_5f7da347_4_agent_step_started",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_4_agent_step_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 4,
-    "created_at_ms": 1780640646980,
+    "created_at_ms": 1780640688189,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_5f7da347_5_agent_step_completed",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_5_agent_step_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 5,
-    "created_at_ms": 1780640646981,
+    "created_at_ms": 1780640688190,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 2160
+      "latency_ms": 3124
     },
     "artifact": null,
     "answer": null,
@@ -97,29 +97,35 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_5f7da347_6_agent_artifact_created",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_6_agent_artifact_created",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 6,
-    "created_at_ms": 1780640646982,
+    "created_at_ms": 1780640688191,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/001/query_plan",
+      "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
       "payload": {
-        "analysis_goal": "count",
+        "analysis_goal": "count_singers_by_country",
         "metrics": [
           {
             "name": "singer_count",
             "expression": "COUNT(*)",
-            "source_column": "*"
+            "source_column": "Singer_ID"
           }
         ],
-        "dimensions": [],
+        "dimensions": [
+          {
+            "name": "country",
+            "column": "Country",
+            "transform": null
+          }
+        ],
         "filters": [],
         "time_range": null,
         "candidate_tables": [
@@ -131,7 +137,7 @@
         ],
         "risk_notes": [],
         "raw_plan": {
-          "intent": "count",
+          "intent": "count_singers_by_country",
           "tables": [
             "singer"
           ],
@@ -139,10 +145,16 @@
             {
               "name": "singer_count",
               "expression": "COUNT(*)",
-              "source_column": "*"
+              "source_column": "Singer_ID"
             }
           ],
-          "dimensions": [],
+          "dimensions": [
+            {
+              "name": "country",
+              "column": "Country",
+              "transform": null
+            }
+          ],
           "filters": [],
           "joins": [],
           "order_by": "[]",
@@ -168,10 +180,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_5f7da347_7_agent_step_started",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_7_agent_step_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 7,
-    "created_at_ms": 1780640649571,
+    "created_at_ms": 1780640690295,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -186,17 +198,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_5f7da347_8_agent_step_completed",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_8_agent_step_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 8,
-    "created_at_ms": 1780640649572,
+    "created_at_ms": 1780640690296,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 17
+      "latency_ms": 4
     },
     "artifact": null,
     "answer": null,
@@ -207,10 +219,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_5f7da347_9_agent_step_started",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_9_agent_step_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 9,
-    "created_at_ms": 1780640652276,
+    "created_at_ms": 1780640692880,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -225,17 +237,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_5f7da347_10_agent_step_completed",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_10_agent_step_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 10,
-    "created_at_ms": 1780640652277,
+    "created_at_ms": 1780640692881,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 249
+      "latency_ms": 22
     },
     "artifact": null,
     "answer": null,
@@ -246,21 +258,21 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_5f7da347_11_agent_artifact_created",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_11_agent_artifact_created",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 11,
-    "created_at_ms": 1780640652278,
+    "created_at_ms": 1780640692882,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate",
+      "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
       "payload": {
-        "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+        "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
         "safety_state": {
           "available": true,
           "passed": true,
@@ -278,7 +290,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/001/query_plan"
+        "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -289,39 +301,39 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_5f7da347_12_agent_artifact_created",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_12_agent_artifact_created",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 12,
-    "created_at_ms": 1780640652279,
+    "created_at_ms": 1780640692883,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/003/safety_report",
+      "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
       "payload": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-        "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+        "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+        "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-          "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+          "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+          "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+          "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -333,18 +345,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+          "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-          "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+          "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+          "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -363,7 +375,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:24:12.276176Z"
+          "created_at": "2026-06-05T06:24:52.880128Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -381,7 +393,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate"
+        "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -392,10 +404,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_5f7da347_13_agent_step_started",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_13_agent_step_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 13,
-    "created_at_ms": 1780640654769,
+    "created_at_ms": 1780640695206,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -410,17 +422,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_5f7da347_14_agent_step_completed",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_14_agent_step_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 14,
-    "created_at_ms": 1780640654771,
+    "created_at_ms": 1780640695207,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
       "tool_name": "sql.execute_readonly",
       "status": "success",
       "error": null,
-      "latency_ms": 53
+      "latency_ms": 14
     },
     "artifact": null,
     "answer": null,
@@ -431,30 +443,40 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_5f7da347_15_agent_artifact_created",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_15_agent_artifact_created",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 15,
-    "created_at_ms": 1780640654772,
+    "created_at_ms": 1780640695207,
     "type": "agent.artifact.created",
     "step": {
       "name": "execute_sql"
     },
     "artifact": {
-      "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/004/result_table",
+      "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table",
       "semantic_id": "result_table",
       "type": "table",
       "title": "Result table",
       "payload": {
         "columns": [
+          "country",
           "singer_count"
         ],
         "rows": [
           {
-            "singer_count": "6"
+            "country": "Netherlands",
+            "singer_count": "1"
+          },
+          {
+            "country": "United States",
+            "singer_count": "1"
+          },
+          {
+            "country": "France",
+            "singer_count": "4"
           }
         ],
-        "rowCount": 1,
-        "latencyMs": 32,
+        "rowCount": 3,
+        "latencyMs": 4,
         "safety_state": {
           "available": true,
           "passed": true,
@@ -472,8 +494,8 @@
       "refs": {},
       "produced_by_step": "execute_sql",
       "depends_on": [
-        "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate",
-        "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/003/safety_report"
+        "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate",
+        "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/003/safety_report"
       ]
     },
     "answer": null,
@@ -484,15 +506,241 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_5f7da347_16_agent_answer_completed",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
+    "event_id": "runtime_bcdad771_16_agent_step_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
     "sequence": 16,
-    "created_at_ms": 1780640657367,
+    "created_at_ms": 1780640696480,
+    "type": "agent.step.started",
+    "step": {
+      "name": "profile_result",
+      "tool_name": "result.profile"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_bcdad771_17_agent_step_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+    "sequence": 17,
+    "created_at_ms": 1780640696481,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "profile_result",
+      "tool_name": "result.profile",
+      "status": "success",
+      "error": null,
+      "latency_ms": 0
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_bcdad771_18_agent_artifact_created",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+    "sequence": 18,
+    "created_at_ms": 1780640696481,
+    "type": "agent.artifact.created",
+    "step": {
+      "name": "profile_result"
+    },
+    "artifact": {
+      "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/005/result_profile",
+      "semantic_id": "result_profile",
+      "type": "insight",
+      "title": "Result profile",
+      "payload": {
+        "row_count": 3,
+        "column_profiles": {
+          "country": {
+            "kind": "category",
+            "count": 3,
+            "null_count": 0,
+            "distinct_count": 3,
+            "sample_values": [
+              "Netherlands",
+              "United States",
+              "France"
+            ],
+            "min": null,
+            "max": null,
+            "sum": null,
+            "avg": null,
+            "top_values": [
+              {
+                "value": "Netherlands",
+                "count": 1
+              },
+              {
+                "value": "United States",
+                "count": 1
+              },
+              {
+                "value": "France",
+                "count": 1
+              }
+            ]
+          },
+          "singer_count": {
+            "kind": "numeric",
+            "count": 3,
+            "null_count": 0,
+            "distinct_count": 2,
+            "sample_values": [
+              "1",
+              "4"
+            ],
+            "min": 1.0,
+            "max": 4.0,
+            "sum": 6.0,
+            "avg": 2.0,
+            "top_values": []
+          }
+        },
+        "detected_patterns": [
+          "category_breakdown",
+          "top_k"
+        ],
+        "notable_facts": [
+          "The result contains 3 profiled rows.",
+          "The most frequent country value is Netherlands (1 rows).",
+          "singer_count ranges from 1.0 to 4.0."
+        ],
+        "anomalies": [],
+        "limitations": [
+          "The profile is based on the rows returned to the agent, not necessarily the full source table."
+        ],
+        "safety_state": {
+          "available": true,
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail_result": "pass",
+          "schema_warnings_count": 0
+        }
+      },
+      "presentation": {
+        "mode": "both",
+        "priority": 10,
+        "collapsed": false
+      },
+      "refs": {},
+      "produced_by_step": "profile_result",
+      "depends_on": [
+        "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table"
+      ]
+    },
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.artifact.created"
+  },
+  {
+    "event_id": "runtime_bcdad771_19_agent_step_started",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+    "sequence": 19,
+    "created_at_ms": 1780640699393,
+    "type": "agent.step.started",
+    "step": {
+      "name": "suggest_chart",
+      "tool_name": "chart.suggest"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_bcdad771_20_agent_step_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+    "sequence": 20,
+    "created_at_ms": 1780640699394,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "suggest_chart",
+      "tool_name": "chart.suggest",
+      "status": "success",
+      "error": null,
+      "latency_ms": 0
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_bcdad771_21_agent_artifact_created",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+    "sequence": 21,
+    "created_at_ms": 1780640699395,
+    "type": "agent.artifact.created",
+    "step": {
+      "name": "suggest_chart"
+    },
+    "artifact": {
+      "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/006/chart_suggestion",
+      "semantic_id": "chart_suggestion",
+      "type": "chart",
+      "title": "Chart suggestion",
+      "payload": {
+        "type": "bar",
+        "x": "country",
+        "y": "singer_count",
+        "reason": "A category field plus a numeric measure is best compared by category.",
+        "safety_state": {
+          "available": true,
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail_result": "pass",
+          "schema_warnings_count": 0
+        }
+      },
+      "presentation": {
+        "mode": "inline",
+        "priority": 30,
+        "collapsed": false
+      },
+      "refs": {},
+      "produced_by_step": "suggest_chart",
+      "depends_on": [
+        "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table"
+      ]
+    },
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.artifact.created"
+  },
+  {
+    "event_id": "runtime_bcdad771_22_agent_answer_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+    "sequence": 22,
+    "created_at_ms": 1780640703365,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
     "answer": {
-      "answer": "We have 6 singers.",
+      "answer": "There are 3 countries represented in the singer table:\n\n- Netherlands: 1 singer\n- United States: 1 singer\n- France: 4 singers\n\nThis result is based on a count of singers grouped by country, limited to the first 100 rows. The total number of countries in the full dataset may be higher.",
       "key_findings": [],
       "evidence": [],
       "caveats": [],
@@ -506,33 +754,39 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_5f7da347_17_agent_run_completed",
-    "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
-    "sequence": 17,
-    "created_at_ms": 1780640657368,
+    "event_id": "runtime_bcdad771_23_agent_run_completed",
+    "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+    "sequence": 23,
+    "created_at_ms": 1780640703366,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "5f7da347-18d3-4503-8341-8e21533c9efb",
-      "session_id": "89bf67b3-beb5-46ae-942a-ee14dfadafcb",
+      "run_id": "bcdad771-67f3-459e-81e2-348f9730c185",
+      "session_id": "c920dd58-09a2-4efc-9c10-e17c32182b2e",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
-      "question": "How many singers do we have?",
-      "context_summary": "Question: How many singers do we have? Answer: We have 6 singers. Artifacts: - agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count, metrics=[{'name': 'singer_count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[], time_range=None, candidate_tables=['singer'] - agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS singer_count FROM singer LIMIT 100 - agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/004/result_table (table, Result table): rowCount=1; columns=singer_count",
+      "question": "Show all countries and the number of singers in each country.",
+      "context_summary": "Question: Show all countries and the number of singers in each country. Answer: There are 3 countries represented in the singer table: - Netherlands: 1 singer - United States: 1 singer - France: 4 singers This result is based on a count of singers grouped by country, limited to the first 100 rows. The total number of countries in the full dataset may be higher. Artifacts: - agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count_singers_by_country, metrics=[{'name': 'singer_count', 'expression': 'COUNT(*)', 'source_column': 'Singer_ID'}], dimensions=[{'name': 'country', 'column': 'Country', 'transform': None}], filters=[], time_range=None, candidate_tables=['singer'] - agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate (sql, Validated SQL): SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100 - agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table (table, Result table): rowCount=3; columns=country, singer_count - agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/005/result_profile (insight, Result profile): The result contains 3 profiled rows.; The most frequent country value is Netherlands (1 rows).; singer_count ranges from 1.0 to 4.0. - agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/006/chart_suggestion (chart, Chart suggestion): type=bar, x=country, y=singer_count, reason=A category field plus a numeric measure is best compared by category., safety_state={'available': True, 'passed': True, 'can_execute': True, 'requires_confirmation': False, 'guardrail_result': 'pass', 'schema_warnings_count': 0}",
       "referenced_artifact_ids": [],
       "query_plan": {
-        "analysis_goal": "count",
+        "analysis_goal": "count_singers_by_country",
         "metrics": [
           {
             "name": "singer_count",
             "expression": "COUNT(*)",
-            "source_column": "*"
+            "source_column": "Singer_ID"
           }
         ],
-        "dimensions": [],
+        "dimensions": [
+          {
+            "name": "country",
+            "column": "Country",
+            "transform": null
+          }
+        ],
         "filters": [],
         "time_range": null,
         "candidate_tables": [
@@ -544,7 +798,7 @@
         ],
         "risk_notes": [],
         "raw_plan": {
-          "intent": "count",
+          "intent": "count_singers_by_country",
           "tables": [
             "singer"
           ],
@@ -552,10 +806,16 @@
             {
               "name": "singer_count",
               "expression": "COUNT(*)",
-              "source_column": "*"
+              "source_column": "Singer_ID"
             }
           ],
-          "dimensions": [],
+          "dimensions": [
+            {
+              "name": "country",
+              "column": "Country",
+              "transform": null
+            }
+          ],
           "filters": [],
           "joins": [],
           "order_by": "[]",
@@ -564,27 +824,27 @@
           "mode": "online"
         }
       },
-      "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+      "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
       "safety": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-        "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+        "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+        "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-          "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+          "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+          "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+          "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -596,18 +856,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+          "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-          "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+          "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+          "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -626,7 +886,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:24:12.276176Z"
+          "created_at": "2026-06-05T06:24:52.880128Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -639,30 +899,40 @@
       "execution": {
         "success": true,
         "columns": [
+          "country",
           "singer_count"
         ],
         "rows": [
           {
-            "singer_count": "6"
+            "country": "Netherlands",
+            "singer_count": "1"
+          },
+          {
+            "country": "United States",
+            "singer_count": "1"
+          },
+          {
+            "country": "France",
+            "singer_count": "4"
           }
         ],
-        "rowCount": 1,
-        "latencyMs": 32,
-        "historyId": "cce66746-eb37-41fa-95f1-524578544618",
-        "executionId": "exec-18ddca08-84af-4be0-9f7f-e383e7c75d44",
+        "rowCount": 3,
+        "latencyMs": 4,
+        "historyId": "3b7a5a9f-d15f-4ed4-a942-c3edba9bb2e0",
+        "executionId": "exec-b6c95a8a-f271-429a-baf0-13221ce93775",
         "safetyDecision": {
-          "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+          "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-          "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+          "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+          "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -681,24 +951,90 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:24:12.276176Z"
+          "created_at": "2026-06-05T06:24:52.880128Z"
         },
         "truncated": false,
         "warnings": [],
         "timing": {
-          "connectMs": 27,
+          "connectMs": 0,
           "guardrailMs": 0,
-          "executeMs": 1,
+          "executeMs": 0,
           "fetchMs": 0,
           "serializeMs": 0,
-          "totalMs": 32
+          "totalMs": 4
         }
       },
-      "explanation": "We have 6 singers.",
-      "chart_suggestion": null,
-      "result_profile": null,
+      "explanation": "There are 3 countries represented in the singer table:\n\n- Netherlands: 1 singer\n- United States: 1 singer\n- France: 4 singers\n\nThis result is based on a count of singers grouped by country, limited to the first 100 rows. The total number of countries in the full dataset may be higher.",
+      "chart_suggestion": {
+        "type": "bar",
+        "x": "country",
+        "y": "singer_count",
+        "reason": "A category field plus a numeric measure is best compared by category."
+      },
+      "result_profile": {
+        "row_count": 3,
+        "column_profiles": {
+          "country": {
+            "kind": "category",
+            "count": 3,
+            "null_count": 0,
+            "distinct_count": 3,
+            "sample_values": [
+              "Netherlands",
+              "United States",
+              "France"
+            ],
+            "min": null,
+            "max": null,
+            "sum": null,
+            "avg": null,
+            "top_values": [
+              {
+                "value": "Netherlands",
+                "count": 1
+              },
+              {
+                "value": "United States",
+                "count": 1
+              },
+              {
+                "value": "France",
+                "count": 1
+              }
+            ]
+          },
+          "singer_count": {
+            "kind": "numeric",
+            "count": 3,
+            "null_count": 0,
+            "distinct_count": 2,
+            "sample_values": [
+              "1",
+              "4"
+            ],
+            "min": 1.0,
+            "max": 4.0,
+            "sum": 6.0,
+            "avg": 2.0,
+            "top_values": []
+          }
+        },
+        "detected_patterns": [
+          "category_breakdown",
+          "top_k"
+        ],
+        "notable_facts": [
+          "The result contains 3 profiled rows.",
+          "The most frequent country value is Netherlands (1 rows).",
+          "singer_count ranges from 1.0 to 4.0."
+        ],
+        "anomalies": [],
+        "limitations": [
+          "The profile is based on the rows returned to the agent, not necessarily the full source table."
+        ]
+      },
       "answer": {
-        "answer": "We have 6 singers.",
+        "answer": "There are 3 countries represented in the singer table:\n\n- Netherlands: 1 singer\n- United States: 1 singer\n- France: 4 singers\n\nThis result is based on a count of singers grouped by country, limited to the first 100 rows. The total number of countries in the full dataset may be higher.",
         "key_findings": [],
         "evidence": [],
         "caveats": [],
@@ -708,20 +1044,26 @@
       "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/001/query_plan",
+          "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
           "payload": {
-            "analysis_goal": "count",
+            "analysis_goal": "count_singers_by_country",
             "metrics": [
               {
                 "name": "singer_count",
                 "expression": "COUNT(*)",
-                "source_column": "*"
+                "source_column": "Singer_ID"
               }
             ],
-            "dimensions": [],
+            "dimensions": [
+              {
+                "name": "country",
+                "column": "Country",
+                "transform": null
+              }
+            ],
             "filters": [],
             "time_range": null,
             "candidate_tables": [
@@ -733,7 +1075,7 @@
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "count",
+              "intent": "count_singers_by_country",
               "tables": [
                 "singer"
               ],
@@ -741,10 +1083,16 @@
                 {
                   "name": "singer_count",
                   "expression": "COUNT(*)",
-                  "source_column": "*"
+                  "source_column": "Singer_ID"
                 }
               ],
-              "dimensions": [],
+              "dimensions": [
+                {
+                  "name": "country",
+                  "column": "Country",
+                  "transform": null
+                }
+              ],
               "filters": [],
               "joins": [],
               "order_by": "[]",
@@ -763,12 +1111,12 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate",
+          "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
           "payload": {
-            "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "safety_state": {
               "available": true,
               "passed": true,
@@ -786,34 +1134,34 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/001/query_plan"
+            "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/003/safety_report",
+          "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
           "payload": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -825,18 +1173,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+              "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -855,7 +1203,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:24:12.276176Z"
+              "created_at": "2026-06-05T06:24:52.880128Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -873,25 +1221,35 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate"
+            "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/004/result_table",
+          "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table",
           "semantic_id": "result_table",
           "type": "table",
           "title": "Result table",
           "payload": {
             "columns": [
+              "country",
               "singer_count"
             ],
             "rows": [
               {
-                "singer_count": "6"
+                "country": "Netherlands",
+                "singer_count": "1"
+              },
+              {
+                "country": "United States",
+                "singer_count": "1"
+              },
+              {
+                "country": "France",
+                "singer_count": "4"
               }
             ],
-            "rowCount": 1,
-            "latencyMs": 32,
+            "rowCount": 3,
+            "latencyMs": 4,
             "safety_state": {
               "available": true,
               "passed": true,
@@ -909,8 +1267,124 @@
           "refs": {},
           "produced_by_step": "execute_sql",
           "depends_on": [
-            "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate",
-            "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/003/safety_report"
+            "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate",
+            "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/003/safety_report"
+          ]
+        },
+        {
+          "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/005/result_profile",
+          "semantic_id": "result_profile",
+          "type": "insight",
+          "title": "Result profile",
+          "payload": {
+            "row_count": 3,
+            "column_profiles": {
+              "country": {
+                "kind": "category",
+                "count": 3,
+                "null_count": 0,
+                "distinct_count": 3,
+                "sample_values": [
+                  "Netherlands",
+                  "United States",
+                  "France"
+                ],
+                "min": null,
+                "max": null,
+                "sum": null,
+                "avg": null,
+                "top_values": [
+                  {
+                    "value": "Netherlands",
+                    "count": 1
+                  },
+                  {
+                    "value": "United States",
+                    "count": 1
+                  },
+                  {
+                    "value": "France",
+                    "count": 1
+                  }
+                ]
+              },
+              "singer_count": {
+                "kind": "numeric",
+                "count": 3,
+                "null_count": 0,
+                "distinct_count": 2,
+                "sample_values": [
+                  "1",
+                  "4"
+                ],
+                "min": 1.0,
+                "max": 4.0,
+                "sum": 6.0,
+                "avg": 2.0,
+                "top_values": []
+              }
+            },
+            "detected_patterns": [
+              "category_breakdown",
+              "top_k"
+            ],
+            "notable_facts": [
+              "The result contains 3 profiled rows.",
+              "The most frequent country value is Netherlands (1 rows).",
+              "singer_count ranges from 1.0 to 4.0."
+            ],
+            "anomalies": [],
+            "limitations": [
+              "The profile is based on the rows returned to the agent, not necessarily the full source table."
+            ],
+            "safety_state": {
+              "available": true,
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail_result": "pass",
+              "schema_warnings_count": 0
+            }
+          },
+          "presentation": {
+            "mode": "both",
+            "priority": 10,
+            "collapsed": false
+          },
+          "refs": {},
+          "produced_by_step": "profile_result",
+          "depends_on": [
+            "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table"
+          ]
+        },
+        {
+          "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/006/chart_suggestion",
+          "semantic_id": "chart_suggestion",
+          "type": "chart",
+          "title": "Chart suggestion",
+          "payload": {
+            "type": "bar",
+            "x": "country",
+            "y": "singer_count",
+            "reason": "A category field plus a numeric measure is best compared by category.",
+            "safety_state": {
+              "available": true,
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail_result": "pass",
+              "schema_warnings_count": 0
+            }
+          },
+          "presentation": {
+            "mode": "inline",
+            "priority": 30,
+            "collapsed": false
+          },
+          "refs": {},
+          "produced_by_step": "suggest_chart",
+          "depends_on": [
+            "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table"
           ]
         }
       ],
@@ -919,7 +1393,7 @@
           "block_id": "block_1_text",
           "sequence": 1,
           "type": "text",
-          "content": "I used the trusted schema context around concert, singer, singer_in_concert, stadium to answer: How many singers do we have?",
+          "content": "I used the trusted schema context around concert, singer, singer_in_concert, stadium to answer: Show all countries and the number of singers in each country.",
           "artifact_id": null,
           "display": null,
           "answer": null,
@@ -930,20 +1404,40 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/004/result_table",
+          "artifact_id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table",
           "display": "full",
           "answer": null,
           "suggestions": []
         },
         {
-          "block_id": "block_3_answer",
+          "block_id": "block_3_artifact_ref",
           "sequence": 3,
+          "type": "artifact_ref",
+          "content": null,
+          "artifact_id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/005/result_profile",
+          "display": "full",
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "block_id": "block_4_artifact_ref",
+          "sequence": 4,
+          "type": "artifact_ref",
+          "content": null,
+          "artifact_id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/006/chart_suggestion",
+          "display": "full",
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "block_id": "block_5_answer",
+          "sequence": 5,
           "type": "answer",
           "content": null,
           "artifact_id": null,
           "display": null,
           "answer": {
-            "answer": "We have 6 singers.",
+            "answer": "There are 3 countries represented in the singer table:\n\n- Netherlands: 1 singer\n- United States: 1 singer\n- France: 4 singers\n\nThis result is based on a count of singers grouped by country, limited to the first 100 rows. The total number of countries in the full dataset may be higher.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -957,9 +1451,9 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780640657365,
+          "created_at_ms": 1780640703363,
           "type": "agent.narration.completed",
-          "content": "I used the trusted schema context around concert, singer, singer_in_concert, stadium to answer: How many singers do we have?",
+          "content": "I used the trusted schema context around concert, singer, singer_in_concert, stadium to answer: Show all countries and the number of singers in each country.",
           "artifact": null,
           "answer": null,
           "suggestions": []
@@ -967,25 +1461,35 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780640657366,
+          "created_at_ms": 1780640703364,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/004/result_table",
+            "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table",
             "semantic_id": "result_table",
             "type": "table",
             "title": "Result table",
             "payload": {
               "columns": [
+                "country",
                 "singer_count"
               ],
               "rows": [
                 {
-                  "singer_count": "6"
+                  "country": "Netherlands",
+                  "singer_count": "1"
+                },
+                {
+                  "country": "United States",
+                  "singer_count": "1"
+                },
+                {
+                  "country": "France",
+                  "singer_count": "4"
                 }
               ],
-              "rowCount": 1,
-              "latencyMs": 32,
+              "rowCount": 3,
+              "latencyMs": 4,
               "safety_state": {
                 "available": true,
                 "passed": true,
@@ -1003,22 +1507,156 @@
             "refs": {},
             "produced_by_step": "execute_sql",
             "depends_on": [
-              "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/002/sql_candidate",
-              "agent/run/5f7da347-18d3-4503-8341-8e21533c9efb/artifact/003/safety_report"
+              "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/002/sql_candidate",
+              "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/003/safety_report"
             ]
           },
           "answer": null,
           "suggestions": []
         },
         {
-          "event_id": "visible_3_agent_answer_completed",
+          "event_id": "visible_3_agent_artifact_created",
           "sequence": 3,
-          "created_at_ms": 1780640657367,
+          "created_at_ms": 1780640703365,
+          "type": "agent.artifact.created",
+          "content": null,
+          "artifact": {
+            "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/005/result_profile",
+            "semantic_id": "result_profile",
+            "type": "insight",
+            "title": "Result profile",
+            "payload": {
+              "row_count": 3,
+              "column_profiles": {
+                "country": {
+                  "kind": "category",
+                  "count": 3,
+                  "null_count": 0,
+                  "distinct_count": 3,
+                  "sample_values": [
+                    "Netherlands",
+                    "United States",
+                    "France"
+                  ],
+                  "min": null,
+                  "max": null,
+                  "sum": null,
+                  "avg": null,
+                  "top_values": [
+                    {
+                      "value": "Netherlands",
+                      "count": 1
+                    },
+                    {
+                      "value": "United States",
+                      "count": 1
+                    },
+                    {
+                      "value": "France",
+                      "count": 1
+                    }
+                  ]
+                },
+                "singer_count": {
+                  "kind": "numeric",
+                  "count": 3,
+                  "null_count": 0,
+                  "distinct_count": 2,
+                  "sample_values": [
+                    "1",
+                    "4"
+                  ],
+                  "min": 1.0,
+                  "max": 4.0,
+                  "sum": 6.0,
+                  "avg": 2.0,
+                  "top_values": []
+                }
+              },
+              "detected_patterns": [
+                "category_breakdown",
+                "top_k"
+              ],
+              "notable_facts": [
+                "The result contains 3 profiled rows.",
+                "The most frequent country value is Netherlands (1 rows).",
+                "singer_count ranges from 1.0 to 4.0."
+              ],
+              "anomalies": [],
+              "limitations": [
+                "The profile is based on the rows returned to the agent, not necessarily the full source table."
+              ],
+              "safety_state": {
+                "available": true,
+                "passed": true,
+                "can_execute": true,
+                "requires_confirmation": false,
+                "guardrail_result": "pass",
+                "schema_warnings_count": 0
+              }
+            },
+            "presentation": {
+              "mode": "both",
+              "priority": 10,
+              "collapsed": false
+            },
+            "refs": {},
+            "produced_by_step": "profile_result",
+            "depends_on": [
+              "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table"
+            ]
+          },
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "event_id": "visible_4_agent_artifact_created",
+          "sequence": 4,
+          "created_at_ms": 1780640703366,
+          "type": "agent.artifact.created",
+          "content": null,
+          "artifact": {
+            "id": "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/006/chart_suggestion",
+            "semantic_id": "chart_suggestion",
+            "type": "chart",
+            "title": "Chart suggestion",
+            "payload": {
+              "type": "bar",
+              "x": "country",
+              "y": "singer_count",
+              "reason": "A category field plus a numeric measure is best compared by category.",
+              "safety_state": {
+                "available": true,
+                "passed": true,
+                "can_execute": true,
+                "requires_confirmation": false,
+                "guardrail_result": "pass",
+                "schema_warnings_count": 0
+              }
+            },
+            "presentation": {
+              "mode": "inline",
+              "priority": 30,
+              "collapsed": false
+            },
+            "refs": {},
+            "produced_by_step": "suggest_chart",
+            "depends_on": [
+              "agent/run/bcdad771-67f3-459e-81e2-348f9730c185/artifact/004/result_table"
+            ]
+          },
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "event_id": "visible_5_agent_answer_completed",
+          "sequence": 5,
+          "created_at_ms": 1780640703367,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
           "answer": {
-            "answer": "We have 6 singers.",
+            "answer": "There are 3 countries represented in the singer table:\n\n- Netherlands: 1 singer\n- United States: 1 singer\n- France: 4 singers\n\nThis result is based on a count of singers grouped by country, limited to the first 100 rows. The total number of countries in the full dataset may be higher.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1032,14 +1670,14 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780640657366,
+          "created_at_ms": 1780640703364,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "optimize_rag": true
           },
@@ -1050,14 +1688,14 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780640657367,
+          "created_at_ms": 1780640703365,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "optimize_rag": true
           },
@@ -1067,7 +1705,7 @@
               {
                 "table": "concert",
                 "comment": "",
-                "score": 0.0,
+                "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
                 ],
@@ -1112,9 +1750,10 @@
               {
                 "table": "singer",
                 "comment": "",
-                "score": 15.0,
+                "score": 32.0,
                 "reasons": [
-                  "table_name_exact_match"
+                  "table_name_exact_match",
+                  "table_name_token_match:in"
                 ],
                 "columns": [
                   {
@@ -1171,9 +1810,9 @@
               {
                 "table": "singer_in_concert",
                 "comment": "",
-                "score": 0.0,
+                "score": 11.0,
                 "reasons": [
-                  "small_schema_full_context"
+                  "table_name_token_match:in"
                 ],
                 "columns": [
                   {
@@ -1195,7 +1834,7 @@
               {
                 "table": "stadium",
                 "comment": "",
-                "score": 3.0,
+                "score": 0.0,
                 "reasons": [
                   "small_schema_full_context"
                 ],
@@ -1287,30 +1926,6 @@
               {
                 "targetType": "table",
                 "table": "concert",
-                "score": 0.0,
-                "reasons": [
-                  "small_schema_full_context"
-                ]
-              },
-              {
-                "targetType": "table",
-                "table": "singer",
-                "score": 15.0,
-                "reasons": [
-                  "table_name_exact_match"
-                ]
-              },
-              {
-                "targetType": "table",
-                "table": "singer_in_concert",
-                "score": 0.0,
-                "reasons": [
-                  "small_schema_full_context"
-                ]
-              },
-              {
-                "targetType": "table",
-                "table": "stadium",
                 "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
@@ -1318,11 +1933,64 @@
               },
               {
                 "targetType": "column",
-                "table": "stadium",
-                "column": "Lowest",
+                "table": "concert",
+                "column": "Theme",
                 "score": 3.0,
                 "reasons": [
-                  "column_name_token_match:we"
+                  "column_name_token_match:the"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "singer",
+                "score": 32.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "singer",
+                "column": "Country",
+                "score": 6.0,
+                "reasons": [
+                  "column_name_exact_match",
+                  "column_name_token_match:country"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "singer",
+                "column": "Singer_ID",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "singer_in_concert",
+                "score": 11.0,
+                "reasons": [
+                  "table_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "singer_in_concert",
+                "column": "Singer_ID",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "stadium",
+                "score": 0.0,
+                "reasons": [
+                  "small_schema_full_context"
                 ]
               }
             ],
@@ -1332,19 +2000,19 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 7
+          "latency_ms": 3
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780640657368,
+          "created_at_ms": 1780640703366,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "selected_tables": [
               "concert",
@@ -1360,14 +2028,14 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780640657369,
+          "created_at_ms": 1780640703367,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "selected_tables": [
               "concert",
@@ -1377,15 +2045,21 @@
             ]
           },
           "output": {
-            "analysis_goal": "count",
+            "analysis_goal": "count_singers_by_country",
             "metrics": [
               {
                 "name": "singer_count",
                 "expression": "COUNT(*)",
-                "source_column": "*"
+                "source_column": "Singer_ID"
               }
             ],
-            "dimensions": [],
+            "dimensions": [
+              {
+                "name": "country",
+                "column": "Country",
+                "transform": null
+              }
+            ],
             "filters": [],
             "time_range": null,
             "candidate_tables": [
@@ -1397,7 +2071,7 @@
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "count",
+              "intent": "count_singers_by_country",
               "tables": [
                 "singer"
               ],
@@ -1405,10 +2079,16 @@
                 {
                   "name": "singer_count",
                   "expression": "COUNT(*)",
-                  "source_column": "*"
+                  "source_column": "Singer_ID"
                 }
               ],
-              "dimensions": [],
+              "dimensions": [
+                {
+                  "name": "country",
+                  "column": "Country",
+                  "transform": null
+                }
+              ],
               "filters": [],
               "joins": [],
               "order_by": "[]",
@@ -1418,24 +2098,24 @@
             }
           },
           "error": null,
-          "latency_ms": 2160
+          "latency_ms": 3124
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780640657370,
+          "created_at_ms": 1780640703368,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "optimize_rag": true,
             "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "count",
+            "plan_goal": "count_singers_by_country",
             "plan_candidate_tables": [
               "singer"
             ],
@@ -1448,26 +2128,26 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780640657371,
+          "created_at_ms": 1780640703369,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "optimize_rag": true,
             "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "count",
+            "plan_goal": "count_singers_by_country",
             "plan_candidate_tables": [
               "singer"
             ],
             "schema_context_size": 724
           },
           "output": {
-            "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "raw_sql": null,
             "model": "databox-query-plan-renderer",
             "mode": "plan_guided",
@@ -1477,15 +2157,21 @@
             "metadata": {
               "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "count",
+                "analysis_goal": "count_singers_by_country",
                 "metrics": [
                   {
                     "name": "singer_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "Singer_ID"
                   }
                 ],
-                "dimensions": [],
+                "dimensions": [
+                  {
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  }
+                ],
                 "filters": [],
                 "time_range": null,
                 "candidate_tables": [
@@ -1497,7 +2183,7 @@
                 ],
                 "risk_notes": [],
                 "raw_plan": {
-                  "intent": "count",
+                  "intent": "count_singers_by_country",
                   "tables": [
                     "singer"
                   ],
@@ -1505,10 +2191,16 @@
                     {
                       "name": "singer_count",
                       "expression": "COUNT(*)",
-                      "source_column": "*"
+                      "source_column": "Singer_ID"
                     }
                   ],
-                  "dimensions": [],
+                  "dimensions": [
+                    {
+                      "name": "country",
+                      "column": "Country",
+                      "transform": null
+                    }
+                  ],
                   "filters": [],
                   "joins": [],
                   "order_by": "[]",
@@ -1518,7 +2210,7 @@
                 }
               },
               "query_plan": {
-                "intent": "count",
+                "intent": "count_singers_by_country",
                 "tables": [
                   "singer"
                 ],
@@ -1526,10 +2218,16 @@
                   {
                     "name": "singer_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "Singer_ID"
                   }
                 ],
-                "dimensions": [],
+                "dimensions": [
+                  {
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  }
+                ],
                 "filters": [],
                 "joins": [],
                 "order_by": "[]",
@@ -1570,19 +2268,19 @@
             }
           },
           "error": null,
-          "latency_ms": 17
+          "latency_ms": 4
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780640657372,
+          "created_at_ms": 1780640703370,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100"
+            "sql_preview": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -1591,35 +2289,35 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780640657373,
+          "created_at_ms": 1780640703371,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100"
+            "sql_preview": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1631,18 +2329,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+              "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1661,7 +2359,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:24:12.276176Z"
+              "created_at": "2026-06-05T06:24:52.880128Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1672,19 +2370,19 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 249
+          "latency_ms": 22
         },
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780640657374,
+          "created_at_ms": 1780640703372,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100"
+            "sql_preview": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -1693,42 +2391,52 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780640657375,
+          "created_at_ms": 1780640703373,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100"
+            "sql_preview": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100"
           },
           "output": {
             "success": true,
             "columns": [
+              "country",
               "singer_count"
             ],
             "rows": [
               {
-                "singer_count": "6"
+                "country": "Netherlands",
+                "singer_count": "1"
+              },
+              {
+                "country": "United States",
+                "singer_count": "1"
+              },
+              {
+                "country": "France",
+                "singer_count": "4"
               }
             ],
-            "rowCount": 1,
-            "latencyMs": 32,
-            "historyId": "cce66746-eb37-41fa-95f1-524578544618",
-            "executionId": "exec-18ddca08-84af-4be0-9f7f-e383e7c75d44",
+            "rowCount": 3,
+            "latencyMs": 4,
+            "historyId": "3b7a5a9f-d15f-4ed4-a942-c3edba9bb2e0",
+            "executionId": "exec-b6c95a8a-f271-429a-baf0-13221ce93775",
             "safetyDecision": {
-              "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+              "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1747,21 +2455,151 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:24:12.276176Z"
+              "created_at": "2026-06-05T06:24:52.880128Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
-              "connectMs": 27,
+              "connectMs": 0,
               "guardrailMs": 0,
-              "executeMs": 1,
+              "executeMs": 0,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 32
+              "totalMs": 4
             }
           },
           "error": null,
-          "latency_ms": 53
+          "latency_ms": 14
+        },
+        {
+          "event_id": "trace_11_step_6_profile_result_started",
+          "sequence": 11,
+          "created_at_ms": 1780640703374,
+          "type": "agent.trace.step_started",
+          "step_id": "step_6_profile_result",
+          "name": "profile_result",
+          "status": null,
+          "input": {
+            "question": "Show all countries and the number of singers in each country.",
+            "has_execution": true,
+            "execution_success": true
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_12_step_6_profile_result_completed",
+          "sequence": 12,
+          "created_at_ms": 1780640703375,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_6_profile_result",
+          "name": "profile_result",
+          "status": "success",
+          "input": {
+            "question": "Show all countries and the number of singers in each country.",
+            "has_execution": true,
+            "execution_success": true
+          },
+          "output": {
+            "row_count": 3,
+            "column_profiles": {
+              "country": {
+                "kind": "category",
+                "count": 3,
+                "null_count": 0,
+                "distinct_count": 3,
+                "sample_values": [
+                  "Netherlands",
+                  "United States",
+                  "France"
+                ],
+                "min": null,
+                "max": null,
+                "sum": null,
+                "avg": null,
+                "top_values": [
+                  {
+                    "value": "Netherlands",
+                    "count": 1
+                  },
+                  {
+                    "value": "United States",
+                    "count": 1
+                  },
+                  {
+                    "value": "France",
+                    "count": 1
+                  }
+                ]
+              },
+              "singer_count": {
+                "kind": "numeric",
+                "count": 3,
+                "null_count": 0,
+                "distinct_count": 2,
+                "sample_values": [
+                  "1",
+                  "4"
+                ],
+                "min": 1.0,
+                "max": 4.0,
+                "sum": 6.0,
+                "avg": 2.0,
+                "top_values": []
+              }
+            },
+            "detected_patterns": [
+              "category_breakdown",
+              "top_k"
+            ],
+            "notable_facts": [
+              "The result contains 3 profiled rows.",
+              "The most frequent country value is Netherlands (1 rows).",
+              "singer_count ranges from 1.0 to 4.0."
+            ],
+            "anomalies": [],
+            "limitations": [
+              "The profile is based on the rows returned to the agent, not necessarily the full source table."
+            ]
+          },
+          "error": null,
+          "latency_ms": 0
+        },
+        {
+          "event_id": "trace_13_step_7_suggest_chart_started",
+          "sequence": 13,
+          "created_at_ms": 1780640703376,
+          "type": "agent.trace.step_started",
+          "step_id": "step_7_suggest_chart",
+          "name": "suggest_chart",
+          "status": null,
+          "input": {
+            "has_execution": true
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_14_step_7_suggest_chart_completed",
+          "sequence": 14,
+          "created_at_ms": 1780640703377,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_7_suggest_chart",
+          "name": "suggest_chart",
+          "status": "success",
+          "input": {
+            "has_execution": true
+          },
+          "output": {
+            "type": "bar",
+            "x": "country",
+            "y": "singer_count",
+            "reason": "A category field plus a numeric measure is best compared by category."
+          },
+          "error": null,
+          "latency_ms": 0
         }
       ],
       "steps": [
@@ -1770,7 +2608,7 @@
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "optimize_rag": true
           },
@@ -1780,7 +2618,7 @@
               {
                 "table": "concert",
                 "comment": "",
-                "score": 0.0,
+                "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
                 ],
@@ -1825,9 +2663,10 @@
               {
                 "table": "singer",
                 "comment": "",
-                "score": 15.0,
+                "score": 32.0,
                 "reasons": [
-                  "table_name_exact_match"
+                  "table_name_exact_match",
+                  "table_name_token_match:in"
                 ],
                 "columns": [
                   {
@@ -1884,9 +2723,9 @@
               {
                 "table": "singer_in_concert",
                 "comment": "",
-                "score": 0.0,
+                "score": 11.0,
                 "reasons": [
-                  "small_schema_full_context"
+                  "table_name_token_match:in"
                 ],
                 "columns": [
                   {
@@ -1908,7 +2747,7 @@
               {
                 "table": "stadium",
                 "comment": "",
-                "score": 3.0,
+                "score": 0.0,
                 "reasons": [
                   "small_schema_full_context"
                 ],
@@ -1998,30 +2837,6 @@
               {
                 "targetType": "table",
                 "table": "concert",
-                "score": 0.0,
-                "reasons": [
-                  "small_schema_full_context"
-                ]
-              },
-              {
-                "targetType": "table",
-                "table": "singer",
-                "score": 15.0,
-                "reasons": [
-                  "table_name_exact_match"
-                ]
-              },
-              {
-                "targetType": "table",
-                "table": "singer_in_concert",
-                "score": 0.0,
-                "reasons": [
-                  "small_schema_full_context"
-                ]
-              },
-              {
-                "targetType": "table",
-                "table": "stadium",
                 "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
@@ -2029,11 +2844,64 @@
               },
               {
                 "targetType": "column",
-                "table": "stadium",
-                "column": "Lowest",
+                "table": "concert",
+                "column": "Theme",
                 "score": 3.0,
                 "reasons": [
-                  "column_name_token_match:we"
+                  "column_name_token_match:the"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "singer",
+                "score": 32.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "singer",
+                "column": "Country",
+                "score": 6.0,
+                "reasons": [
+                  "column_name_exact_match",
+                  "column_name_token_match:country"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "singer",
+                "column": "Singer_ID",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "singer_in_concert",
+                "score": 11.0,
+                "reasons": [
+                  "table_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "singer_in_concert",
+                "column": "Singer_ID",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_token_match:in"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "stadium",
+                "score": 0.0,
+                "reasons": [
+                  "small_schema_full_context"
                 ]
               }
             ],
@@ -2043,14 +2911,14 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 7
+          "latency_ms": 3
         },
         {
           "name": "build_query_plan",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "selected_tables": [
               "concert",
@@ -2060,15 +2928,21 @@
             ]
           },
           "output": {
-            "analysis_goal": "count",
+            "analysis_goal": "count_singers_by_country",
             "metrics": [
               {
                 "name": "singer_count",
                 "expression": "COUNT(*)",
-                "source_column": "*"
+                "source_column": "Singer_ID"
               }
             ],
-            "dimensions": [],
+            "dimensions": [
+              {
+                "name": "country",
+                "column": "Country",
+                "transform": null
+              }
+            ],
             "filters": [],
             "time_range": null,
             "candidate_tables": [
@@ -2080,7 +2954,7 @@
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "count",
+              "intent": "count_singers_by_country",
               "tables": [
                 "singer"
               ],
@@ -2088,10 +2962,16 @@
                 {
                   "name": "singer_count",
                   "expression": "COUNT(*)",
-                  "source_column": "*"
+                  "source_column": "Singer_ID"
                 }
               ],
-              "dimensions": [],
+              "dimensions": [
+                {
+                  "name": "country",
+                  "column": "Country",
+                  "transform": null
+                }
+              ],
               "filters": [],
               "joins": [],
               "order_by": "[]",
@@ -2101,26 +2981,26 @@
             }
           },
           "error": null,
-          "latency_ms": 2160
+          "latency_ms": 3124
         },
         {
           "name": "generate_sql_candidate",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "question": "How many singers do we have?",
+            "question": "Show all countries and the number of singers in each country.",
             "has_follow_up_context": false,
             "optimize_rag": true,
             "model_name": "qwen-plus",
             "has_api_key": true,
-            "plan_goal": "count",
+            "plan_goal": "count_singers_by_country",
             "plan_candidate_tables": [
               "singer"
             ],
             "schema_context_size": 724
           },
           "output": {
-            "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "raw_sql": null,
             "model": "databox-query-plan-renderer",
             "mode": "plan_guided",
@@ -2130,15 +3010,21 @@
             "metadata": {
               "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "count",
+                "analysis_goal": "count_singers_by_country",
                 "metrics": [
                   {
                     "name": "singer_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "Singer_ID"
                   }
                 ],
-                "dimensions": [],
+                "dimensions": [
+                  {
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  }
+                ],
                 "filters": [],
                 "time_range": null,
                 "candidate_tables": [
@@ -2150,7 +3036,7 @@
                 ],
                 "risk_notes": [],
                 "raw_plan": {
-                  "intent": "count",
+                  "intent": "count_singers_by_country",
                   "tables": [
                     "singer"
                   ],
@@ -2158,10 +3044,16 @@
                     {
                       "name": "singer_count",
                       "expression": "COUNT(*)",
-                      "source_column": "*"
+                      "source_column": "Singer_ID"
                     }
                   ],
-                  "dimensions": [],
+                  "dimensions": [
+                    {
+                      "name": "country",
+                      "column": "Country",
+                      "transform": null
+                    }
+                  ],
                   "filters": [],
                   "joins": [],
                   "order_by": "[]",
@@ -2171,7 +3063,7 @@
                 }
               },
               "query_plan": {
-                "intent": "count",
+                "intent": "count_singers_by_country",
                 "tables": [
                   "singer"
                 ],
@@ -2179,10 +3071,16 @@
                   {
                     "name": "singer_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "Singer_ID"
                   }
                 ],
-                "dimensions": [],
+                "dimensions": [
+                  {
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  }
+                ],
                 "filters": [],
                 "joins": [],
                 "order_by": "[]",
@@ -2221,35 +3119,35 @@
             }
           },
           "error": null,
-          "latency_ms": 17
+          "latency_ms": 4
         },
         {
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100"
+            "sql_preview": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-            "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+            "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+            "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2261,18 +3159,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+              "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2291,7 +3189,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:24:12.276176Z"
+              "created_at": "2026-06-05T06:24:52.880128Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2302,42 +3200,52 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 249
+          "latency_ms": 22
         },
         {
           "name": "execute_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100"
+            "sql_preview": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100"
           },
           "output": {
             "success": true,
             "columns": [
+              "country",
               "singer_count"
             ],
             "rows": [
               {
-                "singer_count": "6"
+                "country": "Netherlands",
+                "singer_count": "1"
+              },
+              {
+                "country": "United States",
+                "singer_count": "1"
+              },
+              {
+                "country": "France",
+                "singer_count": "4"
               }
             ],
-            "rowCount": 1,
-            "latencyMs": 32,
-            "historyId": "cce66746-eb37-41fa-95f1-524578544618",
-            "executionId": "exec-18ddca08-84af-4be0-9f7f-e383e7c75d44",
+            "rowCount": 3,
+            "latencyMs": 4,
+            "historyId": "3b7a5a9f-d15f-4ed4-a942-c3edba9bb2e0",
+            "executionId": "exec-b6c95a8a-f271-429a-baf0-13221ce93775",
             "safetyDecision": {
-              "decision_id": "safety-7cff6bb7-1ae6-4dc7-bf35-5c7aeb5e4738",
+              "decision_id": "safety-d8852974-bdd5-4b6e-a69f-eec70047a899",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+              "original_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+              "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
+                "originalSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+                "safeSql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2356,21 +3264,109 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:24:12.276176Z"
+              "created_at": "2026-06-05T06:24:52.880128Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
-              "connectMs": 27,
+              "connectMs": 0,
               "guardrailMs": 0,
-              "executeMs": 1,
+              "executeMs": 0,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 32
+              "totalMs": 4
             }
           },
           "error": null,
-          "latency_ms": 53
+          "latency_ms": 14
+        },
+        {
+          "name": "profile_result",
+          "status": "success",
+          "input": {
+            "question": "Show all countries and the number of singers in each country.",
+            "has_execution": true,
+            "execution_success": true
+          },
+          "output": {
+            "row_count": 3,
+            "column_profiles": {
+              "country": {
+                "kind": "category",
+                "count": 3,
+                "null_count": 0,
+                "distinct_count": 3,
+                "sample_values": [
+                  "Netherlands",
+                  "United States",
+                  "France"
+                ],
+                "min": null,
+                "max": null,
+                "sum": null,
+                "avg": null,
+                "top_values": [
+                  {
+                    "value": "Netherlands",
+                    "count": 1
+                  },
+                  {
+                    "value": "United States",
+                    "count": 1
+                  },
+                  {
+                    "value": "France",
+                    "count": 1
+                  }
+                ]
+              },
+              "singer_count": {
+                "kind": "numeric",
+                "count": 3,
+                "null_count": 0,
+                "distinct_count": 2,
+                "sample_values": [
+                  "1",
+                  "4"
+                ],
+                "min": 1.0,
+                "max": 4.0,
+                "sum": 6.0,
+                "avg": 2.0,
+                "top_values": []
+              }
+            },
+            "detected_patterns": [
+              "category_breakdown",
+              "top_k"
+            ],
+            "notable_facts": [
+              "The result contains 3 profiled rows.",
+              "The most frequent country value is Netherlands (1 rows).",
+              "singer_count ranges from 1.0 to 4.0."
+            ],
+            "anomalies": [],
+            "limitations": [
+              "The profile is based on the rows returned to the agent, not necessarily the full source table."
+            ]
+          },
+          "error": null,
+          "latency_ms": 0
+        },
+        {
+          "name": "suggest_chart",
+          "status": "success",
+          "input": {
+            "has_execution": true
+          },
+          "output": {
+            "type": "bar",
+            "x": "country",
+            "y": "singer_count",
+            "reason": "A category field plus a numeric measure is best compared by category."
+          },
+          "error": null,
+          "latency_ms": 0
         }
       ],
       "error": null,

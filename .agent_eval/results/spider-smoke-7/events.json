@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_16fbd991_1_agent_run_started",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_1_agent_run_started",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 1,
-    "created_at_ms": 1780594985947,
+    "created_at_ms": 1780640768849,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-pets-1",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_16fbd991_2_agent_step_started",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_2_agent_step_started",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 2,
-    "created_at_ms": 1780594985976,
+    "created_at_ms": 1780640770855,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_16fbd991_3_agent_step_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_3_agent_step_completed",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 3,
-    "created_at_ms": 1780594985978,
+    "created_at_ms": 1780640770856,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 2
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_16fbd991_4_agent_step_started",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_4_agent_step_started",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 4,
-    "created_at_ms": 1780594985984,
+    "created_at_ms": 1780640775676,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_16fbd991_5_agent_step_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_5_agent_step_completed",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 5,
-    "created_at_ms": 1780594985986,
+    "created_at_ms": 1780640775677,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 3535
     },
     "artifact": null,
     "answer": null,
@@ -97,61 +97,78 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_16fbd991_6_agent_artifact_created",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_6_agent_artifact_created",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 6,
-    "created_at_ms": 1780594985987,
+    "created_at_ms": 1780640775678,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/001/query_plan",
+      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
       "payload": {
-        "analysis_goal": "answer_question",
-        "metrics": [],
+        "analysis_goal": "count_pets_by_age",
+        "metrics": [
+          {
+            "name": "pet_count",
+            "expression": "COUNT(*)",
+            "source_column": "*"
+          }
+        ],
         "dimensions": [],
-        "filters": [],
+        "filters": [
+          {
+            "column": "student.Age",
+            "operator": ">",
+            "value": "20"
+          }
+        ],
         "time_range": null,
         "candidate_tables": [
           "has_pet",
-          "pets",
           "student"
         ],
         "assumptions": [
-          "Plan mode: offline",
+          "Plan mode: online",
           "Only synced local schema metadata is trusted."
         ],
         "risk_notes": [],
         "raw_plan": {
-          "intent": "answer_question",
+          "intent": "count_pets_by_age",
           "tables": [
             "has_pet",
-            "pets",
             "student"
           ],
-          "metrics": [],
+          "metrics": [
+            {
+              "name": "pet_count",
+              "expression": "COUNT(*)",
+              "source_column": "*"
+            }
+          ],
           "dimensions": [],
-          "filters": [],
+          "filters": [
+            {
+              "column": "student.Age",
+              "operator": ">",
+              "value": "20"
+            }
+          ],
           "joins": [
             {
               "left_table": "has_pet",
               "right_table": "student",
               "condition": "has_pet.StuID = student.StuID"
-            },
-            {
-              "left_table": "has_pet",
-              "right_table": "pets",
-              "condition": "has_pet.PetID = pets.PetID"
             }
           ],
-          "order_by": null,
+          "order_by": "[]",
           "limit": 100,
           "warnings": [],
-          "mode": "offline"
+          "mode": "online"
         }
       },
       "presentation": {
@@ -171,10 +188,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_16fbd991_7_agent_step_started",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_7_agent_step_started",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 7,
-    "created_at_ms": 1780594986009,
+    "created_at_ms": 1780640777875,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -189,17 +206,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_16fbd991_8_agent_step_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_8_agent_step_completed",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 8,
-    "created_at_ms": 1780594986011,
+    "created_at_ms": 1780640777876,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 18
+      "latency_ms": 4
     },
     "artifact": null,
     "answer": null,
@@ -210,10 +227,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_16fbd991_9_agent_step_started",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_9_agent_step_started",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 9,
-    "created_at_ms": 1780594986019,
+    "created_at_ms": 1780640780591,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -228,17 +245,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_16fbd991_10_agent_step_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_10_agent_step_completed",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 10,
-    "created_at_ms": 1780594986019,
+    "created_at_ms": 1780640780593,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 26
     },
     "artifact": null,
     "answer": null,
@@ -249,28 +266,28 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_16fbd991_11_agent_artifact_created",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_11_agent_artifact_created",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 11,
-    "created_at_ms": 1780594986020,
+    "created_at_ms": 1780640780595,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/002/sql_candidate",
+      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
       "payload": {
-        "sql": "SELECT * FROM products LIMIT 10",
+        "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
         "safety_state": {
           "available": true,
-          "passed": false,
-          "can_execute": false,
+          "passed": true,
+          "can_execute": true,
           "requires_confirmation": false,
-          "guardrail_result": "warn",
-          "schema_warnings_count": 1
+          "guardrail_result": "pass",
+          "schema_warnings_count": 0
         }
       },
       "presentation": {
@@ -281,7 +298,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/001/query_plan"
+        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -292,91 +309,66 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_16fbd991_12_agent_artifact_created",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_12_agent_artifact_created",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 12,
-    "created_at_ms": 1780594986022,
+    "created_at_ms": 1780640780596,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/003/safety_report",
+      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
       "payload": {
-        "passed": false,
-        "can_execute": false,
-        "safe_sql": null,
-        "original_sql": "SELECT * FROM products LIMIT 10",
-        "schema_warnings": [
-          "生成 SQL 包含不存在的表: `products`"
-        ],
+        "passed": true,
+        "can_execute": true,
+        "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+        "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+        "schema_warnings": [],
         "guardrail": {
-          "result": "warn",
-          "originalSql": "SELECT * FROM products LIMIT 10",
-          "safeSql": "SELECT * FROM products LIMIT 10",
-          "checks": [
-            {
-              "rule": "select_star",
-              "level": "warn",
-              "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-            }
-          ],
-          "message": "SQL 审核通过，但包含优化建议。"
+          "result": "pass",
+          "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "checks": [],
+          "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT * FROM products LIMIT 10",
-          "schemaWarnings": [
-            "生成 SQL 包含不存在的表: `products`"
-          ],
+          "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "schemaWarnings": [],
           "guardrail": {
-            "result": "warn",
-            "originalSql": "SELECT * FROM products LIMIT 10",
-            "safeSql": "SELECT * FROM products LIMIT 10",
-            "checks": [
-              {
-                "rule": "select_star",
-                "level": "warn",
-                "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-              }
-            ],
-            "message": "SQL 审核通过，但包含优化建议。"
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
           },
-          "riskLevel": "warning",
-          "requiresConfirmation": true,
+          "riskLevel": "safe",
+          "requiresConfirmation": false,
           "messages": [
-            "Schema validation found unknown tables or columns.",
-            "SQL 审核通过，但包含优化建议。"
+            "SQL passed schema validation and guardrail checks."
           ],
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-cdce3865-88fa-4c0a-9401-46ab173b8ec4",
+          "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
-          "original_sql": "SELECT * FROM products LIMIT 10",
-          "safe_sql": null,
-          "passed": false,
-          "can_execute": false,
+          "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "passed": true,
+          "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
-            "result": "warn",
-            "originalSql": "SELECT * FROM products LIMIT 10",
-            "safeSql": "SELECT * FROM products LIMIT 10",
-            "checks": [
-              {
-                "rule": "select_star",
-                "level": "warn",
-                "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-              }
-            ],
-            "message": "SQL 审核通过，但包含优化建议。"
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
           },
-          "schema_warnings": [
-            "生成 SQL 包含不存在的表: `products`"
-          ],
+          "schema_warnings": [],
           "scope_state": {
             "datasource_exists": true,
             "datasource_id": "ds-spider-pets-1",
@@ -386,30 +378,20 @@
             "project_id": "default-project",
             "environment_id": null
           },
-          "blocked_reasons": [
-            "schema_validation",
-            "select_star"
-          ],
+          "blocked_reasons": [],
           "messages": [
-            "Schema validation found unknown tables or columns.",
-            "SQL 审核通过，但包含优化建议。",
-            "Execution blocked until schema validation warnings are resolved.",
-            "Agent execution requires explicit projected columns instead of SELECT *."
+            "SQL passed schema validation and guardrail checks.",
+            "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-04T17:43:06.016892Z"
+          "created_at": "2026-06-05T06:26:20.591034Z"
         },
         "requires_confirmation": false,
         "messages": [
-          "Schema validation found unknown tables or columns.",
-          "SQL 审核通过，但包含优化建议。",
-          "Execution blocked until schema validation warnings are resolved.",
-          "Agent execution requires explicit projected columns instead of SELECT *."
+          "SQL passed schema validation and guardrail checks.",
+          "EXPLAIN dry-run validated safe_sql."
         ],
-        "blocked_reasons": [
-          "schema_validation",
-          "select_star"
-        ],
-        "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+        "blocked_reasons": [],
+        "revise_suggestion": null
       },
       "presentation": {
         "mode": "dock",
@@ -419,7 +401,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/002/sql_candidate"
+        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -430,14 +412,14 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_16fbd991_13_agent_step_started",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_13_agent_step_started",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 13,
-    "created_at_ms": 1780594986033,
+    "created_at_ms": 1780640783194,
     "type": "agent.step.started",
     "step": {
-      "name": "revise_sql",
-      "tool_name": "sql.revise"
+      "name": "execute_sql",
+      "tool_name": "sql.execute_readonly"
     },
     "artifact": null,
     "answer": null,
@@ -448,17 +430,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_16fbd991_14_agent_step_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_14_agent_step_completed",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 14,
-    "created_at_ms": 1780594986034,
+    "created_at_ms": 1780640783195,
     "type": "agent.step.completed",
     "step": {
-      "name": "revise_sql",
-      "tool_name": "sql.revise",
+      "name": "execute_sql",
+      "tool_name": "sql.execute_readonly",
       "status": "success",
       "error": null,
-      "latency_ms": 6
+      "latency_ms": 14
     },
     "artifact": null,
     "answer": null,
@@ -469,54 +451,68 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_16fbd991_15_agent_step_started",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_15_agent_artifact_created",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 15,
-    "created_at_ms": 1780594986038,
-    "type": "agent.step.started",
+    "created_at_ms": 1780640783196,
+    "type": "agent.artifact.created",
     "step": {
-      "name": "answer_synthesizer",
-      "tool_name": "answer.synthesize"
+      "name": "execute_sql"
     },
-    "artifact": null,
+    "artifact": {
+      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+      "semantic_id": "result_table",
+      "type": "table",
+      "title": "Result table",
+      "payload": {
+        "columns": [
+          "pet_count"
+        ],
+        "rows": [
+          {
+            "pet_count": "0"
+          }
+        ],
+        "rowCount": 1,
+        "latencyMs": 4,
+        "safety_state": {
+          "available": true,
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail_result": "pass",
+          "schema_warnings_count": 0
+        }
+      },
+      "presentation": {
+        "mode": "both",
+        "priority": 20,
+        "collapsed": false
+      },
+      "refs": {},
+      "produced_by_step": "execute_sql",
+      "depends_on": [
+        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
+        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report"
+      ]
+    },
     "answer": null,
     "response": null,
     "approval": null,
     "checkpoint": null,
     "error": null,
-    "_sse_event": "agent.step.started"
+    "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_16fbd991_16_agent_step_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
+    "event_id": "runtime_c6743cfb_16_agent_answer_completed",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
     "sequence": 16,
-    "created_at_ms": 1780594986038,
-    "type": "agent.step.completed",
-    "step": {
-      "name": "answer_synthesizer",
-      "tool_name": "answer.synthesize",
-      "status": "success",
-      "error": null,
-      "latency_ms": 0
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.completed"
-  },
-  {
-    "event_id": "runtime_16fbd991_17_agent_answer_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
-    "sequence": 17,
-    "created_at_ms": 1780594986045,
+    "created_at_ms": 1780640786115,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
     "answer": {
-      "answer": "I do not have a successful result set to analyze yet.",
+      "answer": "Students older than 20 own 0 pets.",
       "key_findings": [],
       "evidence": [],
       "caveats": [],
@@ -530,140 +526,132 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_16fbd991_18_agent_run_completed",
-    "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
-    "sequence": 18,
-    "created_at_ms": 1780594986046,
+    "event_id": "runtime_c6743cfb_17_agent_run_completed",
+    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "sequence": 17,
+    "created_at_ms": 1780640786117,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "16fbd991-aef8-4b2c-9826-bcf2e86363da",
-      "session_id": "69c9273a-92ea-4109-b575-95766e17c07c",
+      "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+      "session_id": "0946f26f-bf4e-4da1-84c9-2eb4d4f5efb6",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
       "question": "Find number of pets owned by students who are older than 20.",
-      "context_summary": "Question: Find number of pets owned by students who are older than 20. Answer: I do not have a successful result set to analyze yet. Artifacts: - agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/001/query_plan (query_plan, Query plan): analysis_goal=answer_question, metrics=[], dimensions=[], filters=[], time_range=None, candidate_tables=['has_pet', 'pets', 'student'] - agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/002/sql_candidate (sql, Validated SQL): SELECT * FROM products LIMIT 10 - agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/003/safety_report (safety, Safety report): can_execute=False; messages=['Schema validation found unknown tables or columns.', 'SQL 审核通过，但包含优化建议。', 'Execution blocked until schema validation warnings are resolved.', 'Agent execution requires explicit projected columns instead of SELECT *.']",
+      "context_summary": "Question: Find number of pets owned by students who are older than 20. Answer: Students older than 20 own 0 pets. Artifacts: - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count_pets_by_age, metrics=[{'name': 'pet_count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'student.Age', 'operator': '>', 'value': '20'}], time_range=None, candidate_tables=['has_pet', 'student'] - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100 - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table (table, Result table): rowCount=1; columns=pet_count",
       "referenced_artifact_ids": [],
       "query_plan": {
-        "analysis_goal": "answer_question",
-        "metrics": [],
+        "analysis_goal": "count_pets_by_age",
+        "metrics": [
+          {
+            "name": "pet_count",
+            "expression": "COUNT(*)",
+            "source_column": "*"
+          }
+        ],
         "dimensions": [],
-        "filters": [],
+        "filters": [
+          {
+            "column": "student.Age",
+            "operator": ">",
+            "value": "20"
+          }
+        ],
         "time_range": null,
         "candidate_tables": [
           "has_pet",
-          "pets",
           "student"
         ],
         "assumptions": [
-          "Plan mode: offline",
+          "Plan mode: online",
           "Only synced local schema metadata is trusted."
         ],
         "risk_notes": [],
         "raw_plan": {
-          "intent": "answer_question",
+          "intent": "count_pets_by_age",
           "tables": [
             "has_pet",
-            "pets",
             "student"
           ],
-          "metrics": [],
+          "metrics": [
+            {
+              "name": "pet_count",
+              "expression": "COUNT(*)",
+              "source_column": "*"
+            }
+          ],
           "dimensions": [],
-          "filters": [],
+          "filters": [
+            {
+              "column": "student.Age",
+              "operator": ">",
+              "value": "20"
+            }
+          ],
           "joins": [
             {
               "left_table": "has_pet",
               "right_table": "student",
               "condition": "has_pet.StuID = student.StuID"
-            },
-            {
-              "left_table": "has_pet",
-              "right_table": "pets",
-              "condition": "has_pet.PetID = pets.PetID"
             }
           ],
-          "order_by": null,
+          "order_by": "[]",
           "limit": 100,
           "warnings": [],
-          "mode": "offline"
+          "mode": "online"
         }
       },
-      "sql": "SELECT * FROM products LIMIT 10",
+      "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
       "safety": {
-        "passed": false,
-        "can_execute": false,
-        "safe_sql": null,
-        "original_sql": "SELECT * FROM products LIMIT 10",
-        "schema_warnings": [
-          "生成 SQL 包含不存在的表: `products`"
-        ],
+        "passed": true,
+        "can_execute": true,
+        "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+        "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+        "schema_warnings": [],
         "guardrail": {
-          "result": "warn",
-          "originalSql": "SELECT * FROM products LIMIT 10",
-          "safeSql": "SELECT * FROM products LIMIT 10",
-          "checks": [
-            {
-              "rule": "select_star",
-              "level": "warn",
-              "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-            }
-          ],
-          "message": "SQL 审核通过，但包含优化建议。"
+          "result": "pass",
+          "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "checks": [],
+          "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT * FROM products LIMIT 10",
-          "schemaWarnings": [
-            "生成 SQL 包含不存在的表: `products`"
-          ],
+          "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "schemaWarnings": [],
           "guardrail": {
-            "result": "warn",
-            "originalSql": "SELECT * FROM products LIMIT 10",
-            "safeSql": "SELECT * FROM products LIMIT 10",
-            "checks": [
-              {
-                "rule": "select_star",
-                "level": "warn",
-                "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-              }
-            ],
-            "message": "SQL 审核通过，但包含优化建议。"
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
           },
-          "riskLevel": "warning",
-          "requiresConfirmation": true,
+          "riskLevel": "safe",
+          "requiresConfirmation": false,
           "messages": [
-            "Schema validation found unknown tables or columns.",
-            "SQL 审核通过，但包含优化建议。"
+            "SQL passed schema validation and guardrail checks."
           ],
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-cdce3865-88fa-4c0a-9401-46ab173b8ec4",
+          "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
-          "original_sql": "SELECT * FROM products LIMIT 10",
-          "safe_sql": null,
-          "passed": false,
-          "can_execute": false,
+          "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "passed": true,
+          "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
-            "result": "warn",
-            "originalSql": "SELECT * FROM products LIMIT 10",
-            "safeSql": "SELECT * FROM products LIMIT 10",
-            "checks": [
-              {
-                "rule": "select_star",
-                "level": "warn",
-                "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-              }
-            ],
-            "message": "SQL 审核通过，但包含优化建议。"
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
           },
-          "schema_warnings": [
-            "生成 SQL 包含不存在的表: `products`"
-          ],
+          "schema_warnings": [],
           "scope_state": {
             "datasource_exists": true,
             "datasource_id": "ds-spider-pets-1",
@@ -673,37 +661,84 @@
             "project_id": "default-project",
             "environment_id": null
           },
-          "blocked_reasons": [
-            "schema_validation",
-            "select_star"
-          ],
+          "blocked_reasons": [],
           "messages": [
-            "Schema validation found unknown tables or columns.",
-            "SQL 审核通过，但包含优化建议。",
-            "Execution blocked until schema validation warnings are resolved.",
-            "Agent execution requires explicit projected columns instead of SELECT *."
+            "SQL passed schema validation and guardrail checks.",
+            "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-04T17:43:06.016892Z"
+          "created_at": "2026-06-05T06:26:20.591034Z"
         },
         "requires_confirmation": false,
         "messages": [
-          "Schema validation found unknown tables or columns.",
-          "SQL 审核通过，但包含优化建议。",
-          "Execution blocked until schema validation warnings are resolved.",
-          "Agent execution requires explicit projected columns instead of SELECT *."
+          "SQL passed schema validation and guardrail checks.",
+          "EXPLAIN dry-run validated safe_sql."
         ],
-        "blocked_reasons": [
-          "schema_validation",
-          "select_star"
-        ],
-        "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+        "blocked_reasons": [],
+        "revise_suggestion": null
       },
-      "execution": null,
-      "explanation": "I do not have a successful result set to analyze yet.",
+      "execution": {
+        "success": true,
+        "columns": [
+          "pet_count"
+        ],
+        "rows": [
+          {
+            "pet_count": "0"
+          }
+        ],
+        "rowCount": 1,
+        "latencyMs": 4,
+        "historyId": "2c60b8a6-ed02-44f6-aa35-9591704234f3",
+        "executionId": "exec-a03e8553-0837-4e04-92ab-d931df7c0acf",
+        "safetyDecision": {
+          "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+          "datasource_id": "ds-spider-pets-1",
+          "policy": "agent_readonly",
+          "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail": {
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
+          },
+          "schema_warnings": [],
+          "scope_state": {
+            "datasource_exists": true,
+            "datasource_id": "ds-spider-pets-1",
+            "db_type": "mysql",
+            "env": "dev",
+            "is_read_only": false,
+            "project_id": "default-project",
+            "environment_id": null
+          },
+          "blocked_reasons": [],
+          "messages": [
+            "SQL passed schema validation and guardrail checks.",
+            "EXPLAIN dry-run validated safe_sql."
+          ],
+          "created_at": "2026-06-05T06:26:20.591034Z"
+        },
+        "truncated": false,
+        "warnings": [],
+        "timing": {
+          "connectMs": 0,
+          "guardrailMs": 0,
+          "executeMs": 1,
+          "fetchMs": 0,
+          "serializeMs": 0,
+          "totalMs": 4
+        }
+      },
+      "explanation": "Students older than 20 own 0 pets.",
       "chart_suggestion": null,
       "result_profile": null,
       "answer": {
-        "answer": "I do not have a successful result set to analyze yet.",
+        "answer": "Students older than 20 own 0 pets.",
         "key_findings": [],
         "evidence": [],
         "caveats": [],
@@ -713,52 +748,69 @@
       "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/001/query_plan",
+          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
           "payload": {
-            "analysis_goal": "answer_question",
-            "metrics": [],
+            "analysis_goal": "count_pets_by_age",
+            "metrics": [
+              {
+                "name": "pet_count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
+              }
+            ],
             "dimensions": [],
-            "filters": [],
+            "filters": [
+              {
+                "column": "student.Age",
+                "operator": ">",
+                "value": "20"
+              }
+            ],
             "time_range": null,
             "candidate_tables": [
               "has_pet",
-              "pets",
               "student"
             ],
             "assumptions": [
-              "Plan mode: offline",
+              "Plan mode: online",
               "Only synced local schema metadata is trusted."
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "answer_question",
+              "intent": "count_pets_by_age",
               "tables": [
                 "has_pet",
-                "pets",
                 "student"
               ],
-              "metrics": [],
+              "metrics": [
+                {
+                  "name": "pet_count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
+                }
+              ],
               "dimensions": [],
-              "filters": [],
+              "filters": [
+                {
+                  "column": "student.Age",
+                  "operator": ">",
+                  "value": "20"
+                }
+              ],
               "joins": [
                 {
                   "left_table": "has_pet",
                   "right_table": "student",
                   "condition": "has_pet.StuID = student.StuID"
-                },
-                {
-                  "left_table": "has_pet",
-                  "right_table": "pets",
-                  "condition": "has_pet.PetID = pets.PetID"
                 }
               ],
-              "order_by": null,
+              "order_by": "[]",
               "limit": 100,
               "warnings": [],
-              "mode": "offline"
+              "mode": "online"
             }
           },
           "presentation": {
@@ -771,19 +823,19 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/002/sql_candidate",
+          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
           "payload": {
-            "sql": "SELECT * FROM products LIMIT 10",
+            "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
             "safety_state": {
               "available": true,
-              "passed": false,
-              "can_execute": false,
+              "passed": true,
+              "can_execute": true,
               "requires_confirmation": false,
-              "guardrail_result": "warn",
-              "schema_warnings_count": 1
+              "guardrail_result": "pass",
+              "schema_warnings_count": 0
             }
           },
           "presentation": {
@@ -794,86 +846,61 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/001/query_plan"
+            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/003/safety_report",
+          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
           "payload": {
-            "passed": false,
-            "can_execute": false,
-            "safe_sql": null,
-            "original_sql": "SELECT * FROM products LIMIT 10",
-            "schema_warnings": [
-              "生成 SQL 包含不存在的表: `products`"
-            ],
+            "passed": true,
+            "can_execute": true,
+            "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "schema_warnings": [],
             "guardrail": {
-              "result": "warn",
-              "originalSql": "SELECT * FROM products LIMIT 10",
-              "safeSql": "SELECT * FROM products LIMIT 10",
-              "checks": [
-                {
-                  "rule": "select_star",
-                  "level": "warn",
-                  "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                }
-              ],
-              "message": "SQL 审核通过，但包含优化建议。"
+              "result": "pass",
+              "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "checks": [],
+              "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT * FROM products LIMIT 10",
-              "schemaWarnings": [
-                "生成 SQL 包含不存在的表: `products`"
-              ],
+              "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "schemaWarnings": [],
               "guardrail": {
-                "result": "warn",
-                "originalSql": "SELECT * FROM products LIMIT 10",
-                "safeSql": "SELECT * FROM products LIMIT 10",
-                "checks": [
-                  {
-                    "rule": "select_star",
-                    "level": "warn",
-                    "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                  }
-                ],
-                "message": "SQL 审核通过，但包含优化建议。"
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
               },
-              "riskLevel": "warning",
-              "requiresConfirmation": true,
+              "riskLevel": "safe",
+              "requiresConfirmation": false,
               "messages": [
-                "Schema validation found unknown tables or columns.",
-                "SQL 审核通过，但包含优化建议。"
+                "SQL passed schema validation and guardrail checks."
               ],
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-cdce3865-88fa-4c0a-9401-46ab173b8ec4",
+              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT * FROM products LIMIT 10",
-              "safe_sql": null,
-              "passed": false,
-              "can_execute": false,
+              "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "passed": true,
+              "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
-                "result": "warn",
-                "originalSql": "SELECT * FROM products LIMIT 10",
-                "safeSql": "SELECT * FROM products LIMIT 10",
-                "checks": [
-                  {
-                    "rule": "select_star",
-                    "level": "warn",
-                    "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                  }
-                ],
-                "message": "SQL 审核通过，但包含优化建议。"
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
               },
-              "schema_warnings": [
-                "生成 SQL 包含不存在的表: `products`"
-              ],
+              "schema_warnings": [],
               "scope_state": {
                 "datasource_exists": true,
                 "datasource_id": "ds-spider-pets-1",
@@ -883,30 +910,20 @@
                 "project_id": "default-project",
                 "environment_id": null
               },
-              "blocked_reasons": [
-                "schema_validation",
-                "select_star"
-              ],
+              "blocked_reasons": [],
               "messages": [
-                "Schema validation found unknown tables or columns.",
-                "SQL 审核通过，但包含优化建议。",
-                "Execution blocked until schema validation warnings are resolved.",
-                "Agent execution requires explicit projected columns instead of SELECT *."
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-04T17:43:06.016892Z"
+              "created_at": "2026-06-05T06:26:20.591034Z"
             },
             "requires_confirmation": false,
             "messages": [
-              "Schema validation found unknown tables or columns.",
-              "SQL 审核通过，但包含优化建议。",
-              "Execution blocked until schema validation warnings are resolved.",
-              "Agent execution requires explicit projected columns instead of SELECT *."
+              "SQL passed schema validation and guardrail checks.",
+              "EXPLAIN dry-run validated safe_sql."
             ],
-            "blocked_reasons": [
-              "schema_validation",
-              "select_star"
-            ],
-            "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "blocked_reasons": [],
+            "revise_suggestion": null
           },
           "presentation": {
             "mode": "dock",
@@ -916,7 +933,44 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/16fbd991-aef8-4b2c-9826-bcf2e86363da/artifact/002/sql_candidate"
+            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate"
+          ]
+        },
+        {
+          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+          "semantic_id": "result_table",
+          "type": "table",
+          "title": "Result table",
+          "payload": {
+            "columns": [
+              "pet_count"
+            ],
+            "rows": [
+              {
+                "pet_count": "0"
+              }
+            ],
+            "rowCount": 1,
+            "latencyMs": 4,
+            "safety_state": {
+              "available": true,
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail_result": "pass",
+              "schema_warnings_count": 0
+            }
+          },
+          "presentation": {
+            "mode": "both",
+            "priority": 20,
+            "collapsed": false
+          },
+          "refs": {},
+          "produced_by_step": "execute_sql",
+          "depends_on": [
+            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
+            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report"
           ]
         }
       ],
@@ -932,14 +986,24 @@
           "suggestions": []
         },
         {
-          "block_id": "block_2_answer",
+          "block_id": "block_2_artifact_ref",
           "sequence": 2,
+          "type": "artifact_ref",
+          "content": null,
+          "artifact_id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+          "display": "full",
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "block_id": "block_3_answer",
+          "sequence": 3,
           "type": "answer",
           "content": null,
           "artifact_id": null,
           "display": null,
           "answer": {
-            "answer": "I do not have a successful result set to analyze yet.",
+            "answer": "Students older than 20 own 0 pets.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -953,7 +1017,7 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780594986043,
+          "created_at_ms": 1780640786115,
           "type": "agent.narration.completed",
           "content": "I used the trusted schema context around has_pet, pets, student to answer: Find number of pets owned by students who are older than 20.",
           "artifact": null,
@@ -961,14 +1025,60 @@
           "suggestions": []
         },
         {
-          "event_id": "visible_2_agent_answer_completed",
+          "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780594986044,
+          "created_at_ms": 1780640786116,
+          "type": "agent.artifact.created",
+          "content": null,
+          "artifact": {
+            "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+            "semantic_id": "result_table",
+            "type": "table",
+            "title": "Result table",
+            "payload": {
+              "columns": [
+                "pet_count"
+              ],
+              "rows": [
+                {
+                  "pet_count": "0"
+                }
+              ],
+              "rowCount": 1,
+              "latencyMs": 4,
+              "safety_state": {
+                "available": true,
+                "passed": true,
+                "can_execute": true,
+                "requires_confirmation": false,
+                "guardrail_result": "pass",
+                "schema_warnings_count": 0
+              }
+            },
+            "presentation": {
+              "mode": "both",
+              "priority": 20,
+              "collapsed": false
+            },
+            "refs": {},
+            "produced_by_step": "execute_sql",
+            "depends_on": [
+              "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
+              "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report"
+            ]
+          },
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "event_id": "visible_3_agent_answer_completed",
+          "sequence": 3,
+          "created_at_ms": 1780640786117,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
           "answer": {
-            "answer": "I do not have a successful result set to analyze yet.",
+            "answer": "Students older than 20 own 0 pets.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -982,7 +1092,7 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780594986043,
+          "created_at_ms": 1780640786115,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1000,7 +1110,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780594986044,
+          "created_at_ms": 1780640786116,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1198,12 +1308,12 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 2
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780594986045,
+          "created_at_ms": 1780640786117,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1225,7 +1335,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780594986046,
+          "created_at_ms": 1780640786118,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1241,56 +1351,73 @@
             ]
           },
           "output": {
-            "analysis_goal": "answer_question",
-            "metrics": [],
+            "analysis_goal": "count_pets_by_age",
+            "metrics": [
+              {
+                "name": "pet_count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
+              }
+            ],
             "dimensions": [],
-            "filters": [],
+            "filters": [
+              {
+                "column": "student.Age",
+                "operator": ">",
+                "value": "20"
+              }
+            ],
             "time_range": null,
             "candidate_tables": [
               "has_pet",
-              "pets",
               "student"
             ],
             "assumptions": [
-              "Plan mode: offline",
+              "Plan mode: online",
               "Only synced local schema metadata is trusted."
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "answer_question",
+              "intent": "count_pets_by_age",
               "tables": [
                 "has_pet",
-                "pets",
                 "student"
               ],
-              "metrics": [],
+              "metrics": [
+                {
+                  "name": "pet_count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
+                }
+              ],
               "dimensions": [],
-              "filters": [],
+              "filters": [
+                {
+                  "column": "student.Age",
+                  "operator": ">",
+                  "value": "20"
+                }
+              ],
               "joins": [
                 {
                   "left_table": "has_pet",
                   "right_table": "student",
                   "condition": "has_pet.StuID = student.StuID"
-                },
-                {
-                  "left_table": "has_pet",
-                  "right_table": "pets",
-                  "condition": "has_pet.PetID = pets.PetID"
                 }
               ],
-              "order_by": null,
+              "order_by": "[]",
               "limit": 100,
               "warnings": [],
-              "mode": "offline"
+              "mode": "online"
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 3535
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780594986047,
+          "created_at_ms": 1780640786119,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1300,12 +1427,11 @@
             "question": "Find number of pets owned by students who are older than 20.",
             "has_follow_up_context": false,
             "optimize_rag": true,
-            "model_name": "gpt-4o-mini",
+            "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "answer_question",
+            "plan_goal": "count_pets_by_age",
             "plan_candidate_tables": [
               "has_pet",
-              "pets",
               "student"
             ],
             "schema_context_size": 395
@@ -1317,7 +1443,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780594986048,
+          "created_at_ms": 1780640786120,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1327,102 +1453,121 @@
             "question": "Find number of pets owned by students who are older than 20.",
             "has_follow_up_context": false,
             "optimize_rag": true,
-            "model_name": "gpt-4o-mini",
+            "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "answer_question",
+            "plan_goal": "count_pets_by_age",
             "plan_candidate_tables": [
               "has_pet",
-              "pets",
               "student"
             ],
             "schema_context_size": 395
           },
           "output": {
-            "sql": "SELECT * FROM products LIMIT 10",
+            "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
             "raw_sql": null,
-            "model": "databox-local-heuristic",
-            "mode": "offline",
-            "latency_ms": 4,
-            "schema_validation_warnings": [
-              "生成 SQL 包含不存在的表: `products`"
-            ],
+            "model": "databox-query-plan-renderer",
+            "mode": "plan_guided",
+            "latency_ms": 0,
+            "schema_validation_warnings": [],
             "rewrite_notes": [],
             "metadata": {
-              "generation_source": "generate_sql_fallback",
+              "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "answer_question",
-                "metrics": [],
+                "analysis_goal": "count_pets_by_age",
+                "metrics": [
+                  {
+                    "name": "pet_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
                 "dimensions": [],
-                "filters": [],
+                "filters": [
+                  {
+                    "column": "student.Age",
+                    "operator": ">",
+                    "value": "20"
+                  }
+                ],
                 "time_range": null,
                 "candidate_tables": [
                   "has_pet",
-                  "pets",
                   "student"
                 ],
                 "assumptions": [
-                  "Plan mode: offline",
+                  "Plan mode: online",
                   "Only synced local schema metadata is trusted."
                 ],
                 "risk_notes": [],
                 "raw_plan": {
-                  "intent": "answer_question",
+                  "intent": "count_pets_by_age",
                   "tables": [
                     "has_pet",
-                    "pets",
                     "student"
                   ],
-                  "metrics": [],
+                  "metrics": [
+                    {
+                      "name": "pet_count",
+                      "expression": "COUNT(*)",
+                      "source_column": "*"
+                    }
+                  ],
                   "dimensions": [],
-                  "filters": [],
+                  "filters": [
+                    {
+                      "column": "student.Age",
+                      "operator": ">",
+                      "value": "20"
+                    }
+                  ],
                   "joins": [
                     {
                       "left_table": "has_pet",
                       "right_table": "student",
                       "condition": "has_pet.StuID = student.StuID"
-                    },
-                    {
-                      "left_table": "has_pet",
-                      "right_table": "pets",
-                      "condition": "has_pet.PetID = pets.PetID"
                     }
                   ],
-                  "order_by": null,
+                  "order_by": "[]",
                   "limit": 100,
                   "warnings": [],
-                  "mode": "offline"
+                  "mode": "online"
                 }
               },
               "query_plan": {
-                "intent": "answer_question",
+                "intent": "count_pets_by_age",
                 "tables": [
                   "has_pet",
-                  "pets",
                   "student"
                 ],
-                "metrics": [],
+                "metrics": [
+                  {
+                    "name": "pet_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
                 "dimensions": [],
-                "filters": [],
+                "filters": [
+                  {
+                    "column": "student.Age",
+                    "operator": ">",
+                    "value": "20"
+                  }
+                ],
                 "joins": [
                   {
                     "left_table": "has_pet",
                     "right_table": "student",
                     "condition": "has_pet.StuID = student.StuID"
-                  },
-                  {
-                    "left_table": "has_pet",
-                    "right_table": "pets",
-                    "condition": "has_pet.PetID = pets.PetID"
                   }
                 ],
-                "order_by": null,
+                "order_by": "[]",
                 "limit": 100,
                 "warnings": [],
-                "mode": "offline"
+                "mode": "online"
               },
               "selected_tables": [
                 "has_pet",
-                "pets",
                 "student"
               ],
               "selected_columns": [
@@ -1446,19 +1591,19 @@
             }
           },
           "error": null,
-          "latency_ms": 18
+          "latency_ms": 4
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780594986049,
+          "created_at_ms": 1780640786121,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT * FROM products LIMIT 10"
+            "sql_preview": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -1467,87 +1612,62 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780594986050,
+          "created_at_ms": 1780640786122,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT * FROM products LIMIT 10"
+            "sql_preview": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100"
           },
           "output": {
-            "passed": false,
-            "can_execute": false,
-            "safe_sql": null,
-            "original_sql": "SELECT * FROM products LIMIT 10",
-            "schema_warnings": [
-              "生成 SQL 包含不存在的表: `products`"
-            ],
+            "passed": true,
+            "can_execute": true,
+            "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "schema_warnings": [],
             "guardrail": {
-              "result": "warn",
-              "originalSql": "SELECT * FROM products LIMIT 10",
-              "safeSql": "SELECT * FROM products LIMIT 10",
-              "checks": [
-                {
-                  "rule": "select_star",
-                  "level": "warn",
-                  "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                }
-              ],
-              "message": "SQL 审核通过，但包含优化建议。"
+              "result": "pass",
+              "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "checks": [],
+              "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT * FROM products LIMIT 10",
-              "schemaWarnings": [
-                "生成 SQL 包含不存在的表: `products`"
-              ],
+              "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "schemaWarnings": [],
               "guardrail": {
-                "result": "warn",
-                "originalSql": "SELECT * FROM products LIMIT 10",
-                "safeSql": "SELECT * FROM products LIMIT 10",
-                "checks": [
-                  {
-                    "rule": "select_star",
-                    "level": "warn",
-                    "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                  }
-                ],
-                "message": "SQL 审核通过，但包含优化建议。"
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
               },
-              "riskLevel": "warning",
-              "requiresConfirmation": true,
+              "riskLevel": "safe",
+              "requiresConfirmation": false,
               "messages": [
-                "Schema validation found unknown tables or columns.",
-                "SQL 审核通过，但包含优化建议。"
+                "SQL passed schema validation and guardrail checks."
               ],
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-cdce3865-88fa-4c0a-9401-46ab173b8ec4",
+              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT * FROM products LIMIT 10",
-              "safe_sql": null,
-              "passed": false,
-              "can_execute": false,
+              "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "passed": true,
+              "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
-                "result": "warn",
-                "originalSql": "SELECT * FROM products LIMIT 10",
-                "safeSql": "SELECT * FROM products LIMIT 10",
-                "checks": [
-                  {
-                    "rule": "select_star",
-                    "level": "warn",
-                    "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                  }
-                ],
-                "message": "SQL 审核通过，但包含优化建议。"
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
               },
-              "schema_warnings": [
-                "生成 SQL 包含不存在的表: `products`"
-              ],
+              "schema_warnings": [],
               "scope_state": {
                 "datasource_exists": true,
                 "datasource_id": "ds-spider-pets-1",
@@ -1557,134 +1677,112 @@
                 "project_id": "default-project",
                 "environment_id": null
               },
-              "blocked_reasons": [
-                "schema_validation",
-                "select_star"
-              ],
+              "blocked_reasons": [],
               "messages": [
-                "Schema validation found unknown tables or columns.",
-                "SQL 审核通过，但包含优化建议。",
-                "Execution blocked until schema validation warnings are resolved.",
-                "Agent execution requires explicit projected columns instead of SELECT *."
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-04T17:43:06.016892Z"
+              "created_at": "2026-06-05T06:26:20.591034Z"
             },
             "requires_confirmation": false,
             "messages": [
-              "Schema validation found unknown tables or columns.",
-              "SQL 审核通过，但包含优化建议。",
-              "Execution blocked until schema validation warnings are resolved.",
-              "Agent execution requires explicit projected columns instead of SELECT *."
+              "SQL passed schema validation and guardrail checks.",
+              "EXPLAIN dry-run validated safe_sql."
             ],
-            "blocked_reasons": [
-              "schema_validation",
-              "select_star"
-            ],
-            "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "blocked_reasons": [],
+            "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 26
         },
         {
-          "event_id": "trace_9_step_5_revise_sql_started",
+          "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780594986051,
+          "created_at_ms": 1780640786123,
           "type": "agent.trace.step_started",
-          "step_id": "step_5_revise_sql",
-          "name": "revise_sql",
+          "step_id": "step_5_execute_sql",
+          "name": "execute_sql",
           "status": null,
           "input": {
-            "sql_preview": "SELECT * FROM products LIMIT 10",
-            "error": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "datasource_id": "ds-spider-pets-1",
+            "sql_preview": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100"
           },
           "output": null,
           "error": null,
           "latency_ms": null
         },
         {
-          "event_id": "trace_10_step_5_revise_sql_completed",
+          "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780594986052,
+          "created_at_ms": 1780640786124,
           "type": "agent.trace.step_completed",
-          "step_id": "step_5_revise_sql",
-          "name": "revise_sql",
+          "step_id": "step_5_execute_sql",
+          "name": "execute_sql",
           "status": "success",
           "input": {
-            "sql_preview": "SELECT * FROM products LIMIT 10",
-            "error": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "datasource_id": "ds-spider-pets-1",
+            "sql_preview": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100"
           },
           "output": {
-            "can_fix": false,
-            "fixed_sql": null,
-            "reason": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause.",
-            "changes": [],
-            "remaining_risks": [
-              "A deterministic repair was attempted, but the repaired SQL still did not pass validation.",
-              "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "success": true,
+            "columns": [
+              "pet_count"
             ],
-            "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause.",
-            "blocked_sql": "SELECT * FROM products LIMIT 10"
-          },
-          "error": null,
-          "latency_ms": 6
-        },
-        {
-          "event_id": "trace_11_step_6_answer_synthesizer_started",
-          "sequence": 11,
-          "created_at_ms": 1780594986053,
-          "type": "agent.trace.step_started",
-          "step_id": "step_6_answer_synthesizer",
-          "name": "answer_synthesizer",
-          "status": null,
-          "input": {
-            "question": "Find number of pets owned by students who are older than 20.",
-            "has_sql": true,
-            "has_profile": false,
-            "has_error": false
-          },
-          "output": null,
-          "error": null,
-          "latency_ms": null
-        },
-        {
-          "event_id": "trace_12_step_6_answer_synthesizer_completed",
-          "sequence": 12,
-          "created_at_ms": 1780594986054,
-          "type": "agent.trace.step_completed",
-          "step_id": "step_6_answer_synthesizer",
-          "name": "answer_synthesizer",
-          "status": "success",
-          "input": {
-            "question": "Find number of pets owned by students who are older than 20.",
-            "has_sql": true,
-            "has_profile": false,
-            "has_error": false
-          },
-          "output": {
-            "answer": "I do not have a successful result set to analyze yet.",
-            "key_findings": [],
-            "evidence": [
+            "rows": [
               {
-                "artifact_id": "sql_candidate",
-                "label": "SQL",
-                "value": "validated candidate"
-              },
-              {
-                "artifact_id": "safety_report",
-                "label": "Safety",
-                "value": "blocked"
+                "pet_count": "0"
               }
             ],
-            "caveats": [
-              "Schema validation found unknown tables or columns.",
-              "SQL 审核通过，但包含优化建议。",
-              "Execution blocked until schema validation warnings are resolved."
-            ],
-            "recommendations": [],
-            "follow_up_questions": []
+            "rowCount": 1,
+            "latencyMs": 4,
+            "historyId": "2c60b8a6-ed02-44f6-aa35-9591704234f3",
+            "executionId": "exec-a03e8553-0837-4e04-92ab-d931df7c0acf",
+            "safetyDecision": {
+              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+              "datasource_id": "ds-spider-pets-1",
+              "policy": "agent_readonly",
+              "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "schema_warnings": [],
+              "scope_state": {
+                "datasource_exists": true,
+                "datasource_id": "ds-spider-pets-1",
+                "db_type": "mysql",
+                "env": "dev",
+                "is_read_only": false,
+                "project_id": "default-project",
+                "environment_id": null
+              },
+              "blocked_reasons": [],
+              "messages": [
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
+              ],
+              "created_at": "2026-06-05T06:26:20.591034Z"
+            },
+            "truncated": false,
+            "warnings": [],
+            "timing": {
+              "connectMs": 0,
+              "guardrailMs": 0,
+              "executeMs": 1,
+              "fetchMs": 0,
+              "serializeMs": 0,
+              "totalMs": 4
+            }
           },
           "error": null,
-          "latency_ms": 0
+          "latency_ms": 14
         }
       ],
       "steps": [
@@ -1884,7 +1982,7 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 2
         },
         {
           "name": "build_query_plan",
@@ -1900,51 +1998,68 @@
             ]
           },
           "output": {
-            "analysis_goal": "answer_question",
-            "metrics": [],
+            "analysis_goal": "count_pets_by_age",
+            "metrics": [
+              {
+                "name": "pet_count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
+              }
+            ],
             "dimensions": [],
-            "filters": [],
+            "filters": [
+              {
+                "column": "student.Age",
+                "operator": ">",
+                "value": "20"
+              }
+            ],
             "time_range": null,
             "candidate_tables": [
               "has_pet",
-              "pets",
               "student"
             ],
             "assumptions": [
-              "Plan mode: offline",
+              "Plan mode: online",
               "Only synced local schema metadata is trusted."
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "answer_question",
+              "intent": "count_pets_by_age",
               "tables": [
                 "has_pet",
-                "pets",
                 "student"
               ],
-              "metrics": [],
+              "metrics": [
+                {
+                  "name": "pet_count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
+                }
+              ],
               "dimensions": [],
-              "filters": [],
+              "filters": [
+                {
+                  "column": "student.Age",
+                  "operator": ">",
+                  "value": "20"
+                }
+              ],
               "joins": [
                 {
                   "left_table": "has_pet",
                   "right_table": "student",
                   "condition": "has_pet.StuID = student.StuID"
-                },
-                {
-                  "left_table": "has_pet",
-                  "right_table": "pets",
-                  "condition": "has_pet.PetID = pets.PetID"
                 }
               ],
-              "order_by": null,
+              "order_by": "[]",
               "limit": 100,
               "warnings": [],
-              "mode": "offline"
+              "mode": "online"
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 3535
         },
         {
           "name": "generate_sql_candidate",
@@ -1954,102 +2069,121 @@
             "question": "Find number of pets owned by students who are older than 20.",
             "has_follow_up_context": false,
             "optimize_rag": true,
-            "model_name": "gpt-4o-mini",
-            "has_api_key": false,
-            "plan_goal": "answer_question",
+            "model_name": "qwen-plus",
+            "has_api_key": true,
+            "plan_goal": "count_pets_by_age",
             "plan_candidate_tables": [
               "has_pet",
-              "pets",
               "student"
             ],
             "schema_context_size": 395
           },
           "output": {
-            "sql": "SELECT * FROM products LIMIT 10",
+            "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
             "raw_sql": null,
-            "model": "databox-local-heuristic",
-            "mode": "offline",
-            "latency_ms": 4,
-            "schema_validation_warnings": [
-              "生成 SQL 包含不存在的表: `products`"
-            ],
+            "model": "databox-query-plan-renderer",
+            "mode": "plan_guided",
+            "latency_ms": 0,
+            "schema_validation_warnings": [],
             "rewrite_notes": [],
             "metadata": {
-              "generation_source": "generate_sql_fallback",
+              "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "answer_question",
-                "metrics": [],
+                "analysis_goal": "count_pets_by_age",
+                "metrics": [
+                  {
+                    "name": "pet_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
                 "dimensions": [],
-                "filters": [],
+                "filters": [
+                  {
+                    "column": "student.Age",
+                    "operator": ">",
+                    "value": "20"
+                  }
+                ],
                 "time_range": null,
                 "candidate_tables": [
                   "has_pet",
-                  "pets",
                   "student"
                 ],
                 "assumptions": [
-                  "Plan mode: offline",
+                  "Plan mode: online",
                   "Only synced local schema metadata is trusted."
                 ],
                 "risk_notes": [],
                 "raw_plan": {
-                  "intent": "answer_question",
+                  "intent": "count_pets_by_age",
                   "tables": [
                     "has_pet",
-                    "pets",
                     "student"
                   ],
-                  "metrics": [],
+                  "metrics": [
+                    {
+                      "name": "pet_count",
+                      "expression": "COUNT(*)",
+                      "source_column": "*"
+                    }
+                  ],
                   "dimensions": [],
-                  "filters": [],
+                  "filters": [
+                    {
+                      "column": "student.Age",
+                      "operator": ">",
+                      "value": "20"
+                    }
+                  ],
                   "joins": [
                     {
                       "left_table": "has_pet",
                       "right_table": "student",
                       "condition": "has_pet.StuID = student.StuID"
-                    },
-                    {
-                      "left_table": "has_pet",
-                      "right_table": "pets",
-                      "condition": "has_pet.PetID = pets.PetID"
                     }
                   ],
-                  "order_by": null,
+                  "order_by": "[]",
                   "limit": 100,
                   "warnings": [],
-                  "mode": "offline"
+                  "mode": "online"
                 }
               },
               "query_plan": {
-                "intent": "answer_question",
+                "intent": "count_pets_by_age",
                 "tables": [
                   "has_pet",
-                  "pets",
                   "student"
                 ],
-                "metrics": [],
+                "metrics": [
+                  {
+                    "name": "pet_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
                 "dimensions": [],
-                "filters": [],
+                "filters": [
+                  {
+                    "column": "student.Age",
+                    "operator": ">",
+                    "value": "20"
+                  }
+                ],
                 "joins": [
                   {
                     "left_table": "has_pet",
                     "right_table": "student",
                     "condition": "has_pet.StuID = student.StuID"
-                  },
-                  {
-                    "left_table": "has_pet",
-                    "right_table": "pets",
-                    "condition": "has_pet.PetID = pets.PetID"
                   }
                 ],
-                "order_by": null,
+                "order_by": "[]",
                 "limit": 100,
                 "warnings": [],
-                "mode": "offline"
+                "mode": "online"
               },
               "selected_tables": [
                 "has_pet",
-                "pets",
                 "student"
               ],
               "selected_columns": [
@@ -2073,87 +2207,62 @@
             }
           },
           "error": null,
-          "latency_ms": 18
+          "latency_ms": 4
         },
         {
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT * FROM products LIMIT 10"
+            "sql_preview": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100"
           },
           "output": {
-            "passed": false,
-            "can_execute": false,
-            "safe_sql": null,
-            "original_sql": "SELECT * FROM products LIMIT 10",
-            "schema_warnings": [
-              "生成 SQL 包含不存在的表: `products`"
-            ],
+            "passed": true,
+            "can_execute": true,
+            "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+            "schema_warnings": [],
             "guardrail": {
-              "result": "warn",
-              "originalSql": "SELECT * FROM products LIMIT 10",
-              "safeSql": "SELECT * FROM products LIMIT 10",
-              "checks": [
-                {
-                  "rule": "select_star",
-                  "level": "warn",
-                  "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                }
-              ],
-              "message": "SQL 审核通过，但包含优化建议。"
+              "result": "pass",
+              "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "checks": [],
+              "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT * FROM products LIMIT 10",
-              "schemaWarnings": [
-                "生成 SQL 包含不存在的表: `products`"
-              ],
+              "sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "schemaWarnings": [],
               "guardrail": {
-                "result": "warn",
-                "originalSql": "SELECT * FROM products LIMIT 10",
-                "safeSql": "SELECT * FROM products LIMIT 10",
-                "checks": [
-                  {
-                    "rule": "select_star",
-                    "level": "warn",
-                    "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                  }
-                ],
-                "message": "SQL 审核通过，但包含优化建议。"
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
               },
-              "riskLevel": "warning",
-              "requiresConfirmation": true,
+              "riskLevel": "safe",
+              "requiresConfirmation": false,
               "messages": [
-                "Schema validation found unknown tables or columns.",
-                "SQL 审核通过，但包含优化建议。"
+                "SQL passed schema validation and guardrail checks."
               ],
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-cdce3865-88fa-4c0a-9401-46ab173b8ec4",
+              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT * FROM products LIMIT 10",
-              "safe_sql": null,
-              "passed": false,
-              "can_execute": false,
+              "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "passed": true,
+              "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
-                "result": "warn",
-                "originalSql": "SELECT * FROM products LIMIT 10",
-                "safeSql": "SELECT * FROM products LIMIT 10",
-                "checks": [
-                  {
-                    "rule": "select_star",
-                    "level": "warn",
-                    "message": "建议不要在生产环境使用 SELECT *。显式指定所需字段能显著优化查询性能并减少网卡开销。"
-                  }
-                ],
-                "message": "SQL 审核通过，但包含优化建议。"
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
               },
-              "schema_warnings": [
-                "生成 SQL 包含不存在的表: `products`"
-              ],
+              "schema_warnings": [],
               "scope_state": {
                 "datasource_exists": true,
                 "datasource_id": "ds-spider-pets-1",
@@ -2163,90 +2272,91 @@
                 "project_id": "default-project",
                 "environment_id": null
               },
-              "blocked_reasons": [
-                "schema_validation",
-                "select_star"
-              ],
+              "blocked_reasons": [],
               "messages": [
-                "Schema validation found unknown tables or columns.",
-                "SQL 审核通过，但包含优化建议。",
-                "Execution blocked until schema validation warnings are resolved.",
-                "Agent execution requires explicit projected columns instead of SELECT *."
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-04T17:43:06.016892Z"
+              "created_at": "2026-06-05T06:26:20.591034Z"
             },
             "requires_confirmation": false,
             "messages": [
-              "Schema validation found unknown tables or columns.",
-              "SQL 审核通过，但包含优化建议。",
-              "Execution blocked until schema validation warnings are resolved.",
-              "Agent execution requires explicit projected columns instead of SELECT *."
+              "SQL passed schema validation and guardrail checks.",
+              "EXPLAIN dry-run validated safe_sql."
             ],
-            "blocked_reasons": [
-              "schema_validation",
-              "select_star"
-            ],
-            "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "blocked_reasons": [],
+            "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 26
         },
         {
-          "name": "revise_sql",
+          "name": "execute_sql",
           "status": "success",
           "input": {
-            "sql_preview": "SELECT * FROM products LIMIT 10",
-            "error": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "datasource_id": "ds-spider-pets-1",
+            "sql_preview": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100"
           },
           "output": {
-            "can_fix": false,
-            "fixed_sql": null,
-            "reason": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause.",
-            "changes": [],
-            "remaining_risks": [
-              "A deterministic repair was attempted, but the repaired SQL still did not pass validation.",
-              "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause."
+            "success": true,
+            "columns": [
+              "pet_count"
             ],
-            "revise_suggestion": "Replace SELECT * with explicit column names from the synced schema, then keep a LIMIT clause.",
-            "blocked_sql": "SELECT * FROM products LIMIT 10"
-          },
-          "error": null,
-          "latency_ms": 6
-        },
-        {
-          "name": "answer_synthesizer",
-          "status": "success",
-          "input": {
-            "question": "Find number of pets owned by students who are older than 20.",
-            "has_sql": true,
-            "has_profile": false,
-            "has_error": false
-          },
-          "output": {
-            "answer": "I do not have a successful result set to analyze yet.",
-            "key_findings": [],
-            "evidence": [
+            "rows": [
               {
-                "artifact_id": "sql_candidate",
-                "label": "SQL",
-                "value": "validated candidate"
-              },
-              {
-                "artifact_id": "safety_report",
-                "label": "Safety",
-                "value": "blocked"
+                "pet_count": "0"
               }
             ],
-            "caveats": [
-              "Schema validation found unknown tables or columns.",
-              "SQL 审核通过，但包含优化建议。",
-              "Execution blocked until schema validation warnings are resolved."
-            ],
-            "recommendations": [],
-            "follow_up_questions": []
+            "rowCount": 1,
+            "latencyMs": 4,
+            "historyId": "2c60b8a6-ed02-44f6-aa35-9591704234f3",
+            "executionId": "exec-a03e8553-0837-4e04-92ab-d931df7c0acf",
+            "safetyDecision": {
+              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+              "datasource_id": "ds-spider-pets-1",
+              "policy": "agent_readonly",
+              "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "schema_warnings": [],
+              "scope_state": {
+                "datasource_exists": true,
+                "datasource_id": "ds-spider-pets-1",
+                "db_type": "mysql",
+                "env": "dev",
+                "is_read_only": false,
+                "project_id": "default-project",
+                "environment_id": null
+              },
+              "blocked_reasons": [],
+              "messages": [
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
+              ],
+              "created_at": "2026-06-05T06:26:20.591034Z"
+            },
+            "truncated": false,
+            "warnings": [],
+            "timing": {
+              "connectMs": 0,
+              "guardrailMs": 0,
+              "executeMs": 1,
+              "fetchMs": 0,
+              "serializeMs": 0,
+              "totalMs": 4
+            }
           },
           "error": null,
-          "latency_ms": 0
+          "latency_ms": 14
         }
       ],
       "error": null,

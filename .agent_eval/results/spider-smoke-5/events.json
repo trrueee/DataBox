@@ -1,13 +1,13 @@
 [
   {
-    "event_id": "runtime_65957f3a_1_agent_run_started",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_1_agent_run_started",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 1,
-    "created_at_ms": 1780640751516,
+    "created_at_ms": 1780640732409,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-pets-1",
-      "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+      "question": "Find the number of pets whose weight is heavier than 10.",
       "execute": true
     },
     "artifact": null,
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_65957f3a_2_agent_step_started",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_2_agent_step_started",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 2,
-    "created_at_ms": 1780640753714,
+    "created_at_ms": 1780640734294,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,10 +37,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_65957f3a_3_agent_step_completed",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_3_agent_step_completed",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 3,
-    "created_at_ms": 1780640753716,
+    "created_at_ms": 1780640734295,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_65957f3a_4_agent_step_started",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_4_agent_step_started",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 4,
-    "created_at_ms": 1780640758884,
+    "created_at_ms": 1780640738917,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_65957f3a_5_agent_step_completed",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_5_agent_step_completed",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 5,
-    "created_at_ms": 1780640758885,
+    "created_at_ms": 1780640738917,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 2957
+      "latency_ms": 2447
     },
     "artifact": null,
     "answer": null,
@@ -97,36 +97,36 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_65957f3a_6_agent_artifact_created",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_6_agent_artifact_created",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 6,
-    "created_at_ms": 1780640758885,
+    "created_at_ms": 1780640738918,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/001/query_plan",
+      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
       "payload": {
-        "analysis_goal": "aggregate",
+        "analysis_goal": "count",
         "metrics": [
           {
-            "name": "max_weight",
-            "expression": "MAX(weight)",
-            "source_column": "weight"
+            "name": "count",
+            "expression": "COUNT(*)",
+            "source_column": "*"
           }
         ],
-        "dimensions": [
+        "dimensions": [],
+        "filters": [
           {
-            "name": "pet_type",
-            "column": "PetType",
-            "transform": null
+            "column": "weight",
+            "operator": ">",
+            "value": "10"
           }
         ],
-        "filters": [],
         "time_range": null,
         "candidate_tables": [
           "pets"
@@ -137,25 +137,25 @@
         ],
         "risk_notes": [],
         "raw_plan": {
-          "intent": "aggregate",
+          "intent": "count",
           "tables": [
             "pets"
           ],
           "metrics": [
             {
-              "name": "max_weight",
-              "expression": "MAX(weight)",
-              "source_column": "weight"
+              "name": "count",
+              "expression": "COUNT(*)",
+              "source_column": "*"
             }
           ],
-          "dimensions": [
+          "dimensions": [],
+          "filters": [
             {
-              "name": "pet_type",
-              "column": "PetType",
-              "transform": null
+              "column": "weight",
+              "operator": ">",
+              "value": "10"
             }
           ],
-          "filters": [],
           "joins": [],
           "order_by": "[]",
           "limit": 100,
@@ -180,10 +180,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_65957f3a_7_agent_step_started",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_7_agent_step_started",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 7,
-    "created_at_ms": 1780640760893,
+    "created_at_ms": 1780640741340,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -198,10 +198,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_65957f3a_8_agent_step_completed",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_8_agent_step_completed",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 8,
-    "created_at_ms": 1780640760894,
+    "created_at_ms": 1780640741341,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
@@ -219,10 +219,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_65957f3a_9_agent_step_started",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_9_agent_step_started",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 9,
-    "created_at_ms": 1780640763027,
+    "created_at_ms": 1780640743926,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -237,10 +237,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_65957f3a_10_agent_step_completed",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_10_agent_step_completed",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 10,
-    "created_at_ms": 1780640763028,
+    "created_at_ms": 1780640743927,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
@@ -258,21 +258,21 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_65957f3a_11_agent_artifact_created",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_11_agent_artifact_created",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 11,
-    "created_at_ms": 1780640763029,
+    "created_at_ms": 1780640743928,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate",
+      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
       "payload": {
-        "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+        "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
         "safety_state": {
           "available": true,
           "passed": true,
@@ -290,7 +290,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/001/query_plan"
+        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -301,39 +301,39 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_65957f3a_12_agent_artifact_created",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_12_agent_artifact_created",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 12,
-    "created_at_ms": 1780640763030,
+    "created_at_ms": 1780640743929,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/003/safety_report",
+      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
       "payload": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-        "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+        "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+        "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-          "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+          "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+          "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+          "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -345,18 +345,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+          "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
-          "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-          "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+          "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -375,7 +375,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:03.026943Z"
+          "created_at": "2026-06-05T06:25:43.925593Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -393,7 +393,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate"
+        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -404,10 +404,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_65957f3a_13_agent_step_started",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_13_agent_step_started",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 13,
-    "created_at_ms": 1780640765343,
+    "created_at_ms": 1780640747594,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -422,17 +422,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_65957f3a_14_agent_step_completed",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_14_agent_step_completed",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 14,
-    "created_at_ms": 1780640765344,
+    "created_at_ms": 1780640747596,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
       "tool_name": "sql.execute_readonly",
       "status": "success",
       "error": null,
-      "latency_ms": 13
+      "latency_ms": 41
     },
     "artifact": null,
     "answer": null,
@@ -443,36 +443,30 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_65957f3a_15_agent_artifact_created",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_15_agent_artifact_created",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 15,
-    "created_at_ms": 1780640765345,
+    "created_at_ms": 1780640747597,
     "type": "agent.artifact.created",
     "step": {
       "name": "execute_sql"
     },
     "artifact": {
-      "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/004/result_table",
+      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
       "semantic_id": "result_table",
       "type": "table",
       "title": "Result table",
       "payload": {
         "columns": [
-          "pet_type",
-          "max_weight"
+          "count"
         ],
         "rows": [
           {
-            "pet_type": "cat",
-            "max_weight": "12.0"
-          },
-          {
-            "pet_type": "dog",
-            "max_weight": "13.4"
+            "count": "2"
           }
         ],
-        "rowCount": 2,
-        "latencyMs": 3,
+        "rowCount": 1,
+        "latencyMs": 31,
         "safety_state": {
           "available": true,
           "passed": true,
@@ -490,8 +484,8 @@
       "refs": {},
       "produced_by_step": "execute_sql",
       "depends_on": [
-        "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate",
-        "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/003/safety_report"
+        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
+        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report"
       ]
     },
     "answer": null,
@@ -502,15 +496,15 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_65957f3a_16_agent_answer_completed",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_16_agent_answer_completed",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 16,
-    "created_at_ms": 1780640768227,
+    "created_at_ms": 1780640750836,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
     "answer": {
-      "answer": "The maximum weight for each type of pet is:\n\n- Cat: 12.0\n- Dog: 13.4",
+      "answer": "There are 2 pets whose weight is heavier than 10.",
       "key_findings": [],
       "evidence": [],
       "caveats": [],
@@ -524,40 +518,40 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_65957f3a_17_agent_run_completed",
-    "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
+    "event_id": "runtime_0f62555d_17_agent_run_completed",
+    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
     "sequence": 17,
-    "created_at_ms": 1780640768229,
+    "created_at_ms": 1780640750837,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "65957f3a-a8df-40b4-9824-f913b6810153",
-      "session_id": "5ef372af-e8b6-46c2-8dcf-ce824a78fa88",
+      "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+      "session_id": "706374f3-addb-446b-86b6-8f7ce2bc7b8b",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
-      "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
-      "context_summary": "Question: Find the maximum weight for each type of pet. List the maximum weight and pet type. Answer: The maximum weight for each type of pet is: - Cat: 12.0 - Dog: 13.4 Artifacts: - agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/001/query_plan (query_plan, Query plan): analysis_goal=aggregate, metrics=[{'name': 'max_weight', 'expression': 'MAX(weight)', 'source_column': 'weight'}], dimensions=[{'name': 'pet_type', 'column': 'PetType', 'transform': None}], filters=[], time_range=None, candidate_tables=['pets'] - agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate (sql, Validated SQL): SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100 - agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/004/result_table (table, Result table): rowCount=2; columns=pet_type, max_weight",
+      "question": "Find the number of pets whose weight is heavier than 10.",
+      "context_summary": "Question: Find the number of pets whose weight is heavier than 10. Answer: There are 2 pets whose weight is heavier than 10. Artifacts: - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count, metrics=[{'name': 'count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'weight', 'operator': '>', 'value': '10'}], time_range=None, candidate_tables=['pets'] - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100 - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table (table, Result table): rowCount=1; columns=count",
       "referenced_artifact_ids": [],
       "query_plan": {
-        "analysis_goal": "aggregate",
+        "analysis_goal": "count",
         "metrics": [
           {
-            "name": "max_weight",
-            "expression": "MAX(weight)",
-            "source_column": "weight"
+            "name": "count",
+            "expression": "COUNT(*)",
+            "source_column": "*"
           }
         ],
-        "dimensions": [
+        "dimensions": [],
+        "filters": [
           {
-            "name": "pet_type",
-            "column": "PetType",
-            "transform": null
+            "column": "weight",
+            "operator": ">",
+            "value": "10"
           }
         ],
-        "filters": [],
         "time_range": null,
         "candidate_tables": [
           "pets"
@@ -568,25 +562,25 @@
         ],
         "risk_notes": [],
         "raw_plan": {
-          "intent": "aggregate",
+          "intent": "count",
           "tables": [
             "pets"
           ],
           "metrics": [
             {
-              "name": "max_weight",
-              "expression": "MAX(weight)",
-              "source_column": "weight"
+              "name": "count",
+              "expression": "COUNT(*)",
+              "source_column": "*"
             }
           ],
-          "dimensions": [
+          "dimensions": [],
+          "filters": [
             {
-              "name": "pet_type",
-              "column": "PetType",
-              "transform": null
+              "column": "weight",
+              "operator": ">",
+              "value": "10"
             }
           ],
-          "filters": [],
           "joins": [],
           "order_by": "[]",
           "limit": 100,
@@ -594,27 +588,27 @@
           "mode": "online"
         }
       },
-      "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+      "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
       "safety": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-        "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+        "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+        "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-          "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+          "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+          "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+          "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -626,18 +620,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+          "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
-          "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-          "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+          "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -656,7 +650,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:03.026943Z"
+          "created_at": "2026-06-05T06:25:43.925593Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -669,36 +663,30 @@
       "execution": {
         "success": true,
         "columns": [
-          "pet_type",
-          "max_weight"
+          "count"
         ],
         "rows": [
           {
-            "pet_type": "cat",
-            "max_weight": "12.0"
-          },
-          {
-            "pet_type": "dog",
-            "max_weight": "13.4"
+            "count": "2"
           }
         ],
-        "rowCount": 2,
-        "latencyMs": 3,
-        "historyId": "d25af568-9edd-48ee-b780-2b6e366952d5",
-        "executionId": "exec-b958c32a-647a-41ef-9906-f43650e56243",
+        "rowCount": 1,
+        "latencyMs": 31,
+        "historyId": "7488a2ff-0b02-4966-8306-0b1569c3526a",
+        "executionId": "exec-0b0a86dd-6ffe-460f-a58c-adb282f873e6",
         "safetyDecision": {
-          "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+          "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
-          "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-          "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+          "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -717,24 +705,24 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:03.026943Z"
+          "created_at": "2026-06-05T06:25:43.925593Z"
         },
         "truncated": false,
         "warnings": [],
         "timing": {
-          "connectMs": 0,
+          "connectMs": 27,
           "guardrailMs": 0,
           "executeMs": 0,
           "fetchMs": 0,
           "serializeMs": 0,
-          "totalMs": 3
+          "totalMs": 31
         }
       },
-      "explanation": "The maximum weight for each type of pet is:\n\n- Cat: 12.0\n- Dog: 13.4",
+      "explanation": "There are 2 pets whose weight is heavier than 10.",
       "chart_suggestion": null,
       "result_profile": null,
       "answer": {
-        "answer": "The maximum weight for each type of pet is:\n\n- Cat: 12.0\n- Dog: 13.4",
+        "answer": "There are 2 pets whose weight is heavier than 10.",
         "key_findings": [],
         "evidence": [],
         "caveats": [],
@@ -744,27 +732,27 @@
       "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/001/query_plan",
+          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
           "payload": {
-            "analysis_goal": "aggregate",
+            "analysis_goal": "count",
             "metrics": [
               {
-                "name": "max_weight",
-                "expression": "MAX(weight)",
-                "source_column": "weight"
+                "name": "count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
               }
             ],
-            "dimensions": [
+            "dimensions": [],
+            "filters": [
               {
-                "name": "pet_type",
-                "column": "PetType",
-                "transform": null
+                "column": "weight",
+                "operator": ">",
+                "value": "10"
               }
             ],
-            "filters": [],
             "time_range": null,
             "candidate_tables": [
               "pets"
@@ -775,25 +763,25 @@
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "aggregate",
+              "intent": "count",
               "tables": [
                 "pets"
               ],
               "metrics": [
                 {
-                  "name": "max_weight",
-                  "expression": "MAX(weight)",
-                  "source_column": "weight"
+                  "name": "count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
                 }
               ],
-              "dimensions": [
+              "dimensions": [],
+              "filters": [
                 {
-                  "name": "pet_type",
-                  "column": "PetType",
-                  "transform": null
+                  "column": "weight",
+                  "operator": ">",
+                  "value": "10"
                 }
               ],
-              "filters": [],
               "joins": [],
               "order_by": "[]",
               "limit": 100,
@@ -811,12 +799,12 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate",
+          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
           "payload": {
-            "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "safety_state": {
               "available": true,
               "passed": true,
@@ -834,34 +822,34 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/001/query_plan"
+            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/003/safety_report",
+          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
           "payload": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -873,18 +861,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -903,7 +891,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:03.026943Z"
+              "created_at": "2026-06-05T06:25:43.925593Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -921,31 +909,25 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate"
+            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/004/result_table",
+          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
           "semantic_id": "result_table",
           "type": "table",
           "title": "Result table",
           "payload": {
             "columns": [
-              "pet_type",
-              "max_weight"
+              "count"
             ],
             "rows": [
               {
-                "pet_type": "cat",
-                "max_weight": "12.0"
-              },
-              {
-                "pet_type": "dog",
-                "max_weight": "13.4"
+                "count": "2"
               }
             ],
-            "rowCount": 2,
-            "latencyMs": 3,
+            "rowCount": 1,
+            "latencyMs": 31,
             "safety_state": {
               "available": true,
               "passed": true,
@@ -963,8 +945,8 @@
           "refs": {},
           "produced_by_step": "execute_sql",
           "depends_on": [
-            "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate",
-            "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/003/safety_report"
+            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
+            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report"
           ]
         }
       ],
@@ -973,7 +955,7 @@
           "block_id": "block_1_text",
           "sequence": 1,
           "type": "text",
-          "content": "I used the trusted schema context around has_pet, pets, student to answer: Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+          "content": "I used the trusted schema context around has_pet, pets, student to answer: Find the number of pets whose weight is heavier than 10.",
           "artifact_id": null,
           "display": null,
           "answer": null,
@@ -984,7 +966,7 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/004/result_table",
+          "artifact_id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
           "display": "full",
           "answer": null,
           "suggestions": []
@@ -997,7 +979,7 @@
           "artifact_id": null,
           "display": null,
           "answer": {
-            "answer": "The maximum weight for each type of pet is:\n\n- Cat: 12.0\n- Dog: 13.4",
+            "answer": "There are 2 pets whose weight is heavier than 10.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1011,9 +993,9 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780640768227,
+          "created_at_ms": 1780640750836,
           "type": "agent.narration.completed",
-          "content": "I used the trusted schema context around has_pet, pets, student to answer: Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+          "content": "I used the trusted schema context around has_pet, pets, student to answer: Find the number of pets whose weight is heavier than 10.",
           "artifact": null,
           "answer": null,
           "suggestions": []
@@ -1021,31 +1003,25 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780640768228,
+          "created_at_ms": 1780640750837,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/004/result_table",
+            "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
             "semantic_id": "result_table",
             "type": "table",
             "title": "Result table",
             "payload": {
               "columns": [
-                "pet_type",
-                "max_weight"
+                "count"
               ],
               "rows": [
                 {
-                  "pet_type": "cat",
-                  "max_weight": "12.0"
-                },
-                {
-                  "pet_type": "dog",
-                  "max_weight": "13.4"
+                  "count": "2"
                 }
               ],
-              "rowCount": 2,
-              "latencyMs": 3,
+              "rowCount": 1,
+              "latencyMs": 31,
               "safety_state": {
                 "available": true,
                 "passed": true,
@@ -1063,8 +1039,8 @@
             "refs": {},
             "produced_by_step": "execute_sql",
             "depends_on": [
-              "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/002/sql_candidate",
-              "agent/run/65957f3a-a8df-40b4-9824-f913b6810153/artifact/003/safety_report"
+              "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
+              "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report"
             ]
           },
           "answer": null,
@@ -1073,12 +1049,12 @@
         {
           "event_id": "visible_3_agent_answer_completed",
           "sequence": 3,
-          "created_at_ms": 1780640768229,
+          "created_at_ms": 1780640750838,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
           "answer": {
-            "answer": "The maximum weight for each type of pet is:\n\n- Cat: 12.0\n- Dog: 13.4",
+            "answer": "There are 2 pets whose weight is heavier than 10.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1092,14 +1068,14 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780640768227,
+          "created_at_ms": 1780640750836,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "optimize_rag": true
           },
@@ -1110,14 +1086,14 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780640768228,
+          "created_at_ms": 1780640750837,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "optimize_rag": true
           },
@@ -1127,10 +1103,9 @@
               {
                 "table": "has_pet",
                 "comment": "",
-                "score": 22.0,
+                "score": 0.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
+                  "small_schema_full_context"
                 ],
                 "columns": [
                   {
@@ -1152,10 +1127,10 @@
               {
                 "table": "pets",
                 "comment": "",
-                "score": 49.0,
+                "score": 29.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
+                  "table_name_exact_match",
+                  "table_name_token_match:pets"
                 ],
                 "columns": [
                   {
@@ -1191,7 +1166,7 @@
               {
                 "table": "student",
                 "comment": "",
-                "score": 0.0,
+                "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
                 ],
@@ -1280,80 +1255,45 @@
               {
                 "targetType": "table",
                 "table": "has_pet",
-                "score": 22.0,
+                "score": 0.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "has_pet",
-                "column": "PetID",
-                "score": 6.0,
-                "reasons": [
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet"
+                  "small_schema_full_context"
                 ]
               },
               {
                 "targetType": "table",
                 "table": "pets",
-                "score": 49.0,
+                "score": 29.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "pets",
-                "column": "PetType",
-                "score": 12.0,
-                "reasons": [
-                  "column_name_token_match:type",
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet",
-                  "column_name_token_match:type"
+                  "table_name_exact_match",
+                  "table_name_token_match:pets"
                 ]
               },
               {
                 "targetType": "column",
                 "table": "pets",
                 "column": "weight",
-                "score": 9.0,
+                "score": 6.0,
                 "reasons": [
                   "column_name_exact_match",
-                  "column_name_token_match:weight",
                   "column_name_token_match:weight"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "pets",
-                "column": "PetID",
-                "score": 6.0,
-                "reasons": [
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "pets",
-                "column": "pet_age",
-                "score": 6.0,
-                "reasons": [
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet"
                 ]
               },
               {
                 "targetType": "table",
                 "table": "student",
-                "score": 0.0,
+                "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "student",
+                "column": "Advisor",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_token_match:is"
                 ]
               }
             ],
@@ -1368,14 +1308,14 @@
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780640768229,
+          "created_at_ms": 1780640750838,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "selected_tables": [
               "has_pet",
@@ -1390,14 +1330,14 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780640768230,
+          "created_at_ms": 1780640750839,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "selected_tables": [
               "has_pet",
@@ -1406,22 +1346,22 @@
             ]
           },
           "output": {
-            "analysis_goal": "aggregate",
+            "analysis_goal": "count",
             "metrics": [
               {
-                "name": "max_weight",
-                "expression": "MAX(weight)",
-                "source_column": "weight"
+                "name": "count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
               }
             ],
-            "dimensions": [
+            "dimensions": [],
+            "filters": [
               {
-                "name": "pet_type",
-                "column": "PetType",
-                "transform": null
+                "column": "weight",
+                "operator": ">",
+                "value": "10"
               }
             ],
-            "filters": [],
             "time_range": null,
             "candidate_tables": [
               "pets"
@@ -1432,25 +1372,25 @@
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "aggregate",
+              "intent": "count",
               "tables": [
                 "pets"
               ],
               "metrics": [
                 {
-                  "name": "max_weight",
-                  "expression": "MAX(weight)",
-                  "source_column": "weight"
+                  "name": "count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
                 }
               ],
-              "dimensions": [
+              "dimensions": [],
+              "filters": [
                 {
-                  "name": "pet_type",
-                  "column": "PetType",
-                  "transform": null
+                  "column": "weight",
+                  "operator": ">",
+                  "value": "10"
                 }
               ],
-              "filters": [],
               "joins": [],
               "order_by": "[]",
               "limit": 100,
@@ -1459,24 +1399,24 @@
             }
           },
           "error": null,
-          "latency_ms": 2957
+          "latency_ms": 2447
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780640768231,
+          "created_at_ms": 1780640750840,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "optimize_rag": true,
             "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "aggregate",
+            "plan_goal": "count",
             "plan_candidate_tables": [
               "pets"
             ],
@@ -1489,26 +1429,26 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780640768232,
+          "created_at_ms": 1780640750841,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "optimize_rag": true,
             "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "aggregate",
+            "plan_goal": "count",
             "plan_candidate_tables": [
               "pets"
             ],
             "schema_context_size": 395
           },
           "output": {
-            "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "raw_sql": null,
             "model": "databox-query-plan-renderer",
             "mode": "plan_guided",
@@ -1518,22 +1458,22 @@
             "metadata": {
               "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "aggregate",
+                "analysis_goal": "count",
                 "metrics": [
                   {
-                    "name": "max_weight",
-                    "expression": "MAX(weight)",
-                    "source_column": "weight"
+                    "name": "count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
                   }
                 ],
-                "dimensions": [
+                "dimensions": [],
+                "filters": [
                   {
-                    "name": "pet_type",
-                    "column": "PetType",
-                    "transform": null
+                    "column": "weight",
+                    "operator": ">",
+                    "value": "10"
                   }
                 ],
-                "filters": [],
                 "time_range": null,
                 "candidate_tables": [
                   "pets"
@@ -1544,25 +1484,25 @@
                 ],
                 "risk_notes": [],
                 "raw_plan": {
-                  "intent": "aggregate",
+                  "intent": "count",
                   "tables": [
                     "pets"
                   ],
                   "metrics": [
                     {
-                      "name": "max_weight",
-                      "expression": "MAX(weight)",
-                      "source_column": "weight"
+                      "name": "count",
+                      "expression": "COUNT(*)",
+                      "source_column": "*"
                     }
                   ],
-                  "dimensions": [
+                  "dimensions": [],
+                  "filters": [
                     {
-                      "name": "pet_type",
-                      "column": "PetType",
-                      "transform": null
+                      "column": "weight",
+                      "operator": ">",
+                      "value": "10"
                     }
                   ],
-                  "filters": [],
                   "joins": [],
                   "order_by": "[]",
                   "limit": 100,
@@ -1571,25 +1511,25 @@
                 }
               },
               "query_plan": {
-                "intent": "aggregate",
+                "intent": "count",
                 "tables": [
                   "pets"
                 ],
                 "metrics": [
                   {
-                    "name": "max_weight",
-                    "expression": "MAX(weight)",
-                    "source_column": "weight"
+                    "name": "count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
                   }
                 ],
-                "dimensions": [
+                "dimensions": [],
+                "filters": [
                   {
-                    "name": "pet_type",
-                    "column": "PetType",
-                    "transform": null
+                    "column": "weight",
+                    "operator": ">",
+                    "value": "10"
                   }
                 ],
-                "filters": [],
                 "joins": [],
                 "order_by": "[]",
                 "limit": 100,
@@ -1625,14 +1565,14 @@
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780640768233,
+          "created_at_ms": 1780640750842,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100"
+            "sql_preview": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -1641,35 +1581,35 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780640768234,
+          "created_at_ms": 1780640750843,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100"
+            "sql_preview": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1681,18 +1621,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1711,7 +1651,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:03.026943Z"
+              "created_at": "2026-06-05T06:25:43.925593Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1727,14 +1667,14 @@
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780640768235,
+          "created_at_ms": 1780640750844,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100"
+            "sql_preview": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -1743,48 +1683,42 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780640768236,
+          "created_at_ms": 1780640750845,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100"
+            "sql_preview": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100"
           },
           "output": {
             "success": true,
             "columns": [
-              "pet_type",
-              "max_weight"
+              "count"
             ],
             "rows": [
               {
-                "pet_type": "cat",
-                "max_weight": "12.0"
-              },
-              {
-                "pet_type": "dog",
-                "max_weight": "13.4"
+                "count": "2"
               }
             ],
-            "rowCount": 2,
-            "latencyMs": 3,
-            "historyId": "d25af568-9edd-48ee-b780-2b6e366952d5",
-            "executionId": "exec-b958c32a-647a-41ef-9906-f43650e56243",
+            "rowCount": 1,
+            "latencyMs": 31,
+            "historyId": "7488a2ff-0b02-4966-8306-0b1569c3526a",
+            "executionId": "exec-0b0a86dd-6ffe-460f-a58c-adb282f873e6",
             "safetyDecision": {
-              "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1803,21 +1737,21 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:03.026943Z"
+              "created_at": "2026-06-05T06:25:43.925593Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
-              "connectMs": 0,
+              "connectMs": 27,
               "guardrailMs": 0,
               "executeMs": 0,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 3
+              "totalMs": 31
             }
           },
           "error": null,
-          "latency_ms": 13
+          "latency_ms": 41
         }
       ],
       "steps": [
@@ -1826,7 +1760,7 @@
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "optimize_rag": true
           },
@@ -1836,10 +1770,9 @@
               {
                 "table": "has_pet",
                 "comment": "",
-                "score": 22.0,
+                "score": 0.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
+                  "small_schema_full_context"
                 ],
                 "columns": [
                   {
@@ -1861,10 +1794,10 @@
               {
                 "table": "pets",
                 "comment": "",
-                "score": 49.0,
+                "score": 29.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
+                  "table_name_exact_match",
+                  "table_name_token_match:pets"
                 ],
                 "columns": [
                   {
@@ -1900,7 +1833,7 @@
               {
                 "table": "student",
                 "comment": "",
-                "score": 0.0,
+                "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
                 ],
@@ -1989,80 +1922,45 @@
               {
                 "targetType": "table",
                 "table": "has_pet",
-                "score": 22.0,
+                "score": 0.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "has_pet",
-                "column": "PetID",
-                "score": 6.0,
-                "reasons": [
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet"
+                  "small_schema_full_context"
                 ]
               },
               {
                 "targetType": "table",
                 "table": "pets",
-                "score": 49.0,
+                "score": 29.0,
                 "reasons": [
-                  "table_name_token_match:pet",
-                  "table_name_token_match:pet"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "pets",
-                "column": "PetType",
-                "score": 12.0,
-                "reasons": [
-                  "column_name_token_match:type",
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet",
-                  "column_name_token_match:type"
+                  "table_name_exact_match",
+                  "table_name_token_match:pets"
                 ]
               },
               {
                 "targetType": "column",
                 "table": "pets",
                 "column": "weight",
-                "score": 9.0,
+                "score": 6.0,
                 "reasons": [
                   "column_name_exact_match",
-                  "column_name_token_match:weight",
                   "column_name_token_match:weight"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "pets",
-                "column": "PetID",
-                "score": 6.0,
-                "reasons": [
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet"
-                ]
-              },
-              {
-                "targetType": "column",
-                "table": "pets",
-                "column": "pet_age",
-                "score": 6.0,
-                "reasons": [
-                  "column_name_token_match:pet",
-                  "column_name_token_match:pet"
                 ]
               },
               {
                 "targetType": "table",
                 "table": "student",
-                "score": 0.0,
+                "score": 3.0,
                 "reasons": [
                   "small_schema_full_context"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "student",
+                "column": "Advisor",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_token_match:is"
                 ]
               }
             ],
@@ -2079,7 +1977,7 @@
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "selected_tables": [
               "has_pet",
@@ -2088,22 +1986,22 @@
             ]
           },
           "output": {
-            "analysis_goal": "aggregate",
+            "analysis_goal": "count",
             "metrics": [
               {
-                "name": "max_weight",
-                "expression": "MAX(weight)",
-                "source_column": "weight"
+                "name": "count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
               }
             ],
-            "dimensions": [
+            "dimensions": [],
+            "filters": [
               {
-                "name": "pet_type",
-                "column": "PetType",
-                "transform": null
+                "column": "weight",
+                "operator": ">",
+                "value": "10"
               }
             ],
-            "filters": [],
             "time_range": null,
             "candidate_tables": [
               "pets"
@@ -2114,25 +2012,25 @@
             ],
             "risk_notes": [],
             "raw_plan": {
-              "intent": "aggregate",
+              "intent": "count",
               "tables": [
                 "pets"
               ],
               "metrics": [
                 {
-                  "name": "max_weight",
-                  "expression": "MAX(weight)",
-                  "source_column": "weight"
+                  "name": "count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
                 }
               ],
-              "dimensions": [
+              "dimensions": [],
+              "filters": [
                 {
-                  "name": "pet_type",
-                  "column": "PetType",
-                  "transform": null
+                  "column": "weight",
+                  "operator": ">",
+                  "value": "10"
                 }
               ],
-              "filters": [],
               "joins": [],
               "order_by": "[]",
               "limit": 100,
@@ -2141,26 +2039,26 @@
             }
           },
           "error": null,
-          "latency_ms": 2957
+          "latency_ms": 2447
         },
         {
           "name": "generate_sql_candidate",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
+            "question": "Find the number of pets whose weight is heavier than 10.",
             "has_follow_up_context": false,
             "optimize_rag": true,
             "model_name": "qwen-plus",
             "has_api_key": true,
-            "plan_goal": "aggregate",
+            "plan_goal": "count",
             "plan_candidate_tables": [
               "pets"
             ],
             "schema_context_size": 395
           },
           "output": {
-            "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "raw_sql": null,
             "model": "databox-query-plan-renderer",
             "mode": "plan_guided",
@@ -2170,22 +2068,22 @@
             "metadata": {
               "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "aggregate",
+                "analysis_goal": "count",
                 "metrics": [
                   {
-                    "name": "max_weight",
-                    "expression": "MAX(weight)",
-                    "source_column": "weight"
+                    "name": "count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
                   }
                 ],
-                "dimensions": [
+                "dimensions": [],
+                "filters": [
                   {
-                    "name": "pet_type",
-                    "column": "PetType",
-                    "transform": null
+                    "column": "weight",
+                    "operator": ">",
+                    "value": "10"
                   }
                 ],
-                "filters": [],
                 "time_range": null,
                 "candidate_tables": [
                   "pets"
@@ -2196,25 +2094,25 @@
                 ],
                 "risk_notes": [],
                 "raw_plan": {
-                  "intent": "aggregate",
+                  "intent": "count",
                   "tables": [
                     "pets"
                   ],
                   "metrics": [
                     {
-                      "name": "max_weight",
-                      "expression": "MAX(weight)",
-                      "source_column": "weight"
+                      "name": "count",
+                      "expression": "COUNT(*)",
+                      "source_column": "*"
                     }
                   ],
-                  "dimensions": [
+                  "dimensions": [],
+                  "filters": [
                     {
-                      "name": "pet_type",
-                      "column": "PetType",
-                      "transform": null
+                      "column": "weight",
+                      "operator": ">",
+                      "value": "10"
                     }
                   ],
-                  "filters": [],
                   "joins": [],
                   "order_by": "[]",
                   "limit": 100,
@@ -2223,25 +2121,25 @@
                 }
               },
               "query_plan": {
-                "intent": "aggregate",
+                "intent": "count",
                 "tables": [
                   "pets"
                 ],
                 "metrics": [
                   {
-                    "name": "max_weight",
-                    "expression": "MAX(weight)",
-                    "source_column": "weight"
+                    "name": "count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
                   }
                 ],
-                "dimensions": [
+                "dimensions": [],
+                "filters": [
                   {
-                    "name": "pet_type",
-                    "column": "PetType",
-                    "transform": null
+                    "column": "weight",
+                    "operator": ">",
+                    "value": "10"
                   }
                 ],
-                "filters": [],
                 "joins": [],
                 "order_by": "[]",
                 "limit": 100,
@@ -2279,28 +2177,28 @@
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100"
+            "sql_preview": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-            "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+            "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2312,18 +2210,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2342,7 +2240,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:03.026943Z"
+              "created_at": "2026-06-05T06:25:43.925593Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2360,41 +2258,35 @@
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-pets-1",
-            "sql_preview": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100"
+            "sql_preview": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100"
           },
           "output": {
             "success": true,
             "columns": [
-              "pet_type",
-              "max_weight"
+              "count"
             ],
             "rows": [
               {
-                "pet_type": "cat",
-                "max_weight": "12.0"
-              },
-              {
-                "pet_type": "dog",
-                "max_weight": "13.4"
+                "count": "2"
               }
             ],
-            "rowCount": 2,
-            "latencyMs": 3,
-            "historyId": "d25af568-9edd-48ee-b780-2b6e366952d5",
-            "executionId": "exec-b958c32a-647a-41ef-9906-f43650e56243",
+            "rowCount": 1,
+            "latencyMs": 31,
+            "historyId": "7488a2ff-0b02-4966-8306-0b1569c3526a",
+            "executionId": "exec-0b0a86dd-6ffe-460f-a58c-adb282f873e6",
             "safetyDecision": {
-              "decision_id": "safety-87f7f7e6-8de8-4e38-be18-4045fcf5c5f3",
+              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
-              "original_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-              "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+              "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
-                "safeSql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+                "originalSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2413,21 +2305,21 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:03.026943Z"
+              "created_at": "2026-06-05T06:25:43.925593Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
-              "connectMs": 0,
+              "connectMs": 27,
               "guardrailMs": 0,
               "executeMs": 0,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 3
+              "totalMs": 31
             }
           },
           "error": null,
-          "latency_ms": 13
+          "latency_ms": 41
         }
       ],
       "error": null,

@@ -1,0 +1,54 @@
+{
+  "case_id": "spider-smoke-2",
+  "db_id": "concert_singer",
+  "question": "Show name, country, age for all singers ordered by age from the oldest to the youngest.",
+  "difficulty": "simple",
+  "gold_sql": "SELECT name ,  country ,  age FROM singer ORDER BY age DESC",
+  "agent_sql": null,
+  "safe_sql": null,
+  "agent_answer": null,
+  "status": "eval_env_failed",
+  "final_status": null,
+  "execution_match": null,
+  "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
+  "quality": {
+    "score": 0,
+    "max_score": 5,
+    "sql_valid": false,
+    "execution_match": null,
+    "has_safety_artifact": false,
+    "has_answer": false,
+    "flow_complete": false,
+    "checks": {
+      "completed": false,
+      "sql_generated": false,
+      "execution_match": false,
+      "has_safety": false,
+      "has_answer": false,
+      "has_query_plan": false,
+      "has_table": false,
+      "has_error": true,
+      "flow_complete": false
+    }
+  },
+  "steps": [],
+  "artifacts": [],
+  "approval": null,
+  "latency_seconds": 2.36,
+  "gold_rows_count": 6,
+  "agent_rows_count": 0,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": false,
+    "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
+    "mysql_tables": [
+      "concert",
+      "singer",
+      "singer_in_concert",
+      "stadium"
+    ],
+    "databox_tables": []
+  },
+  "event_count": 0
+}

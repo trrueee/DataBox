@@ -132,7 +132,12 @@ def generate_sql_tool(
     }
 
     def body() -> dict[str, Any]:
-        plan_sql = _render_sql_from_query_plan(db, req.datasource_id, query_plan)
+        # Decide whether plan requires LLM fallback first
+        require_llm, fallback_reason = _plan_requires_llm_sql(query_plan, question=question)
+        plan_sql = None
+        generation_source = None
+        if not require_llm:
+            plan_sql = _render_sql_from_query_plan(db, req.datasource_id, query_plan)
         if plan_sql:
             result = {
                 "sql": plan_sql,
@@ -173,6 +178,7 @@ def generate_sql_tool(
                 "selected_columns": result.get("selectedColumns", []),
                 "schema_context_size": result.get("schemaContextSize"),
                 "rewrite": rewrite_metadata,
+                "fallback_reason": fallback_reason if 'fallback_reason' in locals() else None,
             },
         )
         return candidate.model_dump()
@@ -639,7 +645,13 @@ def _render_sql_from_query_plan(
     filters = [item for item in _list_value(raw_plan.get("filters")) if isinstance(item, dict)]
     joins = [item for item in _list_value(raw_plan.get("joins")) if isinstance(item, dict)]
     intent = str(raw_plan.get("intent") or query_plan.get("analysis_goal") or "").strip()
+    # If plan indicates very simple answer intent with no metrics/dimensions/filters, nothing to render
     if intent == "answer_question" and not metrics and not dimensions and not filters:
+        return None
+
+    # Guard: complex intents require LLM-generated SQL. If so, bail out here.
+    requires, reason = _plan_requires_llm_sql(query_plan, question=(query_plan or {}).get("analysis_goal"))
+    if requires:
         return None
 
     projections: list[str] = []
@@ -688,7 +700,7 @@ def _render_sql_from_query_plan(
         sql_parts.append(f"GROUP BY {', '.join(group_by)}")
 
     order_by_raw = raw_plan.get("order_by")
-    order_by = _coerce_order_by(order_by_raw)
+    order_by = _render_order_by(order_by_raw, schema, tables)
     if order_by_raw:
         import logging
         logging.getLogger("databox.agent.tools").info(
@@ -1071,6 +1083,9 @@ def _filter_expression(item: dict[str, Any]) -> str:
     column = str(item.get("column") or "").strip()
     operator = str(item.get("operator") or "=").strip().upper()
     value = item.get("value")
+    # Normalize textual nulls
+    if isinstance(value, str) and value.strip().lower() in ("none", "null", ""):
+        value = None
     if not column:
         return ""
     # Support explicit IS NULL / IS NOT NULL semantics and do not silently fallback
@@ -1138,6 +1153,132 @@ def _safe_alias(value: str) -> str:
     if alias[0].isdigit():
         alias = f"c_{alias}"
     return alias
+
+
+def _is_safe_identifier(name: str) -> bool:
+    return bool(re.fullmatch(r"[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)?", name))
+
+
+def _render_order_by(value: Any, schema: dict[str, list[str]], tables_in_plan: list[str]) -> str | None:
+    """Render structured order_by value into a safe SQL `ORDER BY` clause or None.
+
+    Supports:
+      - string like "Age DESC"
+      - dict {column, direction}
+      - list of dicts or strings
+    Returns None when empty/unsupported/unsafe.
+    """
+    if value is None:
+        return None
+    # empty list/tuple
+    if isinstance(value, (list, tuple)) and len(value) == 0:
+        return None
+
+    items: list[Any]
+    if isinstance(value, (list, tuple)):
+        items = list(value)
+    else:
+        # also accept JSON-like strings that are not literal Python repr
+        items = [value]
+
+    parts: list[str] = []
+    for item in items:
+        if item is None or item == "" or item == [] or item == {}:
+            continue
+        col = None
+        direction = None
+        if isinstance(item, dict):
+            col = str(item.get("column") or "").strip()
+            direction = str(item.get("direction") or "").strip().upper()
+        else:
+            text = str(item).strip()
+            # Reject python repr-like dictionaries/lists
+            if text.startswith("[{") or text.startswith("{'") or text.startswith("[{'"):
+                return None
+            # split last token as direction if present
+            m = re.match(r"^(.+?)\s+(ASC|DESC)$", text, re.IGNORECASE)
+            if m:
+                col = m.group(1).strip()
+                direction = m.group(2).strip().upper()
+            else:
+                col = text
+                direction = "ASC"
+
+        if not col:
+            continue
+        if direction not in ("ASC", "DESC"):
+            # unsupported direction -> force fallback
+            return None
+
+        # validate identifier safety and existence in schema
+        if "." in col:
+            tbl, colname = col.split(".", 1)
+            if not _is_safe_identifier(col):
+                return None
+            if tbl.lower() not in schema or colname not in schema[tbl.lower()]:
+                return None
+        else:
+            if not re.fullmatch(r"[A-Za-z_][\w]*", col):
+                return None
+            # ensure column exists in one of the plan tables
+            found = False
+            for t in tables_in_plan:
+                if t.lower() in schema and col in schema[t.lower()]:
+                    found = True
+                    break
+            if not found:
+                return None
+
+        parts.append(f"{col} {direction}")
+
+    return ", ".join(parts) if parts else None
+
+
+def _plan_requires_llm_sql(query_plan: dict[str, Any] | None, question: str | None = None) -> tuple[bool, str | None]:
+    """Heuristic: determine whether the plan includes complex intent that requires LLM-generated SQL.
+
+    Returns (requires_llm, reason)
+    """
+    if not query_plan:
+        return False, None
+    raw = query_plan.get("raw_plan") if isinstance(query_plan.get("raw_plan"), dict) else query_plan
+    text_sources = []
+    if question:
+        text_sources.append(str(question))
+    text_sources.append(str(raw.get("intent") or ""))
+    text_sources.append(str(raw.get("analysis_goal") or ""))
+    text_sources.extend([str(item) for item in _list_value(raw.get("warnings"))])
+    text_sources.extend([str(item) for item in _list_value(raw.get("filters"))])
+
+    joined_text = " ".join(text_sources).lower()
+
+    # anti-join / negative existence
+    anti_tokens = ("do not have", "does not have", "without", "not have", "not in", "no ", "not owned")
+    if any(tok in joined_text for tok in anti_tokens):
+        return True, "complex_intent: anti_join"
+
+    # set logic / both constraints
+    set_tokens = ("both", "intersect", "intersection", "all of")
+    if any(tok in joined_text for tok in set_tokens):
+        return True, "complex_intent: set_logic"
+
+    # nested query / aggregate comparison heuristics
+    nested_tokens = ("above average", "below average", "greater than average")
+    if any(tok in joined_text for tok in nested_tokens):
+        return True, "complex_intent: aggregate_comparison"
+    # filter values containing subquery indicators
+    for f in _list_value(raw.get("filters")):
+        v = str((f or {}).get("value") or "")
+        if re.match(r"\(\s*select\b", v, re.IGNORECASE) or "avg(" in v.lower():
+            return True, "complex_intent: nested_query"
+
+    # unsupported operators
+    ops = str(raw.get("operators") or "") + " " + " ".join([str((f or {}).get("operator") or "") for f in _list_value(raw.get("filters"))])
+    unsupported_ops = ("not exists", "exists", "not in", "intersect", "except", "having")
+    if any(op in ops.lower() for op in unsupported_ops):
+        return True, "complex_intent: unsupported_operator"
+
+    return False, None
 
 
 def _coerce_order_by(value: Any) -> str | None:

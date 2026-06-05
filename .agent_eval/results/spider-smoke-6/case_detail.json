@@ -4,29 +4,29 @@
   "question": "Find the maximum weight for each type of pet. List the maximum weight and pet type.",
   "difficulty": "medium",
   "gold_sql": "SELECT max(weight) ,  petType FROM pets GROUP BY petType",
-  "agent_sql": "SELECT * FROM products LIMIT 10",
-  "safe_sql": null,
-  "agent_answer": "I do not have a successful result set to analyze yet.",
-  "status": "validation_blocked",
+  "agent_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+  "safe_sql": "SELECT PetType AS pet_type, MAX(weight) AS max_weight FROM pets GROUP BY PetType LIMIT 100",
+  "agent_answer": "The maximum weight for each type of pet is:\n\n- Cat: 12.0\n- Dog: 13.4",
+  "status": "pass",
   "final_status": "completed",
-  "execution_match": null,
-  "reason": "Validation blocked agent SQL: schema_validation, select_star",
+  "execution_match": true,
+  "reason": "Execution match",
   "quality": {
-    "score": 3,
+    "score": 5,
     "max_score": 5,
     "sql_valid": true,
-    "execution_match": null,
+    "execution_match": true,
     "has_safety_artifact": true,
     "has_answer": true,
     "flow_complete": true,
     "checks": {
-      "completed": false,
+      "completed": true,
       "sql_generated": true,
-      "execution_match": false,
+      "execution_match": true,
       "has_safety": true,
       "has_answer": true,
       "has_query_plan": true,
-      "has_table": false,
+      "has_table": true,
       "has_error": false,
       "flow_complete": true
     }
@@ -36,18 +36,18 @@
     "build_query_plan",
     "generate_sql_candidate",
     "validate_sql",
-    "revise_sql",
-    "answer_synthesizer"
+    "execute_sql"
   ],
   "artifacts": [
     "query_plan",
     "sql",
-    "safety"
+    "safety",
+    "table"
   ],
   "approval": null,
-  "latency_seconds": 0.76,
+  "latency_seconds": 17.35,
   "gold_rows_count": 2,
-  "agent_rows_count": 0,
+  "agent_rows_count": 2,
   "gold_error": null,
   "agent_error": null,
   "schema_preflight": {
@@ -64,5 +64,5 @@
       "student"
     ]
   },
-  "event_count": 18
+  "event_count": 17
 }

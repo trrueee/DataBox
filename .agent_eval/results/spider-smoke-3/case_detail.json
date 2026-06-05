@@ -1,12 +1,12 @@
 {
-  "case_id": "spider-smoke-1",
+  "case_id": "spider-smoke-3",
   "db_id": "concert_singer",
-  "question": "How many singers do we have?",
-  "difficulty": "simple",
-  "gold_sql": "SELECT count(*) FROM singer",
-  "agent_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-  "safe_sql": "SELECT COUNT(*) AS singer_count FROM singer LIMIT 100",
-  "agent_answer": "We have 6 singers.",
+  "question": "Show all countries and the number of singers in each country.",
+  "difficulty": "medium",
+  "gold_sql": "SELECT country ,  count(*) FROM singer GROUP BY country",
+  "agent_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+  "safe_sql": "SELECT Country AS country, COUNT(*) AS singer_count FROM singer GROUP BY Country LIMIT 100",
+  "agent_answer": "There are 3 countries represented in the singer table:\n\n- Netherlands: 1 singer\n- United States: 1 singer\n- France: 4 singers\n\nThis result is based on a count of singers grouped by country, limited to the first 100 rows. The total number of countries in the full dataset may be higher.",
   "status": "pass",
   "final_status": "completed",
   "execution_match": true,
@@ -36,18 +36,22 @@
     "build_query_plan",
     "generate_sql_candidate",
     "validate_sql",
-    "execute_sql"
+    "execute_sql",
+    "profile_result",
+    "suggest_chart"
   ],
   "artifacts": [
     "query_plan",
     "sql",
     "safety",
-    "table"
+    "table",
+    "insight",
+    "chart"
   ],
   "approval": null,
-  "latency_seconds": 17.83,
-  "gold_rows_count": 1,
-  "agent_rows_count": 1,
+  "latency_seconds": 23.2,
+  "gold_rows_count": 3,
+  "agent_rows_count": 3,
   "gold_error": null,
   "agent_error": null,
   "schema_preflight": {
@@ -66,5 +70,5 @@
       "stadium"
     ]
   },
-  "event_count": 17
+  "event_count": 23
 }

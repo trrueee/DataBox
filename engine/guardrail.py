@@ -306,7 +306,7 @@ def guardrail_check(sql_str: str, dialect: str = "mysql") -> GuardrailResult:
                 "rule": "mysql_syntax_invalid",
                 "level": "reject",
                 "message": (
-                    f"SQL 包含 MySQL 不支持的语法: '{token}'. "
+                    "SQL contains a MySQL-unsupported generated ordering expression. "
                     "请使用标准 MySQL ORDER BY column [ASC|DESC] 语法。"
                 ),
             })

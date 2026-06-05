@@ -146,6 +146,28 @@ def test_prepare_generated_sql_removes_invalid_order_by(db_session, demo_datasou
     assert "invalid_order_by_removed" in notes
 
 
+@pytest.mark.parametrize(
+    ("raw_sql", "expected_order_by"),
+    [
+        ("SELECT id FROM users ORDER BY id DESC LIMIT 100", "ORDER BY id DESC"),
+        ("SELECT id FROM users ORDER BY username ASC LIMIT 100", "ORDER BY username ASC"),
+        ("SELECT id FROM users ORDER BY ABS(id) DESC LIMIT 100", "ORDER BY ABS(id) DESC"),
+    ],
+)
+def test_prepare_generated_sql_preserves_valid_order_by(
+    db_session,
+    demo_datasource,
+    raw_sql: str,
+    expected_order_by: str,
+) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    prepared, notes, _metadata = _prepare_generated_sql(db_session, demo_datasource.id, raw_sql)
+
+    assert expected_order_by in prepared
+    assert "invalid_order_by_removed" not in notes
+
+
 def test_generate_sql_tool_no_key_uses_offline_fallback(db_session, demo_datasource) -> None:
     sync_schema(db_session, demo_datasource.id)
     req = AgentRunRequest(datasource_id=demo_datasource.id, question="list products", api_key=None)
@@ -300,3 +322,129 @@ def test_suggest_chart_category_numeric_returns_bar() -> None:
         "y": "count",
         "reason": "A category field plus a numeric measure is best compared by category.",
     }
+
+
+def test_render_structured_order_by_list_and_dict(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fail_generate_sql(*_args, **_kwargs):
+        raise AssertionError("generate_sql fallback should not run for a renderable plan")
+
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fail_generate_sql)
+    req = AgentRunRequest(datasource_id=demo_datasource.id, question="list users")
+    metric = {"name": "total_users", "expression": "COUNT(*)"}
+    # single dict order_by
+    query_plan = {
+        "analysis_goal": "list users",
+        "candidate_tables": ["users"],
+        "raw_plan": {
+            "intent": "aggregate",
+            "tables": ["users"],
+            "metrics": [],
+            "dimensions": [],
+            "filters": [],
+            "joins": [],
+            "order_by": {"column": "id", "direction": "DESC"},
+            "limit": 100,
+        },
+    }
+
+    obs = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
+    assert obs.status == "success"
+    assert obs.output is not None
+    assert obs.output["metadata"]["generation_source"] == "query_plan_rendered"
+    assert "ORDER BY id DESC" in obs.output["sql"].upper()
+    # multi-field list
+    query_plan["raw_plan"]["order_by"] = [{"column": "id", "direction": "DESC"}, {"column": "username", "direction": "ASC"}]
+    obs2 = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
+    assert obs2.status == "success"
+    assert "ORDER BY id DESC, username ASC" in obs2.output["sql"].upper()
+
+
+def test_order_by_illegal_direction_triggers_fallback(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {"sql": "SELECT id FROM users ORDER BY id DESC", "model": "test", "mode": "online", "latencyMs": 1, "schemaValidationWarnings": []}
+
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+    req = AgentRunRequest(datasource_id=demo_datasource.id, question="list users")
+    query_plan = {
+        "analysis_goal": "list users",
+        "candidate_tables": ["users"],
+        "raw_plan": {
+            "intent": "aggregate",
+            "tables": ["users"],
+            "metrics": [],
+            "dimensions": [],
+            "filters": [],
+            "joins": [],
+            "order_by": {"column": "id", "direction": "DOWN"},
+            "limit": 100,
+        },
+    }
+
+    obs = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
+    assert obs.status == "success"
+    assert obs.output is not None
+    assert obs.output["metadata"]["generation_source"] == "generate_sql_fallback"
+
+
+def test_filter_is_null_renders_and_no_quoted_none(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fail_generate_sql(*_args, **_kwargs):
+        raise AssertionError("generate_sql fallback should not run for a renderable plan")
+
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fail_generate_sql)
+    req = AgentRunRequest(datasource_id=demo_datasource.id, question="users without deleted")
+    query_plan = {
+        "analysis_goal": "users without deleted",
+        "candidate_tables": ["users"],
+        "raw_plan": {
+            "intent": "filter",
+            "tables": ["users"],
+            "metrics": [],
+            "dimensions": [],
+            "filters": [{"column": "users.deleted_at", "operator": "IS NULL", "value": None}],
+            "joins": [],
+            "limit": 100,
+        },
+    }
+
+    obs = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
+    assert obs.status == "success"
+    assert obs.output is not None
+    sql = obs.output["sql"]
+    assert "IS NULL" in sql
+    assert "'None'" not in sql and "\"None\"" not in sql
+
+
+def test_plan_requires_llm_for_antijoin_and_inner_join(db_session, demo_datasource, monkeypatch) -> None:
+    sync_schema(db_session, demo_datasource.id)
+
+    def fake_generate_sql(*_args, **_kwargs):
+        return {"sql": "SELECT id FROM users", "model": "test", "mode": "online", "latencyMs": 1, "schemaValidationWarnings": []}
+
+    monkeypatch.setattr("engine.agent.tools.generate_sql", fake_generate_sql)
+    req = AgentRunRequest(datasource_id=demo_datasource.id, question="users who do not have a pet")
+    # Simulate plan with inner join and IS NULL filter semantics
+    query_plan = {
+        "analysis_goal": "users who do not have a pet",
+        "candidate_tables": ["users", "has_pet"],
+        "raw_plan": {
+            "intent": "filter",
+            "tables": ["users", "has_pet"],
+            "metrics": [],
+            "dimensions": [],
+            "filters": [{"column": "has_pet.pet_id", "operator": "IS NULL", "value": None}],
+            "joins": [{"right_table": "has_pet", "condition": "users.id = has_pet.user_id"}],
+            "limit": 100,
+        },
+    }
+
+    obs = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
+    assert obs.status == "success"
+    assert obs.output is not None
+    # Should fallback to LLM because of anti-join intent
+    assert obs.output["metadata"]["generation_source"] == "generate_sql_fallback"

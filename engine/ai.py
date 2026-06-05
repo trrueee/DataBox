@@ -294,7 +294,12 @@ SYSTEM_PROMPT = (
     "2. Only write SELECT queries. DDL or DML statements (like INSERT, UPDATE, DROP, ALTER) are STRICTLY forbidden.\n"
     "3. Use correct table joining paths and reference fields exactly as they are defined.\n"
     "4. Always append a LIMIT clause (default to LIMIT 100) to keep results safe.\n"
-    "5. Output must use standard MySQL syntax dialect."
+    "5. Output must use standard MySQL syntax dialect.\n"
+    "6. Use ONLY tables and columns present in the provided schema context; do not invent table or column names.\n"
+    "7. Do NOT use BigQuery-specific functions or types such as ARRAY(), STRUCT(), UNNEST(), or ARRAY_AGG() in the SQL.\n"
+    "8. For negative/anti-join intents (e.g., 'do not have', 'without'), prefer NOT EXISTS or NOT IN with careful subqueries.\n"
+    "9. For 'both A and B' style constraints, prefer GROUP BY ... HAVING COUNT(DISTINCT ...) = N or an equivalent self-join; avoid ad-hoc client-side filtering.\n"
+    "10. Return ONLY the SQL statement; do not include explanations, examples, or surrounding markdown other than an optional sql code block."
 )
 
 USER_PROMPT_TEMPLATE = (
