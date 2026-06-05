@@ -209,36 +209,51 @@ def generate_sql_tool(
             generation_source = "generate_sql_fallback"
         raw_sql = str(result.get("sql", "") or "").strip()
         sql, rewrite_notes, rewrite_metadata = _prepare_generated_sql(db, req.datasource_id, raw_sql)
+        # Semantic verification and guarded retry
+        semantic_mode = getattr(req, "semantic_mode", "shadow") or "shadow"
         semantic_retry_attempted = False
+        semantic_retry_accepted = False
+        semantic_retry_rejected_reason: str | None = None
         semantic_initial_violations: list[dict[str, Any]] = []
-        semantic_violations = verify_sql_against_contract(sql, contract, schema_context) if sql else []
-        if sql and _has_retryable_semantic_violations(semantic_violations) and req.api_key:
-            semantic_retry_attempted = True
+        semantic_violations: list[Any] = []
+        semantic_retry_violations: list[Any] = []
+
+        if sql and semantic_mode != "off":
+            semantic_violations = verify_sql_against_contract(sql, contract, schema_context)
             semantic_initial_violations = _semantic_violation_payload(semantic_violations)
-            retry_prompt = _semantic_retry_prompt(
-                question=question,
-                schema_context=schema_context,
-                contract=contract,
-                previous_sql=sql,
-                violations=semantic_violations,
-            )
-            retry_result = generate_sql(
-                db,
-                req.datasource_id,
-                retry_prompt,
-                llm_config=_llm_config(req),
-                optimize_rag=req.optimize_rag,
-            )
-            retry_raw_sql = str(retry_result.get("sql", "") or "").strip()
-            retry_sql, retry_notes, retry_metadata = _prepare_generated_sql(db, req.datasource_id, retry_raw_sql)
-            retry_violations = verify_sql_against_contract(retry_sql, contract, schema_context) if retry_sql else []
-            if retry_sql:
-                result = retry_result
-                raw_sql = retry_raw_sql
-                sql = retry_sql
-                rewrite_notes.extend(f"semantic_retry:{note}" for note in retry_notes)
-                rewrite_metadata = {**rewrite_metadata, "semantic_retry": retry_metadata}
-                semantic_violations = retry_violations
+
+            if semantic_mode == "retry" and _should_retry_semantic(contract, semantic_violations, req.api_key):
+                semantic_retry_attempted = True
+                retry_prompt = _semantic_retry_prompt(
+                    question=question,
+                    schema_context=schema_context,
+                    contract=contract,
+                    previous_sql=sql,
+                    violations=semantic_violations,
+                )
+                retry_result = generate_sql(
+                    db, req.datasource_id, retry_prompt,
+                    llm_config=_llm_config(req),
+                    optimize_rag=req.optimize_rag,
+                )
+                retry_raw = str(retry_result.get("sql", "") or "").strip()
+                retry_sql_candidate, retry_notes, retry_meta = _prepare_generated_sql(db, req.datasource_id, retry_raw)
+                if retry_sql_candidate:
+                    retry_violations = verify_sql_against_contract(retry_sql_candidate, contract, schema_context)
+                    semantic_retry_violations = _semantic_violation_payload(retry_violations)
+                    if _accept_semantic_retry(semantic_violations, retry_violations, contract):
+                        semantic_retry_accepted = True
+                        result = retry_result
+                        raw_sql = retry_raw
+                        sql = retry_sql_candidate
+                        rewrite_notes.extend(f"semantic_retry:{note}" for note in retry_notes)
+                        rewrite_metadata = {**rewrite_metadata, "semantic_retry": retry_meta}
+                        semantic_violations = retry_violations
+                    else:
+                        semantic_retry_rejected_reason = "retry_did_not_improve_violations"
+                else:
+                    semantic_retry_rejected_reason = "retry_produced_empty_sql"
+
         sql_value = sql if sql else None
         candidate = SQLCandidate(
             sql=sql_value,
@@ -257,10 +272,14 @@ def generate_sql_tool(
                 "schema_context_size": result.get("schemaContextSize"),
                 "rewrite": rewrite_metadata,
                 "fallback_reason": fallback_reason if 'fallback_reason' in locals() else None,
+                "semantic_mode": semantic_mode,
                 "semantic_contract": contract.to_dict(),
                 "semantic_violations": _semantic_violation_payload(semantic_violations),
                 "semantic_initial_violations": semantic_initial_violations,
                 "semantic_retry_attempted": semantic_retry_attempted,
+                "semantic_retry_accepted": semantic_retry_accepted,
+                "semantic_retry_rejected_reason": semantic_retry_rejected_reason,
+                "semantic_retry_violations": semantic_retry_violations,
             },
         )
         return candidate.model_dump()
@@ -831,6 +850,9 @@ def _question_with_contract(
 
 
 def _contract_requires_llm(contract: QueryContract) -> tuple[bool, str | None]:
+    """Only route to LLM when contract is high-confidence AND signals complex intent."""
+    if contract.confidence < 0.7:
+        return False, None
     if contract.aggregation and contract.aggregation.type == "count_threshold":
         return True, "semantic_contract_count_threshold"
     if contract.negation and contract.negation.type == "absence_of_relation":
@@ -838,6 +860,68 @@ def _contract_requires_llm(contract: QueryContract) -> tuple[bool, str | None]:
     if contract.set_logic and contract.set_logic.type in {"intersection", "both_conditions"}:
         return True, "semantic_contract_set_logic"
     return False, None
+
+
+# Violation codes that may be retried (requires contract confidence >= 0.7)
+_HIGH_CONFIDENCE_RETRYABLE_CODES = frozenset({
+    "having_missing", "group_by_missing", "having_count_missing",
+    "antijoin_outer_join", "setlogic_contradictory_and", "projection_select_star",
+})
+
+
+def _should_retry_semantic(
+    contract: QueryContract,
+    violations: list[SemanticViolation],
+    has_api_key: str | None,
+) -> bool:
+    """Only retry when contract is high-confidence, violations are in the retryable set,
+    and an API key is available."""
+    if not has_api_key:
+        return False
+    if contract.confidence < 0.7:
+        return False
+    return any(v.code in _HIGH_CONFIDENCE_RETRYABLE_CODES for v in violations
+               if v.severity == "retryable")
+
+
+def _semantic_violation_severity_score(violations: list[Any]) -> int:
+    """Score violations: blocking=100, retryable=10, warning=1."""
+    score = 0
+    for v in violations:
+        code = str(v.get("code") if isinstance(v, dict) else v.code)
+        sev = str(v.get("severity") if isinstance(v, dict) else v.severity)
+        if sev == "blocking":
+            score += 100
+        elif sev == "retryable":
+            score += 10
+        else:
+            score += 1
+    return score
+
+
+def _accept_semantic_retry(
+    original_violations: list[Any],
+    retry_violations: list[Any],
+    contract: QueryContract,
+) -> bool:
+    """Accept retry only if it reduces violation severity and introduces no new
+    high-confidence retryable violation codes not present in the original set."""
+    if contract.confidence < 0.7:
+        return False
+    orig_score = _semantic_violation_severity_score(original_violations)
+    retry_score = _semantic_violation_severity_score(retry_violations)
+    if retry_score >= orig_score:
+        return False
+    # Check that retry doesn't introduce NEW high-confidence retryable violations
+    orig_codes = {str(v.get("code") if isinstance(v, dict) else v.code)
+                  for v in original_violations}
+    retry_high_codes = {
+        str(v.get("code") if isinstance(v, dict) else v.code)
+        for v in retry_violations
+        if str(v.get("severity") if isinstance(v, dict) else v.severity) == "retryable"
+    }
+    new_retryable = retry_high_codes - orig_codes
+    return len(new_retryable) == 0
 
 
 def _has_retryable_semantic_violations(violations: list[SemanticViolation]) -> bool:

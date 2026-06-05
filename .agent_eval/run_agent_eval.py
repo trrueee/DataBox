@@ -662,6 +662,7 @@ def run_agent_case(
     session_id: str | None = None,
     parent_run_id: str | None = None,
     workspace_context: dict[str, Any] | None = None,
+    semantic_mode: str = "shadow",
 ) -> tuple[list[dict[str, Any]], str | None, str | None, dict | None]:
     """Run a single agent case against the DataBox streaming API.
 
@@ -677,6 +678,7 @@ def run_agent_case(
         "question": question,
         "execute": execute,
         "max_steps": max_steps,
+        "semantic_mode": semantic_mode,
     }
     if session_id:
         payload["session_id"] = session_id
@@ -973,6 +975,19 @@ def main() -> None:
     parser.add_argument("--out", help="Path for JSONL output file")
     parser.add_argument("--no-execute", action="store_true", help="Disable SQL execution (global)")
     parser.add_argument("--max-steps", type=int, default=15, help="Max agent steps per case")
+    parser.add_argument("--semantic-mode", default=None,
+                        choices=["off", "shadow", "retry"],
+                        help="Semantic verification mode (default: shadow)")
+    parser.add_argument("--concurrency", type=int, default=1,
+                        help="Number of concurrent cases (default: 1)")
+    parser.add_argument("--timeout-per-case", type=int, default=300,
+                        help="Timeout seconds per case (default: 300)")
+    parser.add_argument("--resume", action="store_true",
+                        help="Skip cases already in output JSONL")
+    parser.add_argument("--max-cases", type=int, default=0,
+                        help="Limit to first N cases (0 = all)")
+    parser.add_argument("--case-filter", default=None,
+                        help="Comma-separated case_ids to run")
     args = parser.parse_args()
 
     # Load config (supports both legacy flat format and nested llm/backend format)
@@ -995,6 +1010,7 @@ def main() -> None:
     api_key = args.api_key or cfg.get("api_key") or os.environ.get("OPENAI_API_KEY", "")
     api_base = cfg.get("api_base", "")
     model = args.model or cfg.get("model", "gpt-4o-mini")
+    semantic_mode = args.semantic_mode or cfg.get("semantic_mode", "shadow")
     mysql_cfg = cfg.get("mysql", {})
     mysql_host = args.mysql_host or mysql_cfg.get("host", "127.0.0.1")
     mysql_port = args.mysql_port or mysql_cfg.get("port", 3307)
@@ -1185,6 +1201,7 @@ def main() -> None:
             api_base=api_base,
             execute=case_execute,
             max_steps=max_steps,
+            semantic_mode=semantic_mode,
         )
         case_latency = time.time() - case_start
 

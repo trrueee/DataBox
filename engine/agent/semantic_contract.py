@@ -139,6 +139,7 @@ def build_query_contract(
         contract.projection.allow_extra_columns = False
         contract.projection.mode = "entity_only"
         contract.notes.append("count_threshold_detected")
+        contract.confidence = max(contract.confidence, 0.75)
 
     negation = _negation_contract(q)
     if negation:
@@ -146,6 +147,7 @@ def build_query_contract(
         contract.projection.mode = "entity_only"
         contract.projection.allow_extra_columns = False
         contract.notes.append("absence_of_relation_detected")
+        contract.confidence = max(contract.confidence, 0.75)
 
     set_logic = _set_logic_contract(q)
     if set_logic:
@@ -153,6 +155,7 @@ def build_query_contract(
         contract.projection.mode = "entity_only"
         contract.projection.allow_extra_columns = False
         contract.notes.append("set_logic_detected")
+        contract.confidence = max(contract.confidence, 0.75)
 
     if query_plan:
         _merge_query_plan_hints(contract, query_plan)

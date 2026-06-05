@@ -110,6 +110,7 @@ def test_generate_sql_tool_records_semantic_contract_violations(db_session, demo
         datasource_id=demo_datasource.id,
         question="Which airlines have at least 10 flights?",
         api_key="test",
+        semantic_mode="retry",
     )
 
     obs = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan={})
@@ -120,6 +121,7 @@ def test_generate_sql_tool_records_semantic_contract_violations(db_session, demo
     assert metadata["semantic_contract"]["aggregation"]["type"] == "count_threshold"
     assert {item["code"] for item in metadata["semantic_violations"]} == {"having_missing"}
     assert metadata["semantic_retry_attempted"] is True
+    assert metadata["semantic_mode"] == "retry"
     assert "HAVING" not in obs.output["sql"].upper()
 
 
@@ -150,6 +152,7 @@ def test_generate_sql_tool_retries_once_with_contract_violations(db_session, dem
         datasource_id=demo_datasource.id,
         question="Which airlines have at least 10 flights?",
         api_key="test",
+        semantic_mode="retry",
     )
 
     obs = generate_sql_tool(db_session, req, schema_context={"schema_context": "schema", "schema_context_size": 1}, query_plan={})
@@ -161,7 +164,8 @@ def test_generate_sql_tool_retries_once_with_contract_violations(db_session, dem
     assert "having_missing" in prompts[1]
     assert "HAVING COUNT(*) >= 10" in obs.output["sql"]
     assert obs.output["metadata"]["semantic_retry_attempted"] is True
-    assert obs.output["metadata"]["semantic_violations"] == []
+    assert obs.output["metadata"]["semantic_retry_accepted"] is True
+    assert len(obs.output["metadata"]["semantic_violations"]) == 0
 
 
 def test_semantic_retry_prompt_includes_code_specific_guidance() -> None:
