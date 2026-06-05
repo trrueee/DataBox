@@ -44,9 +44,14 @@ def apply_tool_result_to_state(
         update["query_plan"] = output
 
     elif tool_name == "sql.generate":
-        sql = str(output.get("sql") or "").strip()
+        sql = str(output.get("sql") or "").strip() or None
+        if sql:
+            sql = sql.strip() or None
         update["sql_candidate"] = output
         update["sql"] = sql or state.get("sql")
+        # sql=None indicates generation unavailable (e.g. no LLM key for complex fallback)
+        if not sql and output.get("mode") == "fallback_unavailable":
+            update["error"] = output.get("error") or "SQL generation unavailable: no LLM API key configured."
 
     elif tool_name == "sql.validate":
         safe_sql = str(output.get("safe_sql") or "").strip()

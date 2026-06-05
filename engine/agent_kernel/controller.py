@@ -348,6 +348,10 @@ def _fallback_decision(state: KernelState) -> AgentDecision:
     if state.get("error") and not state.get("revision_attempted") and state.get("sql"):
         return _call("sql.revise", {"sql": state.get("sql"), "error": state.get("error")}, "Revise SQL after the current error.")
 
+    # If sql generation failed / unavailable, stop query path and synthesize answer with error context
+    if state.get("error") and not state.get("sql") and not state.get("answer"):
+        return _call("answer.synthesize", {}, "SQL generation failed — synthesize final answer with error.")
+
     if state.get("answer"):
         answer = state.get("answer") or {}
         return AgentDecision(

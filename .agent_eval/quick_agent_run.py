@@ -143,6 +143,35 @@ def find_step_outputs(
     return outputs
 
 
+def find_step_inputs(
+    steps: list[dict[str, Any]],
+    trace_events: list[dict[str, Any]],
+    *,
+    name: str,
+) -> list[dict[str, Any]]:
+    """Extract input dicts from steps/trace_events matching `name`.
+
+    Unlike find_step_outputs, this reads the **input** field of each
+    step / trace_event — which is where model_name, has_api_key, plan_goal
+    etc. are actually recorded.
+    """
+    inputs: list[dict[str, Any]] = []
+
+    for step in steps:
+        if step.get("name") == name:
+            inp = _as_dict(step.get("input"))
+            if inp:
+                inputs.append(inp)
+
+    for trace in trace_events:
+        if trace.get("name") == name:
+            inp = _as_dict(trace.get("input"))
+            if inp:
+                inputs.append(inp)
+
+    return inputs
+
+
 def find_artifacts(
     artifacts: list[dict[str, Any]],
     *,
@@ -320,15 +349,24 @@ def summarize_events(events: list[dict[str, Any]]) -> dict[str, Any]:
     # Keep backward compatibility
     summary["execute_sql_step"] = execute_summary["execute_sql_step_appeared"]
 
-    # Extract model_name and has_api_key from generate_sql_candidate inputs if available
+    # Extract input fields from generate_sql_candidate step/trace
+    generate_inputs = find_step_inputs(steps, trace_events, name="generate_sql_candidate")
     model_name_candidates = []
     has_api_key_candidates = []
-    for out in generate_outputs:
-        inp = _as_dict(out.get("input"))
+    plan_goal_candidates = []
+    plan_tables_candidates = []
+    schema_size_candidates = []
+    for inp in generate_inputs:
         if inp.get("model_name"):
             model_name_candidates.append(inp.get("model_name"))
         if "has_api_key" in inp:
             has_api_key_candidates.append(inp.get("has_api_key"))
+        if inp.get("plan_goal"):
+            plan_goal_candidates.append(inp.get("plan_goal"))
+        if inp.get("plan_candidate_tables"):
+            plan_tables_candidates.append(inp.get("plan_candidate_tables"))
+        if inp.get("schema_context_size") is not None:
+            schema_size_candidates.append(inp.get("schema_context_size"))
 
     # Also check artifacts for model or metadata
     for art in sql_artifacts:
@@ -344,6 +382,9 @@ def summarize_events(events: list[dict[str, Any]]) -> dict[str, Any]:
 
     summary["model_name_from_input"] = _last_non_empty(model_name_candidates)
     summary["has_api_key_from_input"] = _last_non_empty(has_api_key_candidates)
+    summary["plan_goal_from_input"] = _last_non_empty(plan_goal_candidates)
+    summary["plan_candidate_tables_from_input"] = plan_tables_candidates[0] if plan_tables_candidates else None
+    summary["schema_context_size_from_input"] = schema_size_candidates[0] if schema_size_candidates else None
 
     return summary
 

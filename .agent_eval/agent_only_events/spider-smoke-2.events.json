@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_2cdfe58c_1_agent_run_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_1_agent_run_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 1,
-    "created_at_ms": 1780644586421,
+    "created_at_ms": 1780648854288,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-concert-singer",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_2_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_2_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 2,
-    "created_at_ms": 1780644586450,
+    "created_at_ms": 1780648856610,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_3_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_3_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 3,
-    "created_at_ms": 1780644586451,
+    "created_at_ms": 1780648856611,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 8
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_4_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_4_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 4,
-    "created_at_ms": 1780644586457,
+    "created_at_ms": 1780648862589,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_5_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_5_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 5,
-    "created_at_ms": 1780644586457,
+    "created_at_ms": 1780648862590,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 3361
     },
     "artifact": null,
     "answer": null,
@@ -97,77 +97,78 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_6_agent_artifact_created",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_6_agent_artifact_created",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 6,
-    "created_at_ms": 1780644586458,
+    "created_at_ms": 1780648862591,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/001/query_plan",
+      "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
       "payload": {
-        "analysis_goal": "answer_question",
-        "metrics": [
+        "analysis_goal": "retrieve_singer_details_ordered_by_age",
+        "metrics": [],
+        "dimensions": [
           {
-            "name": "row_count",
-            "expression": "COUNT(*)",
-            "source_column": "concert.id"
+            "name": "name",
+            "column": "Name",
+            "transform": null
+          },
+          {
+            "name": "country",
+            "column": "Country",
+            "transform": null
+          },
+          {
+            "name": "age",
+            "column": "Age",
+            "transform": null
           }
         ],
-        "dimensions": [],
         "filters": [],
         "time_range": null,
         "candidate_tables": [
-          "concert",
-          "singer",
-          "singer_in_concert"
+          "singer"
         ],
         "assumptions": [
-          "Plan mode: offline",
+          "Plan mode: online",
           "Only synced local schema metadata is trusted."
         ],
-        "risk_notes": [
-          "QueryPlan metric.source_column references missing column `concert.id`"
-        ],
+        "risk_notes": [],
         "raw_plan": {
-          "intent": "answer_question",
+          "intent": "retrieve_singer_details_ordered_by_age",
           "tables": [
-            "concert",
-            "singer",
-            "singer_in_concert"
+            "singer"
           ],
-          "metrics": [
+          "metrics": [],
+          "dimensions": [
             {
-              "name": "row_count",
-              "expression": "COUNT(*)",
-              "source_column": "concert.id"
-            }
-          ],
-          "dimensions": [],
-          "filters": [],
-          "joins": [
-            {
-              "left_table": "singer_in_concert",
-              "right_table": "concert",
-              "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+              "name": "name",
+              "column": "Name",
+              "transform": null
             },
             {
-              "left_table": "singer_in_concert",
-              "right_table": "singer",
-              "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+              "name": "country",
+              "column": "Country",
+              "transform": null
+            },
+            {
+              "name": "age",
+              "column": "Age",
+              "transform": null
             }
           ],
-          "order_by": null,
+          "filters": [],
+          "joins": [],
+          "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
           "limit": 100,
-          "warnings": [
-            "QueryPlan metric.source_column references missing column `concert.id`"
-          ],
-          "mode": "offline"
+          "warnings": [],
+          "mode": "online"
         }
       },
       "presentation": {
@@ -187,10 +188,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_2cdfe58c_7_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_7_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 7,
-    "created_at_ms": 1780644586465,
+    "created_at_ms": 1780648864588,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -205,17 +206,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_8_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_8_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 8,
-    "created_at_ms": 1780644586466,
+    "created_at_ms": 1780648864589,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 9
     },
     "artifact": null,
     "answer": null,
@@ -226,10 +227,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_9_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_9_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 9,
-    "created_at_ms": 1780644586480,
+    "created_at_ms": 1780648866942,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -244,17 +245,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_10_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_10_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 10,
-    "created_at_ms": 1780644586480,
+    "created_at_ms": 1780648866952,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 11
+      "latency_ms": 32
     },
     "artifact": null,
     "answer": null,
@@ -265,21 +266,21 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_11_agent_artifact_created",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_11_agent_artifact_created",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 11,
-    "created_at_ms": 1780644586481,
+    "created_at_ms": 1780648866954,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/002/sql_candidate",
+      "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
       "payload": {
-        "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+        "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
         "safety_state": {
           "available": true,
           "passed": true,
@@ -297,7 +298,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/001/query_plan"
+        "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -308,39 +309,39 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_2cdfe58c_12_agent_artifact_created",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_12_agent_artifact_created",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 12,
-    "created_at_ms": 1780644586482,
+    "created_at_ms": 1780648866956,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/003/safety_report",
+      "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
       "payload": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-        "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+        "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+        "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-          "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+          "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+          "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+          "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+            "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -352,18 +353,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-e626ede8-9958-4e63-9480-544db63b36e7",
+          "decision_id": "safety-91b7acfb-2221-4498-9f23-4f018c85a943",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-          "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+          "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+          "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+            "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -382,7 +383,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T07:29:46.479262Z"
+          "created_at": "2026-06-05T08:41:06.942216Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -400,7 +401,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/002/sql_candidate"
+        "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -411,10 +412,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_2cdfe58c_13_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_13_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 13,
-    "created_at_ms": 1780644586485,
+    "created_at_ms": 1780648869446,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -429,10 +430,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_14_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_14_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 14,
-    "created_at_ms": 1780644586485,
+    "created_at_ms": 1780648869446,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
@@ -450,10 +451,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_15_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_15_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 15,
-    "created_at_ms": 1780644586489,
+    "created_at_ms": 1780648871653,
     "type": "agent.step.started",
     "step": {
       "name": "profile_result",
@@ -468,10 +469,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_16_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_16_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 16,
-    "created_at_ms": 1780644586489,
+    "created_at_ms": 1780648871654,
     "type": "agent.step.completed",
     "step": {
       "name": "profile_result",
@@ -489,16 +490,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_17_agent_artifact_created",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_17_agent_artifact_created",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 17,
-    "created_at_ms": 1780644586490,
+    "created_at_ms": 1780648871655,
     "type": "agent.artifact.created",
     "step": {
       "name": "profile_result"
     },
     "artifact": {
-      "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/004/result_profile",
+      "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/004/result_profile",
       "semantic_id": "result_profile",
       "type": "insight",
       "title": "Result profile",
@@ -539,10 +540,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_2cdfe58c_18_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_18_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 18,
-    "created_at_ms": 1780644586492,
+    "created_at_ms": 1780648874377,
     "type": "agent.step.started",
     "step": {
       "name": "suggest_chart",
@@ -557,10 +558,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_19_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_19_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 19,
-    "created_at_ms": 1780644586493,
+    "created_at_ms": 1780648874377,
     "type": "agent.step.completed",
     "step": {
       "name": "suggest_chart",
@@ -578,10 +579,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_20_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_20_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 20,
-    "created_at_ms": 1780644586495,
+    "created_at_ms": 1780648877671,
     "type": "agent.step.started",
     "step": {
       "name": "suggest_followups",
@@ -596,10 +597,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_21_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_21_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 21,
-    "created_at_ms": 1780644586496,
+    "created_at_ms": 1780648877673,
     "type": "agent.step.completed",
     "step": {
       "name": "suggest_followups",
@@ -617,10 +618,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_22_agent_step_started",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_22_agent_step_started",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 22,
-    "created_at_ms": 1780644586499,
+    "created_at_ms": 1780648879985,
     "type": "agent.step.started",
     "step": {
       "name": "answer_synthesizer",
@@ -635,10 +636,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_2cdfe58c_23_agent_step_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_23_agent_step_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 23,
-    "created_at_ms": 1780644586499,
+    "created_at_ms": 1780648879986,
     "type": "agent.step.completed",
     "step": {
       "name": "answer_synthesizer",
@@ -656,15 +657,15 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_24_agent_answer_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_24_agent_answer_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 24,
-    "created_at_ms": 1780644586504,
+    "created_at_ms": 1780648885950,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
     "answer": {
-      "answer": "I generated and validated the SQL, but execution was disabled for this review-only run.",
+      "answer": "I generated and validated the SQL to show name, country, and age for all singers ordered by age from oldest to youngest. However, execution was disabled (`execute=false`) for this review-only run, so no results were retrieved. The validated SQL is:\n\n```sql\nSELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100\n```\n\nTo get the actual results — including proper ordering by age descending — the query should be revised to include `ORDER BY Age DESC`. Would you like me to revise and re-validate the SQL with that ordering?",
       "key_findings": [],
       "evidence": [],
       "caveats": [],
@@ -678,104 +679,105 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_2cdfe58c_25_agent_run_completed",
-    "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
+    "event_id": "runtime_b48fa51e_25_agent_run_completed",
+    "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
     "sequence": 25,
-    "created_at_ms": 1780644586504,
+    "created_at_ms": 1780648885950,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "2cdfe58c-dc8a-4b43-a922-8ad24068e047",
-      "session_id": "ab3b0555-7300-4e08-85c7-5556d9306c38",
+      "run_id": "b48fa51e-7998-42a3-9240-4b8195cd89e6",
+      "session_id": "b681be34-1404-476a-9f85-d0ff581ae537",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
       "question": "Show name, country, age for all singers ordered by age from the oldest to the youngest.",
-      "context_summary": "Question: Show name, country, age for all singers ordered by age from the oldest to the youngest. Answer: I generated and validated the SQL, but execution was disabled for this review-only run. Artifacts: - agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/001/query_plan (query_plan, Query plan): analysis_goal=answer_question, metrics=[{'name': 'row_count', 'expression': 'COUNT(*)', 'source_column': 'concert.id'}], dimensions=[], filters=[], time_range=None, candidate_tables=['concert', 'singer', 'singer_in_concert'] - agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS row_count FROM concert LIMIT 100 - agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/004/result_profile (insight, Result profile):",
+      "context_summary": "Question: Show name, country, age for all singers ordered by age from the oldest to the youngest. Answer: I generated and validated the SQL to show name, country, and age for all singers ordered by age from oldest to youngest. However, execution was disabled (`execute=false`) for this review-only run, so no results were retrieved. The validated SQL is: ```sql SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100 ``` To get the actual results — including proper ordering by age descending — the query should be revised to include `ORDER BY Age DESC`. Would you like me to revise and re-validate the SQL with that ordering? Artifacts: - agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/001/query_plan (query_plan, Query plan): analysis_goal=retrieve_singer_details_ordered_by_age, metrics=[], dimensions=[{'name': 'name', 'column': 'Name', 'transform': None}, {'name': 'country', 'column': 'Country', 'transform': None}, {'name': 'age', 'column': 'Age', 'transform': None}], filters=[], time_range=None, candidate_tables=['singer'] - agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/002/sql_candidate (sql, Validated SQL): SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100 - agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/004/result_profile (insight, Result profile):",
       "referenced_artifact_ids": [],
       "query_plan": {
-        "analysis_goal": "answer_question",
-        "metrics": [
+        "analysis_goal": "retrieve_singer_details_ordered_by_age",
+        "metrics": [],
+        "dimensions": [
           {
-            "name": "row_count",
-            "expression": "COUNT(*)",
-            "source_column": "concert.id"
+            "name": "name",
+            "column": "Name",
+            "transform": null
+          },
+          {
+            "name": "country",
+            "column": "Country",
+            "transform": null
+          },
+          {
+            "name": "age",
+            "column": "Age",
+            "transform": null
           }
         ],
-        "dimensions": [],
         "filters": [],
         "time_range": null,
         "candidate_tables": [
-          "concert",
-          "singer",
-          "singer_in_concert"
+          "singer"
         ],
         "assumptions": [
-          "Plan mode: offline",
+          "Plan mode: online",
           "Only synced local schema metadata is trusted."
         ],
-        "risk_notes": [
-          "QueryPlan metric.source_column references missing column `concert.id`"
-        ],
+        "risk_notes": [],
         "raw_plan": {
-          "intent": "answer_question",
+          "intent": "retrieve_singer_details_ordered_by_age",
           "tables": [
-            "concert",
-            "singer",
-            "singer_in_concert"
+            "singer"
           ],
-          "metrics": [
+          "metrics": [],
+          "dimensions": [
             {
-              "name": "row_count",
-              "expression": "COUNT(*)",
-              "source_column": "concert.id"
-            }
-          ],
-          "dimensions": [],
-          "filters": [],
-          "joins": [
-            {
-              "left_table": "singer_in_concert",
-              "right_table": "concert",
-              "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+              "name": "name",
+              "column": "Name",
+              "transform": null
             },
             {
-              "left_table": "singer_in_concert",
-              "right_table": "singer",
-              "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+              "name": "country",
+              "column": "Country",
+              "transform": null
+            },
+            {
+              "name": "age",
+              "column": "Age",
+              "transform": null
             }
           ],
-          "order_by": null,
+          "filters": [],
+          "joins": [],
+          "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
           "limit": 100,
-          "warnings": [
-            "QueryPlan metric.source_column references missing column `concert.id`"
-          ],
-          "mode": "offline"
+          "warnings": [],
+          "mode": "online"
         }
       },
-      "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+      "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
       "safety": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-        "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+        "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+        "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-          "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+          "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+          "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+          "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+            "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -787,18 +789,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-e626ede8-9958-4e63-9480-544db63b36e7",
+          "decision_id": "safety-91b7acfb-2221-4498-9f23-4f018c85a943",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-          "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+          "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+          "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-            "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+            "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -817,7 +819,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T07:29:46.479262Z"
+          "created_at": "2026-06-05T08:41:06.942216Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -830,7 +832,7 @@
       "execution": {
         "reason": "Request execute=false; SQL was not executed."
       },
-      "explanation": "I generated and validated the SQL, but execution was disabled for this review-only run.",
+      "explanation": "I generated and validated the SQL to show name, country, and age for all singers ordered by age from oldest to youngest. However, execution was disabled (`execute=false`) for this review-only run, so no results were retrieved. The validated SQL is:\n\n```sql\nSELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100\n```\n\nTo get the actual results — including proper ordering by age descending — the query should be revised to include `ORDER BY Age DESC`. Would you like me to revise and re-validate the SQL with that ordering?",
       "chart_suggestion": {
         "type": "table",
         "x": null,
@@ -850,7 +852,7 @@
         ]
       },
       "answer": {
-        "answer": "I generated and validated the SQL, but execution was disabled for this review-only run.",
+        "answer": "I generated and validated the SQL to show name, country, and age for all singers ordered by age from oldest to youngest. However, execution was disabled (`execute=false`) for this review-only run, so no results were retrieved. The validated SQL is:\n\n```sql\nSELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100\n```\n\nTo get the actual results — including proper ordering by age descending — the query should be revised to include `ORDER BY Age DESC`. Would you like me to revise and re-validate the SQL with that ordering?",
         "key_findings": [],
         "evidence": [],
         "caveats": [],
@@ -867,68 +869,69 @@
       ],
       "artifacts": [
         {
-          "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/001/query_plan",
+          "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
           "payload": {
-            "analysis_goal": "answer_question",
-            "metrics": [
+            "analysis_goal": "retrieve_singer_details_ordered_by_age",
+            "metrics": [],
+            "dimensions": [
               {
-                "name": "row_count",
-                "expression": "COUNT(*)",
-                "source_column": "concert.id"
+                "name": "name",
+                "column": "Name",
+                "transform": null
+              },
+              {
+                "name": "country",
+                "column": "Country",
+                "transform": null
+              },
+              {
+                "name": "age",
+                "column": "Age",
+                "transform": null
               }
             ],
-            "dimensions": [],
             "filters": [],
             "time_range": null,
             "candidate_tables": [
-              "concert",
-              "singer",
-              "singer_in_concert"
+              "singer"
             ],
             "assumptions": [
-              "Plan mode: offline",
+              "Plan mode: online",
               "Only synced local schema metadata is trusted."
             ],
-            "risk_notes": [
-              "QueryPlan metric.source_column references missing column `concert.id`"
-            ],
+            "risk_notes": [],
             "raw_plan": {
-              "intent": "answer_question",
+              "intent": "retrieve_singer_details_ordered_by_age",
               "tables": [
-                "concert",
-                "singer",
-                "singer_in_concert"
+                "singer"
               ],
-              "metrics": [
+              "metrics": [],
+              "dimensions": [
                 {
-                  "name": "row_count",
-                  "expression": "COUNT(*)",
-                  "source_column": "concert.id"
-                }
-              ],
-              "dimensions": [],
-              "filters": [],
-              "joins": [
-                {
-                  "left_table": "singer_in_concert",
-                  "right_table": "concert",
-                  "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+                  "name": "name",
+                  "column": "Name",
+                  "transform": null
                 },
                 {
-                  "left_table": "singer_in_concert",
-                  "right_table": "singer",
-                  "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+                  "name": "country",
+                  "column": "Country",
+                  "transform": null
+                },
+                {
+                  "name": "age",
+                  "column": "Age",
+                  "transform": null
                 }
               ],
-              "order_by": null,
+              "filters": [],
+              "joins": [],
+              "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
               "limit": 100,
-              "warnings": [
-                "QueryPlan metric.source_column references missing column `concert.id`"
-              ],
-              "mode": "offline"
+              "warnings": [],
+              "mode": "online"
             }
           },
           "presentation": {
@@ -941,12 +944,12 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/002/sql_candidate",
+          "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
           "payload": {
-            "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "safety_state": {
               "available": true,
               "passed": true,
@@ -964,34 +967,34 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/001/query_plan"
+            "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/003/safety_report",
+          "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
           "payload": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-            "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+            "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-              "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+              "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+                "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+                "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1003,18 +1006,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-e626ede8-9958-4e63-9480-544db63b36e7",
+              "decision_id": "safety-91b7acfb-2221-4498-9f23-4f018c85a943",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+              "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+                "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+                "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1033,7 +1036,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T07:29:46.479262Z"
+              "created_at": "2026-06-05T08:41:06.942216Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1051,11 +1054,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/002/sql_candidate"
+            "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/004/result_profile",
+          "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/004/result_profile",
           "semantic_id": "result_profile",
           "type": "insight",
           "title": "Result profile",
@@ -1105,7 +1108,7 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/004/result_profile",
+          "artifact_id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/004/result_profile",
           "display": "full",
           "answer": null,
           "suggestions": []
@@ -1118,7 +1121,7 @@
           "artifact_id": null,
           "display": null,
           "answer": {
-            "answer": "I generated and validated the SQL, but execution was disabled for this review-only run.",
+            "answer": "I generated and validated the SQL to show name, country, and age for all singers ordered by age from oldest to youngest. However, execution was disabled (`execute=false`) for this review-only run, so no results were retrieved. The validated SQL is:\n\n```sql\nSELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100\n```\n\nTo get the actual results — including proper ordering by age descending — the query should be revised to include `ORDER BY Age DESC`. Would you like me to revise and re-validate the SQL with that ordering?",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1149,7 +1152,7 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780644586502,
+          "created_at_ms": 1780648885948,
           "type": "agent.narration.completed",
           "content": "I used the trusted schema context around concert, singer, singer_in_concert, stadium to answer: Show name, country, age for all singers ordered by age from the oldest to the youngest.",
           "artifact": null,
@@ -1159,11 +1162,11 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780644586503,
+          "created_at_ms": 1780648885949,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/2cdfe58c-dc8a-4b43-a922-8ad24068e047/artifact/004/result_profile",
+            "id": "agent/run/b48fa51e-7998-42a3-9240-4b8195cd89e6/artifact/004/result_profile",
             "semantic_id": "result_profile",
             "type": "insight",
             "title": "Result profile",
@@ -1202,12 +1205,12 @@
         {
           "event_id": "visible_3_agent_answer_completed",
           "sequence": 3,
-          "created_at_ms": 1780644586504,
+          "created_at_ms": 1780648885950,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
           "answer": {
-            "answer": "I generated and validated the SQL, but execution was disabled for this review-only run.",
+            "answer": "I generated and validated the SQL to show name, country, and age for all singers ordered by age from oldest to youngest. However, execution was disabled (`execute=false`) for this review-only run, so no results were retrieved. The validated SQL is:\n\n```sql\nSELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100\n```\n\nTo get the actual results — including proper ordering by age descending — the query should be revised to include `ORDER BY Age DESC`. Would you like me to revise and re-validate the SQL with that ordering?",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1219,7 +1222,7 @@
         {
           "event_id": "visible_4_agent_suggestions_created",
           "sequence": 4,
-          "created_at_ms": 1780644586505,
+          "created_at_ms": 1780648885951,
           "type": "agent.suggestions.created",
           "content": null,
           "artifact": null,
@@ -1238,7 +1241,7 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780644586502,
+          "created_at_ms": 1780648885949,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1256,7 +1259,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780644586503,
+          "created_at_ms": 1780648885950,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1608,12 +1611,12 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 8
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780644586504,
+          "created_at_ms": 1780648885951,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1636,7 +1639,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780644586505,
+          "created_at_ms": 1780648885952,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1653,72 +1656,73 @@
             ]
           },
           "output": {
-            "analysis_goal": "answer_question",
-            "metrics": [
+            "analysis_goal": "retrieve_singer_details_ordered_by_age",
+            "metrics": [],
+            "dimensions": [
               {
-                "name": "row_count",
-                "expression": "COUNT(*)",
-                "source_column": "concert.id"
+                "name": "name",
+                "column": "Name",
+                "transform": null
+              },
+              {
+                "name": "country",
+                "column": "Country",
+                "transform": null
+              },
+              {
+                "name": "age",
+                "column": "Age",
+                "transform": null
               }
             ],
-            "dimensions": [],
             "filters": [],
             "time_range": null,
             "candidate_tables": [
-              "concert",
-              "singer",
-              "singer_in_concert"
+              "singer"
             ],
             "assumptions": [
-              "Plan mode: offline",
+              "Plan mode: online",
               "Only synced local schema metadata is trusted."
             ],
-            "risk_notes": [
-              "QueryPlan metric.source_column references missing column `concert.id`"
-            ],
+            "risk_notes": [],
             "raw_plan": {
-              "intent": "answer_question",
+              "intent": "retrieve_singer_details_ordered_by_age",
               "tables": [
-                "concert",
-                "singer",
-                "singer_in_concert"
+                "singer"
               ],
-              "metrics": [
+              "metrics": [],
+              "dimensions": [
                 {
-                  "name": "row_count",
-                  "expression": "COUNT(*)",
-                  "source_column": "concert.id"
-                }
-              ],
-              "dimensions": [],
-              "filters": [],
-              "joins": [
-                {
-                  "left_table": "singer_in_concert",
-                  "right_table": "concert",
-                  "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+                  "name": "name",
+                  "column": "Name",
+                  "transform": null
                 },
                 {
-                  "left_table": "singer_in_concert",
-                  "right_table": "singer",
-                  "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+                  "name": "country",
+                  "column": "Country",
+                  "transform": null
+                },
+                {
+                  "name": "age",
+                  "column": "Age",
+                  "transform": null
                 }
               ],
-              "order_by": null,
+              "filters": [],
+              "joins": [],
+              "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
               "limit": 100,
-              "warnings": [
-                "QueryPlan metric.source_column references missing column `concert.id`"
-              ],
-              "mode": "offline"
+              "warnings": [],
+              "mode": "online"
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 3361
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780644586506,
+          "created_at_ms": 1780648885953,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1728,13 +1732,11 @@
             "question": "Show name, country, age for all singers ordered by age from the oldest to the youngest.",
             "has_follow_up_context": false,
             "optimize_rag": true,
-            "model_name": null,
+            "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "answer_question",
+            "plan_goal": "retrieve_singer_details_ordered_by_age",
             "plan_candidate_tables": [
-              "concert",
-              "singer",
-              "singer_in_concert"
+              "singer"
             ],
             "schema_context_size": 724
           },
@@ -1745,7 +1747,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780644586507,
+          "created_at_ms": 1780648885954,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1755,18 +1757,16 @@
             "question": "Show name, country, age for all singers ordered by age from the oldest to the youngest.",
             "has_follow_up_context": false,
             "optimize_rag": true,
-            "model_name": null,
+            "model_name": "qwen-plus",
             "has_api_key": "[REDACTED]",
-            "plan_goal": "answer_question",
+            "plan_goal": "retrieve_singer_details_ordered_by_age",
             "plan_candidate_tables": [
-              "concert",
-              "singer",
-              "singer_in_concert"
+              "singer"
             ],
             "schema_context_size": 724
           },
           "output": {
-            "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "raw_sql": null,
             "model": "databox-query-plan-renderer",
             "mode": "plan_guided",
@@ -1776,104 +1776,98 @@
             "metadata": {
               "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "answer_question",
-                "metrics": [
+                "analysis_goal": "retrieve_singer_details_ordered_by_age",
+                "metrics": [],
+                "dimensions": [
                   {
-                    "name": "row_count",
-                    "expression": "COUNT(*)",
-                    "source_column": "concert.id"
+                    "name": "name",
+                    "column": "Name",
+                    "transform": null
+                  },
+                  {
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  },
+                  {
+                    "name": "age",
+                    "column": "Age",
+                    "transform": null
                   }
                 ],
-                "dimensions": [],
                 "filters": [],
                 "time_range": null,
                 "candidate_tables": [
-                  "concert",
-                  "singer",
-                  "singer_in_concert"
+                  "singer"
                 ],
                 "assumptions": [
-                  "Plan mode: offline",
+                  "Plan mode: online",
                   "Only synced local schema metadata is trusted."
                 ],
-                "risk_notes": [
-                  "QueryPlan metric.source_column references missing column `concert.id`"
-                ],
+                "risk_notes": [],
                 "raw_plan": {
-                  "intent": "answer_question",
+                  "intent": "retrieve_singer_details_ordered_by_age",
                   "tables": [
-                    "concert",
-                    "singer",
-                    "singer_in_concert"
+                    "singer"
                   ],
-                  "metrics": [
+                  "metrics": [],
+                  "dimensions": [
                     {
-                      "name": "row_count",
-                      "expression": "COUNT(*)",
-                      "source_column": "concert.id"
-                    }
-                  ],
-                  "dimensions": [],
-                  "filters": [],
-                  "joins": [
-                    {
-                      "left_table": "singer_in_concert",
-                      "right_table": "concert",
-                      "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+                      "name": "name",
+                      "column": "Name",
+                      "transform": null
                     },
                     {
-                      "left_table": "singer_in_concert",
-                      "right_table": "singer",
-                      "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+                      "name": "country",
+                      "column": "Country",
+                      "transform": null
+                    },
+                    {
+                      "name": "age",
+                      "column": "Age",
+                      "transform": null
                     }
                   ],
-                  "order_by": null,
+                  "filters": [],
+                  "joins": [],
+                  "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
                   "limit": 100,
-                  "warnings": [
-                    "QueryPlan metric.source_column references missing column `concert.id`"
-                  ],
-                  "mode": "offline"
+                  "warnings": [],
+                  "mode": "online"
                 }
               },
               "query_plan": {
-                "intent": "answer_question",
+                "intent": "retrieve_singer_details_ordered_by_age",
                 "tables": [
-                  "concert",
-                  "singer",
-                  "singer_in_concert"
+                  "singer"
                 ],
-                "metrics": [
+                "metrics": [],
+                "dimensions": [
                   {
-                    "name": "row_count",
-                    "expression": "COUNT(*)",
-                    "source_column": "concert.id"
-                  }
-                ],
-                "dimensions": [],
-                "filters": [],
-                "joins": [
-                  {
-                    "left_table": "singer_in_concert",
-                    "right_table": "concert",
-                    "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+                    "name": "name",
+                    "column": "Name",
+                    "transform": null
                   },
                   {
-                    "left_table": "singer_in_concert",
-                    "right_table": "singer",
-                    "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  },
+                  {
+                    "name": "age",
+                    "column": "Age",
+                    "transform": null
                   }
                 ],
-                "order_by": null,
+                "filters": [],
+                "joins": [],
+                "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
                 "limit": 100,
-                "warnings": [
-                  "QueryPlan metric.source_column references missing column `concert.id`"
-                ],
-                "mode": "offline"
+                "warnings": [],
+                "mode": "online"
               },
               "selected_tables": [
-                "concert",
-                "singer",
-                "singer_in_concert"
+                "singer"
               ],
               "selected_columns": [
                 "concert.concert_ID",
@@ -1906,19 +1900,19 @@
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 9
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780644586508,
+          "created_at_ms": 1780648885955,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100"
+            "sql_preview": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -1927,35 +1921,35 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780644586509,
+          "created_at_ms": 1780648885956,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100"
+            "sql_preview": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-            "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+            "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-              "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+              "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+                "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+                "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1967,18 +1961,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-e626ede8-9958-4e63-9480-544db63b36e7",
+              "decision_id": "safety-91b7acfb-2221-4498-9f23-4f018c85a943",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+              "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+                "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+                "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1997,7 +1991,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T07:29:46.479262Z"
+              "created_at": "2026-06-05T08:41:06.942216Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2008,12 +2002,12 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 11
+          "latency_ms": 32
         },
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780644586510,
+          "created_at_ms": 1780648885957,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -2028,7 +2022,7 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780644586511,
+          "created_at_ms": 1780648885958,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -2045,7 +2039,7 @@
         {
           "event_id": "trace_11_step_6_profile_result_started",
           "sequence": 11,
-          "created_at_ms": 1780644586512,
+          "created_at_ms": 1780648885959,
           "type": "agent.trace.step_started",
           "step_id": "step_6_profile_result",
           "name": "profile_result",
@@ -2062,7 +2056,7 @@
         {
           "event_id": "trace_12_step_6_profile_result_completed",
           "sequence": 12,
-          "created_at_ms": 1780644586513,
+          "created_at_ms": 1780648885960,
           "type": "agent.trace.step_completed",
           "step_id": "step_6_profile_result",
           "name": "profile_result",
@@ -2090,7 +2084,7 @@
         {
           "event_id": "trace_13_step_7_suggest_chart_started",
           "sequence": 13,
-          "created_at_ms": 1780644586514,
+          "created_at_ms": 1780648885961,
           "type": "agent.trace.step_started",
           "step_id": "step_7_suggest_chart",
           "name": "suggest_chart",
@@ -2105,7 +2099,7 @@
         {
           "event_id": "trace_14_step_7_suggest_chart_completed",
           "sequence": 14,
-          "created_at_ms": 1780644586515,
+          "created_at_ms": 1780648885962,
           "type": "agent.trace.step_completed",
           "step_id": "step_7_suggest_chart",
           "name": "suggest_chart",
@@ -2125,7 +2119,7 @@
         {
           "event_id": "trace_15_step_8_suggest_followups_started",
           "sequence": 15,
-          "created_at_ms": 1780644586516,
+          "created_at_ms": 1780648885963,
           "type": "agent.trace.step_started",
           "step_id": "step_8_suggest_followups",
           "name": "suggest_followups",
@@ -2142,7 +2136,7 @@
         {
           "event_id": "trace_16_step_8_suggest_followups_completed",
           "sequence": 16,
-          "created_at_ms": 1780644586517,
+          "created_at_ms": 1780648885964,
           "type": "agent.trace.step_completed",
           "step_id": "step_8_suggest_followups",
           "name": "suggest_followups",
@@ -2168,7 +2162,7 @@
         {
           "event_id": "trace_17_step_9_answer_synthesizer_started",
           "sequence": 17,
-          "created_at_ms": 1780644586518,
+          "created_at_ms": 1780648885965,
           "type": "agent.trace.step_started",
           "step_id": "step_9_answer_synthesizer",
           "name": "answer_synthesizer",
@@ -2186,7 +2180,7 @@
         {
           "event_id": "trace_18_step_9_answer_synthesizer_completed",
           "sequence": 18,
-          "created_at_ms": 1780644586519,
+          "created_at_ms": 1780648885966,
           "type": "agent.trace.step_completed",
           "step_id": "step_9_answer_synthesizer",
           "name": "answer_synthesizer",
@@ -2582,7 +2576,7 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 8
         },
         {
           "name": "build_query_plan",
@@ -2599,67 +2593,68 @@
             ]
           },
           "output": {
-            "analysis_goal": "answer_question",
-            "metrics": [
+            "analysis_goal": "retrieve_singer_details_ordered_by_age",
+            "metrics": [],
+            "dimensions": [
               {
-                "name": "row_count",
-                "expression": "COUNT(*)",
-                "source_column": "concert.id"
+                "name": "name",
+                "column": "Name",
+                "transform": null
+              },
+              {
+                "name": "country",
+                "column": "Country",
+                "transform": null
+              },
+              {
+                "name": "age",
+                "column": "Age",
+                "transform": null
               }
             ],
-            "dimensions": [],
             "filters": [],
             "time_range": null,
             "candidate_tables": [
-              "concert",
-              "singer",
-              "singer_in_concert"
+              "singer"
             ],
             "assumptions": [
-              "Plan mode: offline",
+              "Plan mode: online",
               "Only synced local schema metadata is trusted."
             ],
-            "risk_notes": [
-              "QueryPlan metric.source_column references missing column `concert.id`"
-            ],
+            "risk_notes": [],
             "raw_plan": {
-              "intent": "answer_question",
+              "intent": "retrieve_singer_details_ordered_by_age",
               "tables": [
-                "concert",
-                "singer",
-                "singer_in_concert"
+                "singer"
               ],
-              "metrics": [
+              "metrics": [],
+              "dimensions": [
                 {
-                  "name": "row_count",
-                  "expression": "COUNT(*)",
-                  "source_column": "concert.id"
-                }
-              ],
-              "dimensions": [],
-              "filters": [],
-              "joins": [
-                {
-                  "left_table": "singer_in_concert",
-                  "right_table": "concert",
-                  "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+                  "name": "name",
+                  "column": "Name",
+                  "transform": null
                 },
                 {
-                  "left_table": "singer_in_concert",
-                  "right_table": "singer",
-                  "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+                  "name": "country",
+                  "column": "Country",
+                  "transform": null
+                },
+                {
+                  "name": "age",
+                  "column": "Age",
+                  "transform": null
                 }
               ],
-              "order_by": null,
+              "filters": [],
+              "joins": [],
+              "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
               "limit": 100,
-              "warnings": [
-                "QueryPlan metric.source_column references missing column `concert.id`"
-              ],
-              "mode": "offline"
+              "warnings": [],
+              "mode": "online"
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 3361
         },
         {
           "name": "generate_sql_candidate",
@@ -2669,18 +2664,16 @@
             "question": "Show name, country, age for all singers ordered by age from the oldest to the youngest.",
             "has_follow_up_context": false,
             "optimize_rag": true,
-            "model_name": null,
-            "has_api_key": false,
-            "plan_goal": "answer_question",
+            "model_name": "qwen-plus",
+            "has_api_key": true,
+            "plan_goal": "retrieve_singer_details_ordered_by_age",
             "plan_candidate_tables": [
-              "concert",
-              "singer",
-              "singer_in_concert"
+              "singer"
             ],
             "schema_context_size": 724
           },
           "output": {
-            "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "raw_sql": null,
             "model": "databox-query-plan-renderer",
             "mode": "plan_guided",
@@ -2690,104 +2683,98 @@
             "metadata": {
               "generation_source": "query_plan_rendered",
               "agent_query_plan": {
-                "analysis_goal": "answer_question",
-                "metrics": [
+                "analysis_goal": "retrieve_singer_details_ordered_by_age",
+                "metrics": [],
+                "dimensions": [
                   {
-                    "name": "row_count",
-                    "expression": "COUNT(*)",
-                    "source_column": "concert.id"
+                    "name": "name",
+                    "column": "Name",
+                    "transform": null
+                  },
+                  {
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  },
+                  {
+                    "name": "age",
+                    "column": "Age",
+                    "transform": null
                   }
                 ],
-                "dimensions": [],
                 "filters": [],
                 "time_range": null,
                 "candidate_tables": [
-                  "concert",
-                  "singer",
-                  "singer_in_concert"
+                  "singer"
                 ],
                 "assumptions": [
-                  "Plan mode: offline",
+                  "Plan mode: online",
                   "Only synced local schema metadata is trusted."
                 ],
-                "risk_notes": [
-                  "QueryPlan metric.source_column references missing column `concert.id`"
-                ],
+                "risk_notes": [],
                 "raw_plan": {
-                  "intent": "answer_question",
+                  "intent": "retrieve_singer_details_ordered_by_age",
                   "tables": [
-                    "concert",
-                    "singer",
-                    "singer_in_concert"
+                    "singer"
                   ],
-                  "metrics": [
+                  "metrics": [],
+                  "dimensions": [
                     {
-                      "name": "row_count",
-                      "expression": "COUNT(*)",
-                      "source_column": "concert.id"
-                    }
-                  ],
-                  "dimensions": [],
-                  "filters": [],
-                  "joins": [
-                    {
-                      "left_table": "singer_in_concert",
-                      "right_table": "concert",
-                      "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+                      "name": "name",
+                      "column": "Name",
+                      "transform": null
                     },
                     {
-                      "left_table": "singer_in_concert",
-                      "right_table": "singer",
-                      "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+                      "name": "country",
+                      "column": "Country",
+                      "transform": null
+                    },
+                    {
+                      "name": "age",
+                      "column": "Age",
+                      "transform": null
                     }
                   ],
-                  "order_by": null,
+                  "filters": [],
+                  "joins": [],
+                  "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
                   "limit": 100,
-                  "warnings": [
-                    "QueryPlan metric.source_column references missing column `concert.id`"
-                  ],
-                  "mode": "offline"
+                  "warnings": [],
+                  "mode": "online"
                 }
               },
               "query_plan": {
-                "intent": "answer_question",
+                "intent": "retrieve_singer_details_ordered_by_age",
                 "tables": [
-                  "concert",
-                  "singer",
-                  "singer_in_concert"
+                  "singer"
                 ],
-                "metrics": [
+                "metrics": [],
+                "dimensions": [
                   {
-                    "name": "row_count",
-                    "expression": "COUNT(*)",
-                    "source_column": "concert.id"
-                  }
-                ],
-                "dimensions": [],
-                "filters": [],
-                "joins": [
-                  {
-                    "left_table": "singer_in_concert",
-                    "right_table": "concert",
-                    "condition": "singer_in_concert.concert_ID = concert.concert_ID"
+                    "name": "name",
+                    "column": "Name",
+                    "transform": null
                   },
                   {
-                    "left_table": "singer_in_concert",
-                    "right_table": "singer",
-                    "condition": "singer_in_concert.Singer_ID = singer.Singer_ID"
+                    "name": "country",
+                    "column": "Country",
+                    "transform": null
+                  },
+                  {
+                    "name": "age",
+                    "column": "Age",
+                    "transform": null
                   }
                 ],
-                "order_by": null,
+                "filters": [],
+                "joins": [],
+                "order_by": "[{'column': 'Age', 'direction': 'DESC'}]",
                 "limit": 100,
-                "warnings": [
-                  "QueryPlan metric.source_column references missing column `concert.id`"
-                ],
-                "mode": "offline"
+                "warnings": [],
+                "mode": "online"
               },
               "selected_tables": [
-                "concert",
-                "singer",
-                "singer_in_concert"
+                "singer"
               ],
               "selected_columns": [
                 "concert.concert_ID",
@@ -2818,35 +2805,35 @@
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 9
         },
         {
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100"
+            "sql_preview": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-            "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+            "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+            "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-              "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+              "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+                "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+                "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2858,18 +2845,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-e626ede8-9958-4e63-9480-544db63b36e7",
+              "decision_id": "safety-91b7acfb-2221-4498-9f23-4f018c85a943",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-              "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+              "original_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+              "safe_sql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
-                "safeSql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+                "originalSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
+                "safeSql": "SELECT Name AS name, Country AS country, Age AS age FROM singer LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2888,7 +2875,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T07:29:46.479262Z"
+              "created_at": "2026-06-05T08:41:06.942216Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2899,7 +2886,7 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 11
+          "latency_ms": 32
         },
         {
           "name": "execute_sql",

@@ -134,15 +134,16 @@ def generate_sql_tool(
     def body() -> dict[str, Any]:
         # Decide whether plan requires LLM fallback first
         require_llm, fallback_reason = _plan_requires_llm_sql(query_plan, question=question)
+        # Check low-confidence BEFORE attempting deterministic renderer (P1 guard)
+        if not require_llm:
+            low_conf, low_reason = _plan_is_low_confidence_for_render(query_plan, question=question)
+            if low_conf:
+                fallback_reason = fallback_reason or low_reason
+                require_llm = True
         plan_sql = None
         generation_source = None
         if not require_llm:
             plan_sql = _render_sql_from_query_plan(db, req.datasource_id, query_plan)
-            # If renderer declined even though plan didn't mark complex, check for low-confidence plan
-            if not plan_sql:
-                low_conf, low_reason = _plan_is_low_confidence_for_render(query_plan, question=question)
-                if low_conf and not fallback_reason:
-                    fallback_reason = low_reason
         if plan_sql:
             result = {
                 "sql": plan_sql,
@@ -157,7 +158,7 @@ def generate_sql_tool(
             }
             generation_source = "query_plan_rendered"
         else:
-            if require_llm and not req.api_key:
+            if (require_llm or fallback_reason) and not req.api_key:
                 result = {
                     "sql": None,
                     "model": "databox-local-heuristic",
@@ -1279,8 +1280,33 @@ def _plan_requires_llm_sql(query_plan: dict[str, Any] | None, question: str | No
     joined_text = " ".join(text_sources).lower()
 
     # anti-join / negative existence
-    anti_tokens = ("do not have", "does not have", "without", "not have", "not in", "no ", "not owned")
-    if any(tok in joined_text for tok in anti_tokens):
+    # Strong anti-join tokens: usually indicate absence of related records across tables
+    strong_anti_tokens = ("do not have", "does not have", "not have", "no ", "not owned")
+    if any(tok in joined_text for tok in strong_anti_tokens):
+        filters = _list_value(raw.get("filters"))
+        joins = _list_value(raw.get("joins"))
+        has_is_null = any(
+            str((f or {}).get("operator") or "").upper() in ("IS NULL", "IS NOT NULL")
+            for f in filters
+        )
+        # If plan has JOINs: IS NULL on a joined table column is anti-join pattern
+        # If no JOINs and no IS NULL: ambiguous negative existence → flag
+        if joins or not has_is_null:
+            return True, "complex_intent: anti_join"
+
+    # "without" is ambiguous: IS NULL filter (simple) vs anti-join (complex)
+    # Only flag when plan has no IS NULL coverage to handle it
+    if "without" in joined_text:
+        filters = _list_value(raw.get("filters"))
+        has_is_null = any(
+            str((f or {}).get("operator") or "").upper() in ("IS NULL", "IS NOT NULL")
+            for f in filters
+        )
+        if not has_is_null:
+            return True, "complex_intent: anti_join"
+
+    # NOT IN / NOT EXISTS are always complex SQL patterns
+    if "not in" in joined_text:
         return True, "complex_intent: anti_join"
 
     # set logic / both constraints

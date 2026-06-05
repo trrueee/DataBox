@@ -67,33 +67,59 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=None)
     args = parser.parse_args()
-    out = {
+
+    llm_cfg = load_llm_config(args.config)
+    llm_has_api_key = bool(llm_cfg.get("api_key"))
+    llm_model_name = llm_cfg.get("model_name")
+    backend_ok = backend_health_ok()
+    token_ok = token_exists()
+
+    required = {
+        "backend_health": backend_ok,
+        "token_exists": token_ok,
+        "llm_has_api_key": llm_has_api_key,
+        "llm_model_name": bool(llm_model_name),
+    }
+
+    warnings = {
         "docker": docker_available(),
         "mysql_port_3307": mysql_port_open("127.0.0.1", 3307),
         "mysql_show_tables": mysql_show_tables_ok(),
-        "backend_health": backend_health_ok(),
-        "token_exists": token_exists(),
     }
-    llm_cfg = load_llm_config(args.config)
-    out["llm_config"] = {
-        "config_file_exists": bool(llm_cfg.get("source", {}).get("config_exists")),
-        "provider": llm_cfg.get("provider"),
-        "model_name": llm_cfg.get("model_name"),
-        "has_api_key": bool(llm_cfg.get("api_key")),
-        "api_key_source": llm_cfg.get("source", {}).get("config_path") if llm_cfg.get("source", {}).get("config_exists") else "env",
-        "api_base_set": bool(llm_cfg.get("api_base")),
+
+    out = {
+        "ok": all(required.values()),
+        "required": required,
+        "warnings": warnings,
+        "llm_config": {
+            "config_file_exists": bool(llm_cfg.get("source", {}).get("config_exists")),
+            "provider": llm_cfg.get("provider"),
+            "model_name": llm_model_name,
+            "has_api_key": llm_has_api_key,
+            "api_key_source": llm_cfg.get("source", {}).get("config_path") if llm_cfg.get("source", {}).get("config_exists") else "env",
+            "api_base_set": bool(llm_cfg.get("api_base")),
+        },
     }
-    ok = all(out.values())
+
     print(json.dumps(out, ensure_ascii=False))
-    print("\nSummary:")
-    for k, v in out.items():
-        print(f" - {k}: {v}")
-    # If running a P1 targeted run, require API key to be configured
-    if not out["llm_config"]["has_api_key"]:
+    print("\nRequired:")
+    for k, v in required.items():
+        status = "PASS" if v else "FAIL"
+        print(f" [{status}] {k}: {v}")
+    print("\nWarnings:")
+    for k, v in warnings.items():
+        status = "OK" if v else "WARN"
+        print(f" [{status}] {k}: {v}")
+    print(f"\nLLM Config: provider={llm_cfg.get('provider')}, model={llm_model_name}, has_key={llm_has_api_key}")
+
+    if not llm_has_api_key:
         print("\nERROR: P1 complex fallback requires a configured LLM API key. Current environment has_api_key=false.")
+        print("Create .agent_eval/config.local.json with your API key, or set DATABOX_LLM_API_KEY env var.")
         raise SystemExit(5)
-    if not ok:
+    if not out["ok"]:
+        print("\nFAIL: Some required checks did not pass.")
         raise SystemExit(1)
+    print("\nAll required checks passed.")
 
 
 if __name__ == "__main__":

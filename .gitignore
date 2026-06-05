@@ -18,6 +18,11 @@ desktop/dist/
 desktop/src-tauri/target/
 desktop/src-tauri/binaries/
 
+# Eval local config (contains API keys — DO NOT COMMIT)
+.agent_eval/config.local.json
+.agent_eval/outputs/
+.agent_eval/agent_only_events/
+
 # IDE / Assistant / Tool states
 .claude/
 .impeccable/

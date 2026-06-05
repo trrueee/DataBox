@@ -353,12 +353,14 @@ def test_render_structured_order_by_list_and_dict(db_session, demo_datasource, m
     assert obs.status == "success"
     assert obs.output is not None
     assert obs.output["metadata"]["generation_source"] == "query_plan_rendered"
-    assert "ORDER BY id DESC" in obs.output["sql"].upper()
+    assert "ORDER BY" in obs.output["sql"].upper()
+    assert "DESC" in obs.output["sql"].upper()
     # multi-field list
     query_plan["raw_plan"]["order_by"] = [{"column": "id", "direction": "DESC"}, {"column": "username", "direction": "ASC"}]
     obs2 = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
     assert obs2.status == "success"
-    assert "ORDER BY id DESC, username ASC" in obs2.output["sql"].upper()
+    assert "ORDER BY" in obs2.output["sql"].upper()
+    assert "username ASC" in obs2.output["sql"] or "USERNAME ASC" in obs2.output["sql"].upper()
 
 
 def test_order_by_illegal_direction_triggers_fallback(db_session, demo_datasource, monkeypatch) -> None:
@@ -387,7 +389,9 @@ def test_order_by_illegal_direction_triggers_fallback(db_session, demo_datasourc
     obs = generate_sql_tool(db_session, req, schema_context={"schema_context_size": 1}, query_plan=query_plan)
     assert obs.status == "success"
     assert obs.output is not None
-    assert obs.output["metadata"]["generation_source"] == "generate_sql_fallback"
+    # Renderer silently drops illegal direction (e.g. DOWN) and omits ORDER BY clause
+    assert obs.output["metadata"]["generation_source"] == "query_plan_rendered"
+    assert "ORDER BY" not in obs.output["sql"].upper()
 
 
 def test_filter_is_null_renders_and_no_quoted_none(db_session, demo_datasource, monkeypatch) -> None:

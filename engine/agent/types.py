@@ -190,7 +190,7 @@ class QueryPlan(BaseModel):
 
 
 class SQLCandidate(BaseModel):
-    sql: str
+    sql: str | None = None
     raw_sql: str | None = None
     model: str | None = None
     mode: str | None = None
