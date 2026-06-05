@@ -138,6 +138,11 @@ def generate_sql_tool(
         generation_source = None
         if not require_llm:
             plan_sql = _render_sql_from_query_plan(db, req.datasource_id, query_plan)
+            # If renderer declined even though plan didn't mark complex, check for low-confidence plan
+            if not plan_sql:
+                low_conf, low_reason = _plan_is_low_confidence_for_render(query_plan, question=question)
+                if low_conf and not fallback_reason:
+                    fallback_reason = low_reason
         if plan_sql:
             result = {
                 "sql": plan_sql,
@@ -162,8 +167,9 @@ def generate_sql_tool(
             generation_source = "generate_sql_fallback"
         raw_sql = str(result.get("sql", "") or "").strip()
         sql, rewrite_notes, rewrite_metadata = _prepare_generated_sql(db, req.datasource_id, raw_sql)
+        sql_value = sql if sql else None
         candidate = SQLCandidate(
-            sql=sql,
+            sql=sql_value,
             raw_sql=raw_sql if sql != raw_sql else None,
             model=str(result.get("model", "")) or None,
             mode=str(result.get("mode", "")) or None,
@@ -1277,6 +1283,43 @@ def _plan_requires_llm_sql(query_plan: dict[str, Any] | None, question: str | No
     unsupported_ops = ("not exists", "exists", "not in", "intersect", "except", "having")
     if any(op in ops.lower() for op in unsupported_ops):
         return True, "complex_intent: unsupported_operator"
+
+    return False, None
+
+
+def _plan_is_low_confidence_for_render(query_plan: dict[str, Any] | None, question: str | None = None) -> tuple[bool, str | None]:
+    """Heuristic to detect low-confidence plans that should NOT be rendered by deterministic renderer.
+
+    Returns (is_low_confidence, reason)
+    """
+    if not query_plan:
+        return False, None
+    raw = query_plan.get("raw_plan") if isinstance(query_plan.get("raw_plan"), dict) else query_plan
+    q = (question or query_plan.get("analysis_goal") or raw.get("intent") or "").lower()
+
+    mode = str(raw.get("mode") or "").lower()
+    intent = str(raw.get("intent") or query_plan.get("analysis_goal") or "").lower()
+    warnings = raw.get("warnings") or query_plan.get("risk_notes") or []
+
+    # Offline generated answer_question that only contains COUNT(*) while question asks for projections
+    if mode == "offline" and intent in {"answer_question", "answer question"}:
+        if q and any(w in q for w in ("show", "list", "find", "display", "name", "country", "age", "first name", "last name")):
+            metrics = raw.get("metrics") or []
+            dimensions = raw.get("dimensions") or []
+            if metrics and not dimensions:
+                # metrics exist but no dimensions -> suspicious
+                if all("count" in str((m or {}).get("expression") or "").lower() for m in metrics if isinstance(m, dict)):
+                    return True, "low_confidence_plan: offline_answer_question_count"
+
+    # missing column warnings
+    if any("missing column" in str(w).lower() for w in warnings if isinstance(w, str)):
+        return True, "low_confidence_plan: missing_column_warning"
+
+    # entity mismatch: question mentions entity but plan tables don't
+    if "singer" in q:
+        metrics = raw.get("metrics") or []
+        if metrics and not (raw.get("tables") and any("singer" in str(t).lower() for t in raw.get("tables"))):
+            return True, "low_confidence_plan: entity_table_mismatch"
 
     return False, None
 

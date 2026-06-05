@@ -59,6 +59,22 @@ def main():
     env = os.environ.copy()
     env = clean_env_for_windows(env)
 
+    # Ensure LLM config is present for P1 targeted runs when required.
+    # Read possible local config overrides from .agent_eval/config.local.json
+    try:
+        cfg_path = ROOT / "config.local.json"
+        if cfg_path.exists():
+            import json as _json
+
+            with cfg_path.open("r", encoding="utf-8") as fh:
+                cfg = _json.load(fh)
+            # merge known keys into env if not already present
+            for k in ("DATABOX_LLM_PROVIDER", "DATABOX_LLM_MODEL", "OPENAI_API_KEY", "DASHSCOPE_API_KEY", "DATABOX_LLM_API_KEY"):
+                if k in cfg and k not in env:
+                    env[k] = str(cfg[k])
+    except Exception:
+        pass
+
     cmd = [sys.executable, "-m", "uvicorn", "engine.main:app", "--host", "127.0.0.1", "--port", "18625", "--log-level", "info"]
 
     STDOUT.parent.mkdir(parents=True, exist_ok=True)

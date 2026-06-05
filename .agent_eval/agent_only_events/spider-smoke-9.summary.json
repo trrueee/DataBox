@@ -1,0 +1,66 @@
+{
+  "case_id": "spider-smoke-9",
+  "error": null,
+  "status_code": 200,
+  "events_count": 18,
+  "execute_requested": false,
+  "final_status": "completed",
+  "generation_source": "generate_sql_fallback",
+  "model": "databox-local-heuristic",
+  "fallback_reason": "complex_intent: anti_join",
+  "agent_sql": "SELECT * FROM products LIMIT 10",
+  "safe_sql": null,
+  "safety.can_execute": false,
+  "blocked_reasons": [
+    "schema_validation",
+    "select_star",
+    "schema_error"
+  ],
+  "execute_sql_step": false,
+  "artifact_count": 6,
+  "final_answer": "I do not have a successful result set to analyze yet.",
+  "final_error": null,
+  "summary_debug": {
+    "event_types": [
+      "agent.answer.completed",
+      "agent.artifact.created",
+      "agent.run.completed",
+      "agent.run.started",
+      "agent.step.completed",
+      "agent.step.started"
+    ],
+    "sse_events": [
+      "agent.answer.completed",
+      "agent.artifact.created",
+      "agent.run.completed",
+      "agent.run.started",
+      "agent.step.completed",
+      "agent.step.started"
+    ],
+    "artifact_semantic_ids": [
+      "query_plan",
+      "safety_report",
+      "sql_candidate"
+    ],
+    "step_names": [
+      "answer_synthesizer",
+      "build_query_plan",
+      "build_schema_context",
+      "generate_sql_candidate",
+      "revise_sql",
+      "validate_sql"
+    ],
+    "trace_step_names": [
+      "answer_synthesizer",
+      "build_query_plan",
+      "build_schema_context",
+      "generate_sql_candidate",
+      "revise_sql",
+      "validate_sql"
+    ],
+    "has_response": true,
+    "has_artifacts": true,
+    "has_trace_events": true,
+    "missing_final_status": false
+  }
+}

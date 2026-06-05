@@ -3,6 +3,7 @@
 
 Outputs JSON and human readable summary. Exits non-zero if any check fails.
 """
+import os
 import json
 import socket
 import subprocess
@@ -68,11 +69,28 @@ def main():
         "backend_health": backend_health_ok(),
         "token_exists": token_exists(),
     }
+    # LLM env check
+    def check_llm_env() -> dict:
+        provider = os.getenv("DATABOX_LLM_PROVIDER") or os.getenv("LLM_PROVIDER")
+        model = os.getenv("DATABOX_LLM_MODEL") or os.getenv("OPENAI_MODEL") or os.getenv("DASHSCOPE_MODEL")
+        api_key = (
+            os.getenv("OPENAI_API_KEY")
+            or os.getenv("DASHSCOPE_API_KEY")
+            or os.getenv("QWEN_API_KEY")
+            or os.getenv("DATABOX_LLM_API_KEY")
+        )
+        return {"llm_provider": provider, "llm_model": model, "has_api_key": bool(api_key)}
+
+    out.update(check_llm_env())
     ok = all(out.values())
     print(json.dumps(out, ensure_ascii=False))
     print("\nSummary:")
     for k, v in out.items():
         print(f" - {k}: {v}")
+    # If running a P1 targeted run, require API key to be configured
+    if not out.get("has_api_key"):
+        print("\nERROR: P1 complex fallback requires a configured LLM API key. Current environment has_api_key=false.")
+        raise SystemExit(5)
     if not ok:
         raise SystemExit(1)
 

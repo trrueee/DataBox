@@ -1,0 +1,69 @@
+{
+  "case_id": "spider-smoke-2",
+  "error": null,
+  "status_code": 200,
+  "events_count": 25,
+  "execute_requested": false,
+  "final_status": "completed",
+  "generation_source": "query_plan_rendered",
+  "model": "databox-query-plan-renderer",
+  "fallback_reason": null,
+  "agent_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+  "safe_sql": "SELECT COUNT(*) AS row_count FROM concert LIMIT 100",
+  "safety.can_execute": true,
+  "blocked_reasons": [],
+  "execute_sql_step": true,
+  "artifact_count": 8,
+  "final_answer": "I generated and validated the SQL, but execution was disabled for this review-only run.",
+  "final_error": null,
+  "summary_debug": {
+    "event_types": [
+      "agent.answer.completed",
+      "agent.artifact.created",
+      "agent.run.completed",
+      "agent.run.started",
+      "agent.step.completed",
+      "agent.step.started"
+    ],
+    "sse_events": [
+      "agent.answer.completed",
+      "agent.artifact.created",
+      "agent.run.completed",
+      "agent.run.started",
+      "agent.step.completed",
+      "agent.step.started"
+    ],
+    "artifact_semantic_ids": [
+      "query_plan",
+      "result_profile",
+      "safety_report",
+      "sql_candidate"
+    ],
+    "step_names": [
+      "answer_synthesizer",
+      "build_query_plan",
+      "build_schema_context",
+      "execute_sql",
+      "generate_sql_candidate",
+      "profile_result",
+      "suggest_chart",
+      "suggest_followups",
+      "validate_sql"
+    ],
+    "trace_step_names": [
+      "answer_synthesizer",
+      "build_query_plan",
+      "build_schema_context",
+      "execute_sql",
+      "generate_sql_candidate",
+      "profile_result",
+      "suggest_chart",
+      "suggest_followups",
+      "validate_sql"
+    ],
+    "has_response": true,
+    "has_artifacts": true,
+    "has_trace_events": true,
+    "missing_final_status": false
+  }
+}

@@ -176,6 +176,32 @@ def search_demo_sql(question: str) -> str:
     return "SELECT * FROM products LIMIT 10"
 
 
+def _has_real_llm_config(api_key: str | None, model_name: str | None) -> bool:
+    return bool(api_key and model_name)
+
+
+def _query_plan_requires_llm(query_plan: dict[str, Any] | None) -> bool:
+    """Conservative heuristic: inspect a query_plan dict and detect anti-join, set logic, nested queries or explicit unsupported ops."""
+    if not query_plan:
+        return False
+    raw = query_plan.get("raw_plan") if isinstance(query_plan.get("raw_plan"), dict) else query_plan
+    txt = str(raw).lower()
+    markers = ("anti_join", "not exists", "not in", "intersect", "except", "set_logic", "nested", "nested_query", "having", "exists")
+    if any(m in txt for m in markers):
+        return True
+    # also check intent/warnings
+    intent = str(raw.get("intent") or "").lower()
+    if intent in ("answer_question",) and raw.get("mode") == "offline":
+        # if offline answer_question but plan contains only count metric and no projections, consider requiring LLM
+        metrics = raw.get("metrics") or []
+        dimensions = raw.get("dimensions") or []
+        if metrics and not dimensions:
+            # heuristic: metric expressions with count only
+            if all("count" in str((m or {}).get("expression") or "").lower() for m in metrics if isinstance(m, dict)):
+                return True
+    return False
+
+
 def select_relevant_tables(tables: list[SchemaTable], question: str) -> list[SchemaTable]:
     """
     RAG Heuristic: Selects the most relevant tables for the given question
@@ -404,7 +430,43 @@ def generate_sql(
     
     # 2. Check if we are running in Offline Demo Mode
     if not api_key:
-        # Run local heuristic matcher
+        # If the query plan indicates complex intent that requires LLM, we must fail-closed here.
+        try:
+            qp_dict = query_plan.to_dict() if query_plan is not None else {}
+        except Exception:
+            qp_dict = {}
+
+        if _query_plan_requires_llm(qp_dict):
+            latency_ms = int((time.time() - start_time) * 1000)
+            # Log the attempted offline fallback as a blocked/unsupported operation
+            log_entry = LLMLog(
+                request_type="text_to_sql",
+                data_source_id=datasource_id,
+                prompt_hash=prompt_hash,
+                model_name="databox-local-heuristic",
+                latency_ms=latency_ms,
+                status="blocked",
+                error_message="LLM fallback required but no API key configured",
+                prompt_version=PROMPT_VERSION,
+                prompt_template_hash=PROMPT_TEMPLATE_HASH,
+                model_temperature=0.0,
+                max_tokens=None,
+            )
+            db.add(log_entry)
+            db.commit()
+            return {
+                "sql": None,
+                "model": "databox-local-heuristic",
+                "mode": "fallback_unavailable",
+                "latencyMs": latency_ms,
+                "schemaValidationWarnings": [],
+                "queryPlan": qp_dict,
+                **schema_metadata,
+                "metadata": {"generation_source": "generate_sql_fallback", "fallback_reason": "no_llm_api_key", "blocked_reason": "no_llm_api_key"},
+                "error": "Complex SQL fallback requires a configured LLM API key.",
+            }
+
+        # Otherwise run local heuristic matcher (only for simple offline cases)
         generated_query = search_demo_sql(question)
         latency_ms = int((time.time() - start_time) * 1000)
         
