@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_c6743cfb_1_agent_run_started",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_1_agent_run_started",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 1,
-    "created_at_ms": 1780640768849,
+    "created_at_ms": 1780675584376,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-pets-1",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_c6743cfb_2_agent_step_started",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_2_agent_step_started",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 2,
-    "created_at_ms": 1780640770855,
+    "created_at_ms": 1780675586426,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c6743cfb_3_agent_step_completed",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_3_agent_step_completed",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 3,
-    "created_at_ms": 1780640770856,
+    "created_at_ms": 1780675586427,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 2
+      "latency_ms": 3
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c6743cfb_4_agent_step_started",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_4_agent_step_started",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 4,
-    "created_at_ms": 1780640775676,
+    "created_at_ms": 1780675592271,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c6743cfb_5_agent_step_completed",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_5_agent_step_completed",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 5,
-    "created_at_ms": 1780640775677,
+    "created_at_ms": 1780675592272,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 3535
+      "latency_ms": 3578
     },
     "artifact": null,
     "answer": null,
@@ -97,16 +97,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c6743cfb_6_agent_artifact_created",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_6_agent_artifact_created",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 6,
-    "created_at_ms": 1780640775678,
+    "created_at_ms": 1780675592274,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan",
+      "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
@@ -116,7 +116,7 @@
           {
             "name": "pet_count",
             "expression": "COUNT(*)",
-            "source_column": "*"
+            "source_column": "has_pet.PetID"
           }
         ],
         "dimensions": [],
@@ -147,7 +147,7 @@
             {
               "name": "pet_count",
               "expression": "COUNT(*)",
-              "source_column": "*"
+              "source_column": "has_pet.PetID"
             }
           ],
           "dimensions": [],
@@ -188,10 +188,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_c6743cfb_7_agent_step_started",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_7_agent_step_started",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 7,
-    "created_at_ms": 1780640777875,
+    "created_at_ms": 1780675594527,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -206,17 +206,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c6743cfb_8_agent_step_completed",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_8_agent_step_completed",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 8,
-    "created_at_ms": 1780640777876,
+    "created_at_ms": 1780675594527,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 4
+      "latency_ms": 6
     },
     "artifact": null,
     "answer": null,
@@ -227,10 +227,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c6743cfb_9_agent_step_started",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_9_agent_step_started",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 9,
-    "created_at_ms": 1780640780591,
+    "created_at_ms": 1780675596507,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -245,17 +245,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c6743cfb_10_agent_step_completed",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_10_agent_step_completed",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 10,
-    "created_at_ms": 1780640780593,
+    "created_at_ms": 1780675596510,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 26
+      "latency_ms": 33
     },
     "artifact": null,
     "answer": null,
@@ -266,16 +266,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c6743cfb_11_agent_artifact_created",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_11_agent_artifact_created",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 11,
-    "created_at_ms": 1780640780595,
+    "created_at_ms": 1780675596511,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
+      "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
@@ -298,7 +298,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan"
+        "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -309,16 +309,16 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_c6743cfb_12_agent_artifact_created",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_12_agent_artifact_created",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 12,
-    "created_at_ms": 1780640780596,
+    "created_at_ms": 1780675596514,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report",
+      "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
@@ -353,7 +353,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+          "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -383,7 +383,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:20.591034Z"
+          "created_at": "2026-06-05T16:06:36.506954Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -401,7 +401,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate"
+        "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -412,10 +412,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_c6743cfb_13_agent_step_started",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_13_agent_step_started",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 13,
-    "created_at_ms": 1780640783194,
+    "created_at_ms": 1780675598979,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -430,17 +430,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_c6743cfb_14_agent_step_completed",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_14_agent_step_completed",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 14,
-    "created_at_ms": 1780640783195,
+    "created_at_ms": 1780675598981,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
       "tool_name": "sql.execute_readonly",
       "status": "success",
       "error": null,
-      "latency_ms": 14
+      "latency_ms": 16
     },
     "artifact": null,
     "answer": null,
@@ -451,16 +451,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_c6743cfb_15_agent_artifact_created",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_15_agent_artifact_created",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 15,
-    "created_at_ms": 1780640783196,
+    "created_at_ms": 1780675598982,
     "type": "agent.artifact.created",
     "step": {
       "name": "execute_sql"
     },
     "artifact": {
-      "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+      "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/004/result_table",
       "semantic_id": "result_table",
       "type": "table",
       "title": "Result table",
@@ -474,7 +474,7 @@
           }
         ],
         "rowCount": 1,
-        "latencyMs": 4,
+        "latencyMs": 5,
         "safety_state": {
           "available": true,
           "passed": true,
@@ -492,8 +492,8 @@
       "refs": {},
       "produced_by_step": "execute_sql",
       "depends_on": [
-        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
-        "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report"
+        "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate",
+        "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/003/safety_report"
       ]
     },
     "answer": null,
@@ -504,15 +504,15 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_c6743cfb_16_agent_answer_completed",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_16_agent_answer_completed",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 16,
-    "created_at_ms": 1780640786115,
+    "created_at_ms": 1780675601761,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
     "answer": {
-      "answer": "Students older than 20 own 0 pets.",
+      "answer": "The number of pets owned by students who are older than 20 is 0.",
       "key_findings": [],
       "evidence": [],
       "caveats": [],
@@ -526,22 +526,22 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_c6743cfb_17_agent_run_completed",
-    "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
+    "event_id": "runtime_7bc56a71_17_agent_run_completed",
+    "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
     "sequence": 17,
-    "created_at_ms": 1780640786117,
+    "created_at_ms": 1780675601763,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "c6743cfb-ecfa-48ad-8e98-a987b738d8d6",
-      "session_id": "0946f26f-bf4e-4da1-84c9-2eb4d4f5efb6",
+      "run_id": "7bc56a71-ef0c-4c6a-a5b9-84218da532bb",
+      "session_id": "00ffffcd-c378-4537-8318-741b3bc0bc9a",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
       "question": "Find number of pets owned by students who are older than 20.",
-      "context_summary": "Question: Find number of pets owned by students who are older than 20. Answer: Students older than 20 own 0 pets. Artifacts: - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count_pets_by_age, metrics=[{'name': 'pet_count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'student.Age', 'operator': '>', 'value': '20'}], time_range=None, candidate_tables=['has_pet', 'student'] - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100 - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table (table, Result table): rowCount=1; columns=pet_count",
+      "context_summary": "Question: Find number of pets owned by students who are older than 20. Answer: The number of pets owned by students who are older than 20 is 0. Artifacts: - agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count_pets_by_age, metrics=[{'name': 'pet_count', 'expression': 'COUNT(*)', 'source_column': 'has_pet.PetID'}], dimensions=[], filters=[{'column': 'student.Age', 'operator': '>', 'value': '20'}], time_range=None, candidate_tables=['has_pet', 'student'] - agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100 - agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/004/result_table (table, Result table): rowCount=1; columns=pet_count",
       "referenced_artifact_ids": [],
       "query_plan": {
         "analysis_goal": "count_pets_by_age",
@@ -549,7 +549,7 @@
           {
             "name": "pet_count",
             "expression": "COUNT(*)",
-            "source_column": "*"
+            "source_column": "has_pet.PetID"
           }
         ],
         "dimensions": [],
@@ -580,7 +580,7 @@
             {
               "name": "pet_count",
               "expression": "COUNT(*)",
-              "source_column": "*"
+              "source_column": "has_pet.PetID"
             }
           ],
           "dimensions": [],
@@ -636,7 +636,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+          "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -666,7 +666,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:20.591034Z"
+          "created_at": "2026-06-05T16:06:36.506954Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -687,11 +687,11 @@
           }
         ],
         "rowCount": 1,
-        "latencyMs": 4,
-        "historyId": "2c60b8a6-ed02-44f6-aa35-9591704234f3",
-        "executionId": "exec-a03e8553-0837-4e04-92ab-d931df7c0acf",
+        "latencyMs": 5,
+        "historyId": "a7b079ce-964f-45e3-9885-eb8f779ee24a",
+        "executionId": "exec-9c728ed3-9dbe-4dc6-87e1-7224930364db",
         "safetyDecision": {
-          "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+          "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -721,7 +721,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:20.591034Z"
+          "created_at": "2026-06-05T16:06:36.506954Z"
         },
         "truncated": false,
         "warnings": [],
@@ -731,14 +731,14 @@
           "executeMs": 1,
           "fetchMs": 0,
           "serializeMs": 0,
-          "totalMs": 4
+          "totalMs": 5
         }
       },
-      "explanation": "Students older than 20 own 0 pets.",
+      "explanation": "The number of pets owned by students who are older than 20 is 0.",
       "chart_suggestion": null,
       "result_profile": null,
       "answer": {
-        "answer": "Students older than 20 own 0 pets.",
+        "answer": "The number of pets owned by students who are older than 20 is 0.",
         "key_findings": [],
         "evidence": [],
         "caveats": [],
@@ -748,7 +748,7 @@
       "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan",
+          "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
@@ -758,7 +758,7 @@
               {
                 "name": "pet_count",
                 "expression": "COUNT(*)",
-                "source_column": "*"
+                "source_column": "has_pet.PetID"
               }
             ],
             "dimensions": [],
@@ -789,7 +789,7 @@
                 {
                   "name": "pet_count",
                   "expression": "COUNT(*)",
-                  "source_column": "*"
+                  "source_column": "has_pet.PetID"
                 }
               ],
               "dimensions": [],
@@ -823,7 +823,7 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
+          "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
@@ -846,11 +846,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/001/query_plan"
+            "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report",
+          "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
@@ -885,7 +885,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+              "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -915,7 +915,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:20.591034Z"
+              "created_at": "2026-06-05T16:06:36.506954Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -933,11 +933,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate"
+            "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+          "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/004/result_table",
           "semantic_id": "result_table",
           "type": "table",
           "title": "Result table",
@@ -951,7 +951,7 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 4,
+            "latencyMs": 5,
             "safety_state": {
               "available": true,
               "passed": true,
@@ -969,8 +969,8 @@
           "refs": {},
           "produced_by_step": "execute_sql",
           "depends_on": [
-            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
-            "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report"
+            "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate",
+            "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/003/safety_report"
           ]
         }
       ],
@@ -990,7 +990,7 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+          "artifact_id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/004/result_table",
           "display": "full",
           "answer": null,
           "suggestions": []
@@ -1003,7 +1003,7 @@
           "artifact_id": null,
           "display": null,
           "answer": {
-            "answer": "Students older than 20 own 0 pets.",
+            "answer": "The number of pets owned by students who are older than 20 is 0.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1017,7 +1017,7 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780640786115,
+          "created_at_ms": 1780675601759,
           "type": "agent.narration.completed",
           "content": "I used the trusted schema context around has_pet, pets, student to answer: Find number of pets owned by students who are older than 20.",
           "artifact": null,
@@ -1027,11 +1027,11 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780640786116,
+          "created_at_ms": 1780675601760,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/004/result_table",
+            "id": "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/004/result_table",
             "semantic_id": "result_table",
             "type": "table",
             "title": "Result table",
@@ -1045,7 +1045,7 @@
                 }
               ],
               "rowCount": 1,
-              "latencyMs": 4,
+              "latencyMs": 5,
               "safety_state": {
                 "available": true,
                 "passed": true,
@@ -1063,8 +1063,8 @@
             "refs": {},
             "produced_by_step": "execute_sql",
             "depends_on": [
-              "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/002/sql_candidate",
-              "agent/run/c6743cfb-ecfa-48ad-8e98-a987b738d8d6/artifact/003/safety_report"
+              "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/002/sql_candidate",
+              "agent/run/7bc56a71-ef0c-4c6a-a5b9-84218da532bb/artifact/003/safety_report"
             ]
           },
           "answer": null,
@@ -1073,12 +1073,12 @@
         {
           "event_id": "visible_3_agent_answer_completed",
           "sequence": 3,
-          "created_at_ms": 1780640786117,
+          "created_at_ms": 1780675601761,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
           "answer": {
-            "answer": "Students older than 20 own 0 pets.",
+            "answer": "The number of pets owned by students who are older than 20 is 0.",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1092,7 +1092,7 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780640786115,
+          "created_at_ms": 1780675601759,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1110,7 +1110,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780640786116,
+          "created_at_ms": 1780675601760,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1308,12 +1308,12 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 2
+          "latency_ms": 3
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780640786117,
+          "created_at_ms": 1780675601761,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1335,7 +1335,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780640786118,
+          "created_at_ms": 1780675601762,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1356,7 +1356,7 @@
               {
                 "name": "pet_count",
                 "expression": "COUNT(*)",
-                "source_column": "*"
+                "source_column": "has_pet.PetID"
               }
             ],
             "dimensions": [],
@@ -1387,7 +1387,7 @@
                 {
                   "name": "pet_count",
                   "expression": "COUNT(*)",
-                  "source_column": "*"
+                  "source_column": "has_pet.PetID"
                 }
               ],
               "dimensions": [],
@@ -1412,12 +1412,12 @@
             }
           },
           "error": null,
-          "latency_ms": 3535
+          "latency_ms": 3578
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780640786119,
+          "created_at_ms": 1780675601763,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1443,7 +1443,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780640786120,
+          "created_at_ms": 1780675601764,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1478,7 +1478,7 @@
                   {
                     "name": "pet_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "has_pet.PetID"
                   }
                 ],
                 "dimensions": [],
@@ -1509,7 +1509,7 @@
                     {
                       "name": "pet_count",
                       "expression": "COUNT(*)",
-                      "source_column": "*"
+                      "source_column": "has_pet.PetID"
                     }
                   ],
                   "dimensions": [],
@@ -1543,7 +1543,7 @@
                   {
                     "name": "pet_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "has_pet.PetID"
                   }
                 ],
                 "dimensions": [],
@@ -1587,16 +1587,17 @@
                 "student.city_code"
               ],
               "schema_context_size": 395,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": null
             }
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 6
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780640786121,
+          "created_at_ms": 1780675601765,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1612,7 +1613,7 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780640786122,
+          "created_at_ms": 1780675601766,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1652,7 +1653,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+              "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -1682,7 +1683,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:20.591034Z"
+              "created_at": "2026-06-05T16:06:36.506954Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1693,12 +1694,12 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 26
+          "latency_ms": 33
         },
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780640786123,
+          "created_at_ms": 1780675601767,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -1714,7 +1715,7 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780640786124,
+          "created_at_ms": 1780675601768,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -1734,11 +1735,11 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 4,
-            "historyId": "2c60b8a6-ed02-44f6-aa35-9591704234f3",
-            "executionId": "exec-a03e8553-0837-4e04-92ab-d931df7c0acf",
+            "latencyMs": 5,
+            "historyId": "a7b079ce-964f-45e3-9885-eb8f779ee24a",
+            "executionId": "exec-9c728ed3-9dbe-4dc6-87e1-7224930364db",
             "safetyDecision": {
-              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+              "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -1768,7 +1769,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:20.591034Z"
+              "created_at": "2026-06-05T16:06:36.506954Z"
             },
             "truncated": false,
             "warnings": [],
@@ -1778,11 +1779,11 @@
               "executeMs": 1,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 4
+              "totalMs": 5
             }
           },
           "error": null,
-          "latency_ms": 14
+          "latency_ms": 16
         }
       ],
       "steps": [
@@ -1982,7 +1983,7 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 2
+          "latency_ms": 3
         },
         {
           "name": "build_query_plan",
@@ -2003,7 +2004,7 @@
               {
                 "name": "pet_count",
                 "expression": "COUNT(*)",
-                "source_column": "*"
+                "source_column": "has_pet.PetID"
               }
             ],
             "dimensions": [],
@@ -2034,7 +2035,7 @@
                 {
                   "name": "pet_count",
                   "expression": "COUNT(*)",
-                  "source_column": "*"
+                  "source_column": "has_pet.PetID"
                 }
               ],
               "dimensions": [],
@@ -2059,7 +2060,7 @@
             }
           },
           "error": null,
-          "latency_ms": 3535
+          "latency_ms": 3578
         },
         {
           "name": "generate_sql_candidate",
@@ -2094,7 +2095,7 @@
                   {
                     "name": "pet_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "has_pet.PetID"
                   }
                 ],
                 "dimensions": [],
@@ -2125,7 +2126,7 @@
                     {
                       "name": "pet_count",
                       "expression": "COUNT(*)",
-                      "source_column": "*"
+                      "source_column": "has_pet.PetID"
                     }
                   ],
                   "dimensions": [],
@@ -2159,7 +2160,7 @@
                   {
                     "name": "pet_count",
                     "expression": "COUNT(*)",
-                    "source_column": "*"
+                    "source_column": "has_pet.PetID"
                   }
                 ],
                 "dimensions": [],
@@ -2203,11 +2204,12 @@
                 "student.city_code"
               ],
               "schema_context_size": 395,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": null
             }
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 6
         },
         {
           "name": "validate_sql",
@@ -2247,7 +2249,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+              "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -2277,7 +2279,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:20.591034Z"
+              "created_at": "2026-06-05T16:06:36.506954Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2288,7 +2290,7 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 26
+          "latency_ms": 33
         },
         {
           "name": "execute_sql",
@@ -2308,11 +2310,11 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 4,
-            "historyId": "2c60b8a6-ed02-44f6-aa35-9591704234f3",
-            "executionId": "exec-a03e8553-0837-4e04-92ab-d931df7c0acf",
+            "latencyMs": 5,
+            "historyId": "a7b079ce-964f-45e3-9885-eb8f779ee24a",
+            "executionId": "exec-9c728ed3-9dbe-4dc6-87e1-7224930364db",
             "safetyDecision": {
-              "decision_id": "safety-dce19db5-acb2-459a-9057-f0cb8610bef5",
+              "decision_id": "safety-412fe05a-5a19-4332-b0a4-f90c168976d1",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS pet_count FROM has_pet JOIN student ON has_pet.StuID = student.StuID WHERE student.Age > 20 LIMIT 100",
@@ -2342,7 +2344,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:20.591034Z"
+              "created_at": "2026-06-05T16:06:36.506954Z"
             },
             "truncated": false,
             "warnings": [],
@@ -2352,11 +2354,11 @@
               "executeMs": 1,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 4
+              "totalMs": 5
             }
           },
           "error": null,
-          "latency_ms": 14
+          "latency_ms": 16
         }
       ],
       "error": null,

@@ -1,0 +1,78 @@
+{
+  "case_id": "spider-dev-017",
+  "db_id": "pets_1",
+  "question": "Find the first name and age of students who have a pet.",
+  "difficulty": "medium",
+  "gold_sql": "SELECT DISTINCT T1.fname ,  T1.age FROM student AS T1 JOIN has_pet AS T2 ON T1.stuid  =  T2.stuid",
+  "gold_sql_original": "SELECT DISTINCT T1.fname ,  T1.age FROM student AS T1 JOIN has_pet AS T2 ON T1.stuid  =  T2.stuid",
+  "gold_sql_canonical": "SELECT DISTINCT T1.fname ,  T1.age FROM student AS T1 JOIN has_pet AS T2 ON T1.stuid  =  T2.stuid",
+  "gold_sql_was_canonicalized": false,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT Fname AS first_name, Age AS age FROM student JOIN has_pet ON student.StuID = has_pet.StuID LIMIT 100",
+  "safe_sql": "SELECT Fname AS first_name, Age AS age FROM student JOIN has_pet ON student.StuID = has_pet.StuID LIMIT 100",
+  "agent_answer": "The first name and age of students who have a pet are:\n\n- Linda, 18\n- Tracy, 19\n- Tracy, 19\n\nThis result contains 3 rows. Tracy appears twice, and ages range from 18 to 19.",
+  "status": "execution_mismatch",
+  "final_status": "completed",
+  "execution_match": false,
+  "reason": "Result mismatch: Row count mismatch: gold=2, agent=3",
+  "quality": {
+    "score": 3,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": false,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": false,
+      "sql_generated": true,
+      "execution_match": false,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql",
+    "profile_result",
+    "suggest_chart",
+    "suggest_followups",
+    "answer_synthesizer"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table",
+    "insight",
+    "chart"
+  ],
+  "approval": null,
+  "latency_seconds": 31.34,
+  "gold_rows_count": 2,
+  "agent_rows_count": 3,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "has_pet",
+      "pets",
+      "student"
+    ],
+    "databox_tables": [
+      "has_pet",
+      "pets",
+      "student"
+    ]
+  },
+  "event_count": 27
+}

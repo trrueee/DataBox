@@ -1,0 +1,72 @@
+{
+  "case_id": "spider-dev-044",
+  "db_id": "network_1",
+  "question": "Show the names of all of the high schooler Kyle's friends.",
+  "difficulty": "extra",
+  "gold_sql": "SELECT T3.name FROM Friend AS T1 JOIN Highschooler AS T2 ON T1.student_id  =  T2.id JOIN Highschooler AS T3 ON T1.friend_id  =  T3.id WHERE T2.name  =  \"Kyle\"",
+  "gold_sql_original": "SELECT T3.name FROM Friend AS T1 JOIN Highschooler AS T2 ON T1.student_id  =  T2.id JOIN Highschooler AS T3 ON T1.friend_id  =  T3.id WHERE T2.name  =  \"Kyle\"",
+  "gold_sql_canonical": "SELECT T3.name FROM friend AS T1 JOIN highschooler AS T2 ON T1.student_id  =  T2.id JOIN highschooler AS T3 ON T1.friend_id  =  T3.id WHERE T2.name  =  \"Kyle\"",
+  "gold_sql_was_canonicalized": true,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT h2.name FROM highschooler AS h1 JOIN friend AS f ON h1.ID = f.student_id JOIN highschooler AS h2 ON f.friend_id = h2.ID WHERE h1.name = 'Kyle' LIMIT 100",
+  "safe_sql": "SELECT h2.name FROM highschooler AS h1 JOIN friend AS f ON h1.ID = f.student_id JOIN highschooler AS h2 ON f.friend_id = h2.ID WHERE h1.name = 'Kyle' LIMIT 100",
+  "agent_answer": "Kyle's friend is Jordan.",
+  "status": "pass",
+  "final_status": "completed",
+  "execution_match": true,
+  "reason": "Execution match",
+  "quality": {
+    "score": 5,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": true,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": true,
+      "sql_generated": true,
+      "execution_match": true,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table"
+  ],
+  "approval": null,
+  "latency_seconds": 26.86,
+  "gold_rows_count": 1,
+  "agent_rows_count": 1,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ],
+    "databox_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ]
+  },
+  "event_count": 17
+}

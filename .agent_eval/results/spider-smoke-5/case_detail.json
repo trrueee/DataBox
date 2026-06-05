@@ -45,7 +45,7 @@
     "table"
   ],
   "approval": null,
-  "latency_seconds": 19.04,
+  "latency_seconds": 18.05,
   "gold_rows_count": 1,
   "agent_rows_count": 1,
   "gold_error": null,

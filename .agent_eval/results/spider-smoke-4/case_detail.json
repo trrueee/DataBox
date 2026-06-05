@@ -4,9 +4,9 @@
   "question": "List all song names by singers above the average age.",
   "difficulty": "medium",
   "gold_sql": "SELECT song_name FROM singer WHERE age  >  (SELECT avg(age) FROM singer)",
-  "agent_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-  "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-  "agent_answer": "The song names by singers above the average age are: You, Sun, and Gentleman.",
+  "agent_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+  "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+  "agent_answer": "The song names by singers above the average age are:\n\n- You\n- Sun\n- Gentleman",
   "status": "pass",
   "final_status": "completed",
   "execution_match": true,
@@ -36,21 +36,16 @@
     "build_query_plan",
     "generate_sql_candidate",
     "validate_sql",
-    "execute_sql",
-    "profile_result",
-    "suggest_chart",
-    "suggest_followups",
-    "answer_synthesizer"
+    "execute_sql"
   ],
   "artifacts": [
     "query_plan",
     "sql",
     "safety",
-    "table",
-    "insight"
+    "table"
   ],
   "approval": null,
-  "latency_seconds": 28.4,
+  "latency_seconds": 23.69,
   "gold_rows_count": 3,
   "agent_rows_count": 3,
   "gold_error": null,
@@ -71,5 +66,5 @@
       "stadium"
     ]
   },
-  "event_count": 26
+  "event_count": 17
 }

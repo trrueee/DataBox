@@ -1,0 +1,79 @@
+{
+  "case_id": "spider-dev-023",
+  "db_id": "car_1",
+  "question": "How many countries does each continent have? List the continent id, continent name and the number of countries.",
+  "difficulty": "medium",
+  "gold_sql": "SELECT T1.ContId ,  T1.Continent ,  count(*) FROM CONTINENTS AS T1 JOIN COUNTRIES AS T2 ON T1.ContId  =  T2.Continent GROUP BY T1.ContId;",
+  "gold_sql_original": "SELECT T1.ContId ,  T1.Continent ,  count(*) FROM CONTINENTS AS T1 JOIN COUNTRIES AS T2 ON T1.ContId  =  T2.Continent GROUP BY T1.ContId;",
+  "gold_sql_canonical": "SELECT T1.ContId ,  T1.Continent ,  count(*) FROM continents AS T1 JOIN countries AS T2 ON T1.ContId  =  T2.Continent GROUP BY T1.ContId;",
+  "gold_sql_was_canonicalized": true,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT continents.ContId AS continent_id, continents.Continent AS continent_name, COUNT(*) AS country_count FROM continents JOIN countries ON continents.ContId = countries.Continent GROUP BY continents.ContId, continents.Continent LIMIT 100",
+  "safe_sql": "SELECT continents.ContId AS continent_id, continents.Continent AS continent_name, COUNT(*) AS country_count FROM continents JOIN countries ON continents.ContId = countries.Continent GROUP BY continents.ContId, continents.Continent LIMIT 100",
+  "agent_answer": "The query executed successfully but returned no rows. This means that, based on the current data and join condition (continents.ContId = countries.Continent), there are no matching country records for any continent in the joined tables. Possible causes include: mismatched column names or data types in the join key, missing foreign key relationships, or an empty or mispopulated `countries` table. You may want to inspect sample data from both `continents` and `countries` tables to verify schema alignment and data completeness.",
+  "status": "pass",
+  "final_status": "completed",
+  "execution_match": true,
+  "reason": "Execution match",
+  "quality": {
+    "score": 5,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": true,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": true,
+      "sql_generated": true,
+      "execution_match": true,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql",
+    "profile_result",
+    "suggest_chart",
+    "suggest_followups",
+    "answer_synthesizer"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table",
+    "insight"
+  ],
+  "approval": null,
+  "latency_seconds": 36.33,
+  "gold_rows_count": 0,
+  "agent_rows_count": 0,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "car_makers",
+      "continents",
+      "countries",
+      "model_list"
+    ],
+    "databox_tables": [
+      "car_makers",
+      "continents",
+      "countries",
+      "model_list"
+    ]
+  },
+  "event_count": 26
+}

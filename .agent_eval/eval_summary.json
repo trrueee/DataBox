@@ -1,46 +1,521 @@
 {
-  "evaluation_time": "2026-06-05T06:41:13.688432+00:00",
-  "total_cases": 3,
-  "passed_cases": 0,
-  "failed_cases": 3,
-  "pass_rate": 0.0,
-  "average_latency_seconds": 2.29,
-  "total_duration_seconds": 6.88,
+  "evaluation_time": "2026-06-05T18:41:17.588129+00:00",
+  "total_cases": 50,
+  "passed_cases": 28,
+  "failed_cases": 22,
+  "pass_rate": 56.0,
+  "average_latency_seconds": 36.94,
+  "total_duration_seconds": 1848.6,
   "status_counts": {
-    "pass": 0,
-    "eval_env_failed": 3,
-    "validation_blocked": 0,
+    "pass": 28,
+    "eval_env_failed": 0,
+    "validation_blocked": 2,
     "agent_execution_failed": 0,
-    "execution_mismatch": 0
+    "execution_mismatch": 20
   },
+  "gold_sql_canonicalized_count": 20,
+  "gold_sql_canonicalization_failed_count": 0,
   "model": "qwen-plus",
   "cases": [
     {
-      "case_id": "spider-smoke-2",
+      "case_id": "spider-dev-001",
       "db_id": "concert_singer",
-      "difficulty": "simple",
-      "status": "eval_env_failed",
-      "score": 0,
-      "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
-      "latency_seconds": 2.36
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 27.09,
+      "gold_sql_was_canonicalized": false
     },
     {
-      "case_id": "spider-smoke-9",
+      "case_id": "spider-dev-002",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 21.81,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-003",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 17.94,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-004",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 31.95,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-005",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 22.07,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-006",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 37.93,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-007",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=3, agent=6",
+      "latency_seconds": 33.1,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-008",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=3, agent=6",
+      "latency_seconds": 32.58,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-009",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 34.39,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-010",
+      "db_id": "concert_singer",
+      "difficulty": "easy",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 34.03,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-011",
       "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 19.97,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-012",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 31.64,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-013",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row mismatch: gold=['1.5000', 2, 'dog'], agent=['cat', '3.0000', 3]",
+      "latency_seconds": 30.99,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-014",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row mismatch: gold=['1.5000', 2, 'dog'], agent=['cat', '3.0000', 3]",
+      "latency_seconds": 32.45,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-015",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row mismatch: gold=[11.35, 'dog'], agent=['cat', 12.0]",
+      "latency_seconds": 31.3,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-016",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row mismatch: gold=[11.35, 'dog'], agent=['cat', 12.0]",
+      "latency_seconds": 30.96,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-017",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=2, agent=3",
+      "latency_seconds": 31.34,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-018",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=2, agent=3",
+      "latency_seconds": 34.46,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-019",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Column count mismatch: gold=1, agent=8",
+      "latency_seconds": 47.38,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-020",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 19.83,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-021",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "validation_blocked",
+      "score": 3,
+      "reason": "Validation blocked agent SQL: schema_error",
+      "latency_seconds": 25.04,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-022",
+      "db_id": "pets_1",
+      "difficulty": "medium",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 33.55,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-023",
+      "db_id": "car_1",
+      "difficulty": "medium",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 36.33,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-024",
+      "db_id": "car_1",
+      "difficulty": "medium",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 34.8,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-025",
+      "db_id": "car_1",
+      "difficulty": "medium",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 36.45,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-026",
+      "db_id": "flight_2",
       "difficulty": "hard",
-      "status": "eval_env_failed",
-      "score": 0,
-      "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
-      "latency_seconds": 2.26
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 31.8,
+      "gold_sql_was_canonicalized": true
     },
     {
-      "case_id": "spider-smoke-10",
-      "db_id": "pets_1",
-      "difficulty": "extra hard",
-      "status": "eval_env_failed",
-      "score": 0,
-      "reason": "DataBox schema preflight failed: [WinError 10061] 由于目标计算机积极拒绝，无法连接。",
-      "latency_seconds": 2.25
+      "case_id": "spider-dev-027",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 22.77,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-028",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 19.86,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-029",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 33.12,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-030",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Column count mismatch: gold=1, agent=2",
+      "latency_seconds": 36.18,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-031",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Column count mismatch: gold=1, agent=2",
+      "latency_seconds": 35.27,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-032",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 26.8,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-033",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 41.55,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-034",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 39.4,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-035",
+      "db_id": "flight_2",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Column count mismatch: gold=1, agent=4",
+      "latency_seconds": 38.51,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-036",
+      "db_id": "employee_hire_evaluation",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=1, agent=4",
+      "latency_seconds": 289.44,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-037",
+      "db_id": "employee_hire_evaluation",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=1, agent=4",
+      "latency_seconds": 33.16,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-038",
+      "db_id": "employee_hire_evaluation",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=5, agent=6",
+      "latency_seconds": 45.26,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-039",
+      "db_id": "employee_hire_evaluation",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=5, agent=6",
+      "latency_seconds": 25.48,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-040",
+      "db_id": "employee_hire_evaluation",
+      "difficulty": "hard",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=3, agent=7",
+      "latency_seconds": 42.37,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-041",
+      "db_id": "museum_visit",
+      "difficulty": "extra",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 33.68,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-042",
+      "db_id": "orchestra",
+      "difficulty": "extra",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=1, agent=0",
+      "latency_seconds": 36.11,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-043",
+      "db_id": "orchestra",
+      "difficulty": "extra",
+      "status": "validation_blocked",
+      "score": 3,
+      "reason": "Validation blocked agent SQL: guardrail_reject",
+      "latency_seconds": 31.93,
+      "gold_sql_was_canonicalized": false
+    },
+    {
+      "case_id": "spider-dev-044",
+      "db_id": "network_1",
+      "difficulty": "extra",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 26.86,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-045",
+      "db_id": "network_1",
+      "difficulty": "extra",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 26.45,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-046",
+      "db_id": "network_1",
+      "difficulty": "extra",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 25.05,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-047",
+      "db_id": "network_1",
+      "difficulty": "extra",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 35.29,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-048",
+      "db_id": "network_1",
+      "difficulty": "extra",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=2, agent=20",
+      "latency_seconds": 40.63,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-049",
+      "db_id": "network_1",
+      "difficulty": "extra",
+      "status": "execution_mismatch",
+      "score": 3,
+      "reason": "Result mismatch: Row count mismatch: gold=8, agent=14",
+      "latency_seconds": 25.82,
+      "gold_sql_was_canonicalized": true
+    },
+    {
+      "case_id": "spider-dev-050",
+      "db_id": "network_1",
+      "difficulty": "extra",
+      "status": "pass",
+      "score": 5,
+      "reason": "Execution match",
+      "latency_seconds": 35.05,
+      "gold_sql_was_canonicalized": true
     }
   ]
 }

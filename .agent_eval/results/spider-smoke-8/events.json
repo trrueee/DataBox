@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_1ea49202_1_agent_run_started",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_1_agent_run_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 1,
-    "created_at_ms": 1780640786742,
+    "created_at_ms": 1780675602232,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-pets-1",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_1ea49202_2_agent_step_started",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_2_agent_step_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 2,
-    "created_at_ms": 1780640789254,
+    "created_at_ms": 1780675604252,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_1ea49202_3_agent_step_completed",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_3_agent_step_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 3,
-    "created_at_ms": 1780640789255,
+    "created_at_ms": 1780675604253,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 2
+      "latency_ms": 3
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_1ea49202_4_agent_step_started",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_4_agent_step_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 4,
-    "created_at_ms": 1780640795916,
+    "created_at_ms": 1780675611542,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_1ea49202_5_agent_step_completed",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_5_agent_step_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 5,
-    "created_at_ms": 1780640795917,
+    "created_at_ms": 1780675611543,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 4626
+      "latency_ms": 4663
     },
     "artifact": null,
     "answer": null,
@@ -97,16 +97,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_1ea49202_6_agent_artifact_created",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_6_agent_artifact_created",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 6,
-    "created_at_ms": 1780640795917,
+    "created_at_ms": 1780675611544,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/001/query_plan",
+      "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
@@ -205,10 +205,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_1ea49202_7_agent_step_started",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_7_agent_step_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 7,
-    "created_at_ms": 1780640798048,
+    "created_at_ms": 1780675613604,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -223,17 +223,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_1ea49202_8_agent_step_completed",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_8_agent_step_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 8,
-    "created_at_ms": 1780640798050,
+    "created_at_ms": 1780675613605,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 5
+      "latency_ms": 8
     },
     "artifact": null,
     "answer": null,
@@ -244,10 +244,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_1ea49202_9_agent_step_started",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_9_agent_step_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 9,
-    "created_at_ms": 1780640800237,
+    "created_at_ms": 1780675615663,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -262,17 +262,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_1ea49202_10_agent_step_completed",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_10_agent_step_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 10,
-    "created_at_ms": 1780640800239,
+    "created_at_ms": 1780675615664,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 29
+      "latency_ms": 40
     },
     "artifact": null,
     "answer": null,
@@ -283,16 +283,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_1ea49202_11_agent_artifact_created",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_11_agent_artifact_created",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 11,
-    "created_at_ms": 1780640800239,
+    "created_at_ms": 1780675615665,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate",
+      "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
@@ -315,7 +315,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/001/query_plan"
+        "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -326,16 +326,16 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_1ea49202_12_agent_artifact_created",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_12_agent_artifact_created",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 12,
-    "created_at_ms": 1780640800240,
+    "created_at_ms": 1780675615666,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/003/safety_report",
+      "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
@@ -370,7 +370,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+          "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
@@ -400,7 +400,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:40.237160Z"
+          "created_at": "2026-06-05T16:06:55.662981Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -418,7 +418,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate"
+        "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -429,10 +429,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_1ea49202_13_agent_step_started",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_13_agent_step_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 13,
-    "created_at_ms": 1780640802590,
+    "created_at_ms": 1780675618331,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -447,17 +447,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_1ea49202_14_agent_step_completed",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_14_agent_step_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 14,
-    "created_at_ms": 1780640802591,
+    "created_at_ms": 1780675618333,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
       "tool_name": "sql.execute_readonly",
       "status": "success",
       "error": null,
-      "latency_ms": 14
+      "latency_ms": 17
     },
     "artifact": null,
     "answer": null,
@@ -468,16 +468,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_1ea49202_15_agent_artifact_created",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_15_agent_artifact_created",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 15,
-    "created_at_ms": 1780640802592,
+    "created_at_ms": 1780675618334,
     "type": "agent.artifact.created",
     "step": {
       "name": "execute_sql"
     },
     "artifact": {
-      "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/004/result_table",
+      "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table",
       "semantic_id": "result_table",
       "type": "table",
       "title": "Result table",
@@ -491,7 +491,7 @@
           }
         ],
         "rowCount": 1,
-        "latencyMs": 4,
+        "latencyMs": 5,
         "safety_state": {
           "available": true,
           "passed": true,
@@ -509,8 +509,8 @@
       "refs": {},
       "produced_by_step": "execute_sql",
       "depends_on": [
-        "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate",
-        "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/003/safety_report"
+        "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate",
+        "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/003/safety_report"
       ]
     },
     "answer": null,
@@ -521,15 +521,164 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_1ea49202_16_agent_answer_completed",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
+    "event_id": "runtime_ff194c01_16_agent_step_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
     "sequence": 16,
-    "created_at_ms": 1780640805606,
+    "created_at_ms": 1780675620570,
+    "type": "agent.step.started",
+    "step": {
+      "name": "profile_result",
+      "tool_name": "result.profile"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_ff194c01_17_agent_step_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
+    "sequence": 17,
+    "created_at_ms": 1780675620571,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "profile_result",
+      "tool_name": "result.profile",
+      "status": "success",
+      "error": null,
+      "latency_ms": 0
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_ff194c01_18_agent_artifact_created",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
+    "sequence": 18,
+    "created_at_ms": 1780675620572,
+    "type": "agent.artifact.created",
+    "step": {
+      "name": "profile_result"
+    },
+    "artifact": {
+      "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/005/result_profile",
+      "semantic_id": "result_profile",
+      "type": "insight",
+      "title": "Result profile",
+      "payload": {
+        "row_count": 1,
+        "column_profiles": {
+          "count": {
+            "kind": "numeric",
+            "count": 1,
+            "null_count": 0,
+            "distinct_count": 1,
+            "sample_values": [
+              "2"
+            ],
+            "min": 2.0,
+            "max": 2.0,
+            "sum": 2.0,
+            "avg": 2.0,
+            "top_values": []
+          }
+        },
+        "detected_patterns": [
+          "single_metric"
+        ],
+        "notable_facts": [
+          "The result contains 1 profiled rows.",
+          "count is 2.0.",
+          "count ranges from 2.0 to 2.0."
+        ],
+        "anomalies": [],
+        "limitations": [
+          "The profile is based on the rows returned to the agent, not necessarily the full source table."
+        ],
+        "safety_state": {
+          "available": true,
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail_result": "pass",
+          "schema_warnings_count": 0
+        }
+      },
+      "presentation": {
+        "mode": "both",
+        "priority": 10,
+        "collapsed": false
+      },
+      "refs": {},
+      "produced_by_step": "profile_result",
+      "depends_on": [
+        "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table"
+      ]
+    },
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.artifact.created"
+  },
+  {
+    "event_id": "runtime_ff194c01_19_agent_step_started",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
+    "sequence": 19,
+    "created_at_ms": 1780675622623,
+    "type": "agent.step.started",
+    "step": {
+      "name": "suggest_chart",
+      "tool_name": "chart.suggest"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_ff194c01_20_agent_step_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
+    "sequence": 20,
+    "created_at_ms": 1780675622624,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "suggest_chart",
+      "tool_name": "chart.suggest",
+      "status": "success",
+      "error": null,
+      "latency_ms": 0
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_ff194c01_21_agent_answer_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
+    "sequence": 21,
+    "created_at_ms": 1780675625585,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
     "answer": {
-      "answer": "There are 2 dog pets raised by female students (with sex 'F').",
+      "answer": "There are 2 dog pets raised by female students (with sex F).",
       "key_findings": [],
       "evidence": [],
       "caveats": [],
@@ -543,22 +692,22 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_1ea49202_17_agent_run_completed",
-    "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
-    "sequence": 17,
-    "created_at_ms": 1780640805607,
+    "event_id": "runtime_ff194c01_22_agent_run_completed",
+    "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
+    "sequence": 22,
+    "created_at_ms": 1780675625586,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "1ea49202-028a-4f10-81a9-743d6662eebe",
-      "session_id": "476f1b42-4e70-497a-b432-a85c9180e03e",
+      "run_id": "ff194c01-0722-4767-8a2f-94d119638999",
+      "session_id": "669c89df-234b-4b91-961e-15d68f9efce3",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
       "question": "Find the number of dog pets that are raised by female students (with sex F).",
-      "context_summary": "Question: Find the number of dog pets that are raised by female students (with sex F). Answer: There are 2 dog pets raised by female students (with sex 'F'). Artifacts: - agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count, metrics=[{'name': 'count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'pets.PetType', 'operator': '=', 'value': 'dog'}, {'column': 'student.Sex', 'operator': '=', 'value': 'F'}], time_range=None, candidate_tables=['has_pet', 'pets', 'student'] - agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100 - agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/004/result_table (table, Result table): rowCount=1; columns=count",
+      "context_summary": "Question: Find the number of dog pets that are raised by female students (with sex F). Answer: There are 2 dog pets raised by female students (with sex F). Artifacts: - agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count, metrics=[{'name': 'count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'pets.PetType', 'operator': '=', 'value': 'dog'}, {'column': 'student.Sex', 'operator': '=', 'value': 'F'}], time_range=None, candidate_tables=['has_pet', 'pets', 'student'] - agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100 - agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table (table, Result table): rowCount=1; columns=count - agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/005/result_profile (insight, Result profile): The result contains 1 profiled rows.; count is 2.0.; count ranges from 2.0 to 2.0.",
       "referenced_artifact_ids": [],
       "query_plan": {
         "analysis_goal": "count",
@@ -670,7 +819,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+          "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
@@ -700,7 +849,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:40.237160Z"
+          "created_at": "2026-06-05T16:06:55.662981Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -721,11 +870,11 @@
           }
         ],
         "rowCount": 1,
-        "latencyMs": 4,
-        "historyId": "8eca367c-05a6-45e6-9703-815fd129cd38",
-        "executionId": "exec-539bf363-b2ce-4fc6-b4ca-4933a7224faa",
+        "latencyMs": 5,
+        "historyId": "603f948e-a29a-4277-a13c-3b843a8f8387",
+        "executionId": "exec-633dd6d0-6e30-4dfa-b0a1-7cdaceb172c7",
         "safetyDecision": {
-          "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+          "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
@@ -755,7 +904,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:26:40.237160Z"
+          "created_at": "2026-06-05T16:06:55.662981Z"
         },
         "truncated": false,
         "warnings": [],
@@ -765,14 +914,49 @@
           "executeMs": 1,
           "fetchMs": 0,
           "serializeMs": 0,
-          "totalMs": 4
+          "totalMs": 5
         }
       },
-      "explanation": "There are 2 dog pets raised by female students (with sex 'F').",
-      "chart_suggestion": null,
-      "result_profile": null,
+      "explanation": "There are 2 dog pets raised by female students (with sex F).",
+      "chart_suggestion": {
+        "type": "table",
+        "x": "count",
+        "y": "count",
+        "reason": "No clear category/time plus numeric pairing was found."
+      },
+      "result_profile": {
+        "row_count": 1,
+        "column_profiles": {
+          "count": {
+            "kind": "numeric",
+            "count": 1,
+            "null_count": 0,
+            "distinct_count": 1,
+            "sample_values": [
+              "2"
+            ],
+            "min": 2.0,
+            "max": 2.0,
+            "sum": 2.0,
+            "avg": 2.0,
+            "top_values": []
+          }
+        },
+        "detected_patterns": [
+          "single_metric"
+        ],
+        "notable_facts": [
+          "The result contains 1 profiled rows.",
+          "count is 2.0.",
+          "count ranges from 2.0 to 2.0."
+        ],
+        "anomalies": [],
+        "limitations": [
+          "The profile is based on the rows returned to the agent, not necessarily the full source table."
+        ]
+      },
       "answer": {
-        "answer": "There are 2 dog pets raised by female students (with sex 'F').",
+        "answer": "There are 2 dog pets raised by female students (with sex F).",
         "key_findings": [],
         "evidence": [],
         "caveats": [],
@@ -782,7 +966,7 @@
       "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/001/query_plan",
+          "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
@@ -874,7 +1058,7 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate",
+          "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
@@ -897,11 +1081,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/001/query_plan"
+            "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/003/safety_report",
+          "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
@@ -936,7 +1120,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+              "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
@@ -966,7 +1150,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:40.237160Z"
+              "created_at": "2026-06-05T16:06:55.662981Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -984,11 +1168,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate"
+            "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/004/result_table",
+          "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table",
           "semantic_id": "result_table",
           "type": "table",
           "title": "Result table",
@@ -1002,7 +1186,7 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 4,
+            "latencyMs": 5,
             "safety_state": {
               "available": true,
               "passed": true,
@@ -1020,8 +1204,63 @@
           "refs": {},
           "produced_by_step": "execute_sql",
           "depends_on": [
-            "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate",
-            "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/003/safety_report"
+            "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate",
+            "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/003/safety_report"
+          ]
+        },
+        {
+          "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/005/result_profile",
+          "semantic_id": "result_profile",
+          "type": "insight",
+          "title": "Result profile",
+          "payload": {
+            "row_count": 1,
+            "column_profiles": {
+              "count": {
+                "kind": "numeric",
+                "count": 1,
+                "null_count": 0,
+                "distinct_count": 1,
+                "sample_values": [
+                  "2"
+                ],
+                "min": 2.0,
+                "max": 2.0,
+                "sum": 2.0,
+                "avg": 2.0,
+                "top_values": []
+              }
+            },
+            "detected_patterns": [
+              "single_metric"
+            ],
+            "notable_facts": [
+              "The result contains 1 profiled rows.",
+              "count is 2.0.",
+              "count ranges from 2.0 to 2.0."
+            ],
+            "anomalies": [],
+            "limitations": [
+              "The profile is based on the rows returned to the agent, not necessarily the full source table."
+            ],
+            "safety_state": {
+              "available": true,
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail_result": "pass",
+              "schema_warnings_count": 0
+            }
+          },
+          "presentation": {
+            "mode": "both",
+            "priority": 10,
+            "collapsed": false
+          },
+          "refs": {},
+          "produced_by_step": "profile_result",
+          "depends_on": [
+            "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table"
           ]
         }
       ],
@@ -1041,20 +1280,30 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/004/result_table",
+          "artifact_id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table",
           "display": "full",
           "answer": null,
           "suggestions": []
         },
         {
-          "block_id": "block_3_answer",
+          "block_id": "block_3_artifact_ref",
           "sequence": 3,
+          "type": "artifact_ref",
+          "content": null,
+          "artifact_id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/005/result_profile",
+          "display": "full",
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "block_id": "block_4_answer",
+          "sequence": 4,
           "type": "answer",
           "content": null,
           "artifact_id": null,
           "display": null,
           "answer": {
-            "answer": "There are 2 dog pets raised by female students (with sex 'F').",
+            "answer": "There are 2 dog pets raised by female students (with sex F).",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1068,7 +1317,7 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780640805604,
+          "created_at_ms": 1780675625583,
           "type": "agent.narration.completed",
           "content": "I used the trusted schema context around has_pet, pets, student to answer: Find the number of dog pets that are raised by female students (with sex F).",
           "artifact": null,
@@ -1078,11 +1327,11 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780640805605,
+          "created_at_ms": 1780675625584,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/004/result_table",
+            "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table",
             "semantic_id": "result_table",
             "type": "table",
             "title": "Result table",
@@ -1096,7 +1345,7 @@
                 }
               ],
               "rowCount": 1,
-              "latencyMs": 4,
+              "latencyMs": 5,
               "safety_state": {
                 "available": true,
                 "passed": true,
@@ -1114,22 +1363,86 @@
             "refs": {},
             "produced_by_step": "execute_sql",
             "depends_on": [
-              "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/002/sql_candidate",
-              "agent/run/1ea49202-028a-4f10-81a9-743d6662eebe/artifact/003/safety_report"
+              "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/002/sql_candidate",
+              "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/003/safety_report"
             ]
           },
           "answer": null,
           "suggestions": []
         },
         {
-          "event_id": "visible_3_agent_answer_completed",
+          "event_id": "visible_3_agent_artifact_created",
           "sequence": 3,
-          "created_at_ms": 1780640805606,
+          "created_at_ms": 1780675625585,
+          "type": "agent.artifact.created",
+          "content": null,
+          "artifact": {
+            "id": "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/005/result_profile",
+            "semantic_id": "result_profile",
+            "type": "insight",
+            "title": "Result profile",
+            "payload": {
+              "row_count": 1,
+              "column_profiles": {
+                "count": {
+                  "kind": "numeric",
+                  "count": 1,
+                  "null_count": 0,
+                  "distinct_count": 1,
+                  "sample_values": [
+                    "2"
+                  ],
+                  "min": 2.0,
+                  "max": 2.0,
+                  "sum": 2.0,
+                  "avg": 2.0,
+                  "top_values": []
+                }
+              },
+              "detected_patterns": [
+                "single_metric"
+              ],
+              "notable_facts": [
+                "The result contains 1 profiled rows.",
+                "count is 2.0.",
+                "count ranges from 2.0 to 2.0."
+              ],
+              "anomalies": [],
+              "limitations": [
+                "The profile is based on the rows returned to the agent, not necessarily the full source table."
+              ],
+              "safety_state": {
+                "available": true,
+                "passed": true,
+                "can_execute": true,
+                "requires_confirmation": false,
+                "guardrail_result": "pass",
+                "schema_warnings_count": 0
+              }
+            },
+            "presentation": {
+              "mode": "both",
+              "priority": 10,
+              "collapsed": false
+            },
+            "refs": {},
+            "produced_by_step": "profile_result",
+            "depends_on": [
+              "agent/run/ff194c01-0722-4767-8a2f-94d119638999/artifact/004/result_table"
+            ]
+          },
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "event_id": "visible_4_agent_answer_completed",
+          "sequence": 4,
+          "created_at_ms": 1780675625586,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
           "answer": {
-            "answer": "There are 2 dog pets raised by female students (with sex 'F').",
+            "answer": "There are 2 dog pets raised by female students (with sex F).",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1143,7 +1456,7 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780640805604,
+          "created_at_ms": 1780675625583,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1161,7 +1474,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780640805605,
+          "created_at_ms": 1780675625584,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1378,12 +1691,12 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 2
+          "latency_ms": 3
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780640805606,
+          "created_at_ms": 1780675625585,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1405,7 +1718,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780640805607,
+          "created_at_ms": 1780675625586,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1499,12 +1812,12 @@
             }
           },
           "error": null,
-          "latency_ms": 4626
+          "latency_ms": 4663
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780640805608,
+          "created_at_ms": 1780675625587,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1531,7 +1844,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780640805609,
+          "created_at_ms": 1780675625588,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1705,16 +2018,17 @@
                 "student.city_code"
               ],
               "schema_context_size": 395,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": null
             }
           },
           "error": null,
-          "latency_ms": 5
+          "latency_ms": 8
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780640805610,
+          "created_at_ms": 1780675625589,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1730,7 +2044,7 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780640805611,
+          "created_at_ms": 1780675625590,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1770,7 +2084,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+              "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = '[REDACTED_LITERAL]' AND student.Sex = '[REDACTED_LITERAL]' LIMIT 100",
@@ -1800,7 +2114,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:40.237160Z"
+              "created_at": "2026-06-05T16:06:55.662981Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1811,12 +2125,12 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 29
+          "latency_ms": 40
         },
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780640805612,
+          "created_at_ms": 1780675625591,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -1832,7 +2146,7 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780640805613,
+          "created_at_ms": 1780675625592,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -1852,11 +2166,11 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 4,
-            "historyId": "8eca367c-05a6-45e6-9703-815fd129cd38",
-            "executionId": "exec-539bf363-b2ce-4fc6-b4ca-4933a7224faa",
+            "latencyMs": 5,
+            "historyId": "603f948e-a29a-4277-a13c-3b843a8f8387",
+            "executionId": "exec-633dd6d0-6e30-4dfa-b0a1-7cdaceb172c7",
             "safetyDecision": {
-              "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+              "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = '[REDACTED_LITERAL]' AND student.Sex = '[REDACTED_LITERAL]' LIMIT 100",
@@ -1886,7 +2200,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:40.237160Z"
+              "created_at": "2026-06-05T16:06:55.662981Z"
             },
             "truncated": false,
             "warnings": [],
@@ -1896,11 +2210,110 @@
               "executeMs": 1,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 4
+              "totalMs": 5
             }
           },
           "error": null,
-          "latency_ms": 14
+          "latency_ms": 17
+        },
+        {
+          "event_id": "trace_11_step_6_profile_result_started",
+          "sequence": 11,
+          "created_at_ms": 1780675625593,
+          "type": "agent.trace.step_started",
+          "step_id": "step_6_profile_result",
+          "name": "profile_result",
+          "status": null,
+          "input": {
+            "question": "Find the number of dog pets that are raised by female students (with sex F).",
+            "has_execution": true,
+            "execution_success": true
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_12_step_6_profile_result_completed",
+          "sequence": 12,
+          "created_at_ms": 1780675625594,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_6_profile_result",
+          "name": "profile_result",
+          "status": "success",
+          "input": {
+            "question": "Find the number of dog pets that are raised by female students (with sex F).",
+            "has_execution": true,
+            "execution_success": true
+          },
+          "output": {
+            "row_count": 1,
+            "column_profiles": {
+              "count": {
+                "kind": "numeric",
+                "count": 1,
+                "null_count": 0,
+                "distinct_count": 1,
+                "sample_values": [
+                  "2"
+                ],
+                "min": 2.0,
+                "max": 2.0,
+                "sum": 2.0,
+                "avg": 2.0,
+                "top_values": []
+              }
+            },
+            "detected_patterns": [
+              "single_metric"
+            ],
+            "notable_facts": [
+              "The result contains 1 profiled rows.",
+              "count is 2.0.",
+              "count ranges from 2.0 to 2.0."
+            ],
+            "anomalies": [],
+            "limitations": [
+              "The profile is based on the rows returned to the agent, not necessarily the full source table."
+            ]
+          },
+          "error": null,
+          "latency_ms": 0
+        },
+        {
+          "event_id": "trace_13_step_7_suggest_chart_started",
+          "sequence": 13,
+          "created_at_ms": 1780675625595,
+          "type": "agent.trace.step_started",
+          "step_id": "step_7_suggest_chart",
+          "name": "suggest_chart",
+          "status": null,
+          "input": {
+            "has_execution": true
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_14_step_7_suggest_chart_completed",
+          "sequence": 14,
+          "created_at_ms": 1780675625596,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_7_suggest_chart",
+          "name": "suggest_chart",
+          "status": "success",
+          "input": {
+            "has_execution": true
+          },
+          "output": {
+            "type": "table",
+            "x": "count",
+            "y": "count",
+            "reason": "No clear category/time plus numeric pairing was found."
+          },
+          "error": null,
+          "latency_ms": 0
         }
       ],
       "steps": [
@@ -2119,7 +2532,7 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 2
+          "latency_ms": 3
         },
         {
           "name": "build_query_plan",
@@ -2213,7 +2626,7 @@
             }
           },
           "error": null,
-          "latency_ms": 4626
+          "latency_ms": 4663
         },
         {
           "name": "generate_sql_candidate",
@@ -2387,11 +2800,12 @@
                 "student.city_code"
               ],
               "schema_context_size": 395,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": null
             }
           },
           "error": null,
-          "latency_ms": 5
+          "latency_ms": 8
         },
         {
           "name": "validate_sql",
@@ -2431,7 +2845,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+              "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
@@ -2461,7 +2875,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:40.237160Z"
+              "created_at": "2026-06-05T16:06:55.662981Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2472,7 +2886,7 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 29
+          "latency_ms": 40
         },
         {
           "name": "execute_sql",
@@ -2492,11 +2906,11 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 4,
-            "historyId": "8eca367c-05a6-45e6-9703-815fd129cd38",
-            "executionId": "exec-539bf363-b2ce-4fc6-b4ca-4933a7224faa",
+            "latencyMs": 5,
+            "historyId": "603f948e-a29a-4277-a13c-3b843a8f8387",
+            "executionId": "exec-633dd6d0-6e30-4dfa-b0a1-7cdaceb172c7",
             "safetyDecision": {
-              "decision_id": "safety-3e77fbb0-cd8b-4a75-8e48-8a61d3ec78b4",
+              "decision_id": "safety-96da26d4-341d-4d6b-95b8-636e90d9d965",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
@@ -2526,7 +2940,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:26:40.237160Z"
+              "created_at": "2026-06-05T16:06:55.662981Z"
             },
             "truncated": false,
             "warnings": [],
@@ -2536,11 +2950,68 @@
               "executeMs": 1,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 4
+              "totalMs": 5
             }
           },
           "error": null,
-          "latency_ms": 14
+          "latency_ms": 17
+        },
+        {
+          "name": "profile_result",
+          "status": "success",
+          "input": {
+            "question": "Find the number of dog pets that are raised by female students (with sex F).",
+            "has_execution": true,
+            "execution_success": true
+          },
+          "output": {
+            "row_count": 1,
+            "column_profiles": {
+              "count": {
+                "kind": "numeric",
+                "count": 1,
+                "null_count": 0,
+                "distinct_count": 1,
+                "sample_values": [
+                  "2"
+                ],
+                "min": 2.0,
+                "max": 2.0,
+                "sum": 2.0,
+                "avg": 2.0,
+                "top_values": []
+              }
+            },
+            "detected_patterns": [
+              "single_metric"
+            ],
+            "notable_facts": [
+              "The result contains 1 profiled rows.",
+              "count is 2.0.",
+              "count ranges from 2.0 to 2.0."
+            ],
+            "anomalies": [],
+            "limitations": [
+              "The profile is based on the rows returned to the agent, not necessarily the full source table."
+            ]
+          },
+          "error": null,
+          "latency_ms": 0
+        },
+        {
+          "name": "suggest_chart",
+          "status": "success",
+          "input": {
+            "has_execution": true
+          },
+          "output": {
+            "type": "table",
+            "x": "count",
+            "y": "count",
+            "reason": "No clear category/time plus numeric pairing was found."
+          },
+          "error": null,
+          "latency_ms": 0
         }
       ],
       "error": null,

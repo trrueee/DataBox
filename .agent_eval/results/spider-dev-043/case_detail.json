@@ -1,0 +1,74 @@
+{
+  "case_id": "spider-dev-043",
+  "db_id": "orchestra",
+  "question": "What are the record companies that are used by both orchestras founded before 2003 and those founded after 2003?",
+  "difficulty": "extra",
+  "gold_sql": "SELECT Record_Company FROM orchestra WHERE Year_of_Founded  <  2003 INTERSECT SELECT Record_Company FROM orchestra WHERE Year_of_Founded  >  2003",
+  "gold_sql_original": "SELECT Record_Company FROM orchestra WHERE Year_of_Founded  <  2003 INTERSECT SELECT Record_Company FROM orchestra WHERE Year_of_Founded  >  2003",
+  "gold_sql_canonical": "SELECT Record_Company FROM orchestra WHERE Year_of_Founded  <  2003 INTERSECT SELECT Record_Company FROM orchestra WHERE Year_of_Founded  >  2003",
+  "gold_sql_was_canonicalized": false,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT Record_Company FROM orchestra WHERE Year_of_Founded < 2003 INTERSECT SELECT Record_Company FROM orchestra WHERE Year_of_Founded > 2003 LIMIT 100",
+  "safe_sql": null,
+  "agent_answer": "The SQL query to find record companies used by both orchestras founded before 2003 and those founded after 2003 was generated and validated, but execution is blocked by the guardrail. The query uses INTERSECT, which may not be supported or permitted in this environment. No result set was retrieved.",
+  "status": "validation_blocked",
+  "final_status": "completed",
+  "execution_match": null,
+  "reason": "Validation blocked agent SQL: guardrail_reject",
+  "quality": {
+    "score": 3,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": null,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": false,
+      "sql_generated": true,
+      "execution_match": false,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": false,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "revise_sql",
+    "answer_synthesizer"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety"
+  ],
+  "approval": null,
+  "latency_seconds": 31.93,
+  "gold_rows_count": 1,
+  "agent_rows_count": 0,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "conductor",
+      "orchestra",
+      "performance",
+      "show"
+    ],
+    "databox_tables": [
+      "conductor",
+      "orchestra",
+      "performance",
+      "show"
+    ]
+  },
+  "event_count": 18
+}

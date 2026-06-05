@@ -1,0 +1,77 @@
+{
+  "case_id": "spider-dev-050",
+  "db_id": "network_1",
+  "question": "What are the ids of students who both have friends and are liked?",
+  "difficulty": "extra",
+  "gold_sql": "SELECT student_id FROM Friend INTERSECT SELECT liked_id FROM Likes",
+  "gold_sql_original": "SELECT student_id FROM Friend INTERSECT SELECT liked_id FROM Likes",
+  "gold_sql_canonical": "SELECT student_id FROM friend INTERSECT SELECT liked_id FROM likes",
+  "gold_sql_was_canonicalized": true,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT DISTINCT f.student_id FROM friend AS f INNER JOIN likes AS l ON f.student_id = l.liked_id LIMIT 100",
+  "safe_sql": "SELECT DISTINCT f.student_id FROM friend AS f INNER JOIN likes AS l ON f.student_id = l.liked_id LIMIT 100",
+  "agent_answer": "The student IDs who both have friends and are liked are: 1101, 1247, 1304, 1468, 1501, and three additional IDs (not fully listed in the sampled rows but confirmed in the full result set of 8 rows).",
+  "status": "pass",
+  "final_status": "completed",
+  "execution_match": true,
+  "reason": "Execution match",
+  "quality": {
+    "score": 5,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": true,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": true,
+      "sql_generated": true,
+      "execution_match": true,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql",
+    "profile_result",
+    "suggest_chart",
+    "suggest_followups",
+    "answer_synthesizer"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table",
+    "insight"
+  ],
+  "approval": null,
+  "latency_seconds": 35.05,
+  "gold_rows_count": 8,
+  "agent_rows_count": 8,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ],
+    "databox_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ]
+  },
+  "event_count": 26
+}

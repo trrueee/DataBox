@@ -6,7 +6,7 @@
   "gold_sql": "SELECT count(*) FROM student AS T1 JOIN has_pet AS T2 ON T1.stuid  =  T2.stuid JOIN pets AS T3 ON T2.petid  =  T3.petid WHERE T1.sex  =  'F' AND T3.pettype  =  'dog'",
   "agent_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
   "safe_sql": "SELECT COUNT(*) AS count FROM has_pet JOIN pets ON has_pet.PetID = pets.PetID JOIN student ON has_pet.StuID = student.StuID WHERE pets.PetType = 'dog' AND student.Sex = 'F' LIMIT 100",
-  "agent_answer": "There are 2 dog pets raised by female students (with sex 'F').",
+  "agent_answer": "There are 2 dog pets raised by female students (with sex F).",
   "status": "pass",
   "final_status": "completed",
   "execution_match": true,
@@ -36,16 +36,19 @@
     "build_query_plan",
     "generate_sql_candidate",
     "validate_sql",
-    "execute_sql"
+    "execute_sql",
+    "profile_result",
+    "suggest_chart"
   ],
   "artifacts": [
     "query_plan",
     "sql",
     "safety",
-    "table"
+    "table",
+    "insight"
   ],
   "approval": null,
-  "latency_seconds": 19.47,
+  "latency_seconds": 23.81,
   "gold_rows_count": 1,
   "agent_rows_count": 1,
   "gold_error": null,
@@ -64,5 +67,5 @@
       "student"
     ]
   },
-  "event_count": 17
+  "event_count": 22
 }

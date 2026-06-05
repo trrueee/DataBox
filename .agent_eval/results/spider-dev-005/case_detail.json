@@ -1,0 +1,74 @@
+{
+  "case_id": "spider-dev-005",
+  "db_id": "concert_singer",
+  "question": "Show the name and the release year of the song by the youngest singer.",
+  "difficulty": "easy",
+  "gold_sql": "SELECT song_name ,  song_release_year FROM singer ORDER BY age LIMIT 1",
+  "gold_sql_original": "SELECT song_name ,  song_release_year FROM singer ORDER BY age LIMIT 1",
+  "gold_sql_canonical": "SELECT song_name ,  song_release_year FROM singer ORDER BY age LIMIT 1",
+  "gold_sql_was_canonicalized": false,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT Song_Name AS song_name, Song_release_year AS song_release_year FROM singer ORDER BY Age ASC LIMIT 1",
+  "safe_sql": "SELECT Song_Name AS song_name, Song_release_year AS song_release_year FROM singer ORDER BY Age ASC LIMIT 1",
+  "agent_answer": "The song by the youngest singer is \"Love\", released in 2016.",
+  "status": "pass",
+  "final_status": "completed",
+  "execution_match": true,
+  "reason": "Execution match",
+  "quality": {
+    "score": 5,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": true,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": true,
+      "sql_generated": true,
+      "execution_match": true,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table"
+  ],
+  "approval": null,
+  "latency_seconds": 22.07,
+  "gold_rows_count": 1,
+  "agent_rows_count": 1,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "concert",
+      "singer",
+      "singer_in_concert",
+      "stadium"
+    ],
+    "databox_tables": [
+      "concert",
+      "singer",
+      "singer_in_concert",
+      "stadium"
+    ]
+  },
+  "event_count": 17
+}

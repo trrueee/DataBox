@@ -1,0 +1,72 @@
+{
+  "case_id": "spider-dev-028",
+  "db_id": "flight_2",
+  "question": "How many United Airlines flights go to City 'Aberdeen'?",
+  "difficulty": "hard",
+  "gold_sql": "SELECT count(*) FROM FLIGHTS AS T1 JOIN AIRPORTS AS T2 ON T1.DestAirport  =  T2.AirportCode JOIN AIRLINES AS T3 ON T3.uid  =  T1.Airline WHERE T2.City  =  \"Aberdeen\" AND T3.Airline  =  \"United Airlines\"",
+  "gold_sql_original": "SELECT count(*) FROM FLIGHTS AS T1 JOIN AIRPORTS AS T2 ON T1.DestAirport  =  T2.AirportCode JOIN AIRLINES AS T3 ON T3.uid  =  T1.Airline WHERE T2.City  =  \"Aberdeen\" AND T3.Airline  =  \"United Airlines\"",
+  "gold_sql_canonical": "SELECT count(*) FROM flights AS T1 JOIN airports AS T2 ON T1.DestAirport  =  T2.AirportCode JOIN airlines AS T3 ON T3.uid  =  T1.Airline WHERE T2.City  =  \"Aberdeen\" AND T3.Airline  =  \"United Airlines\"",
+  "gold_sql_was_canonicalized": true,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+  "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+  "agent_answer": "There are 0 United Airlines flights that go to the city of Aberdeen.",
+  "status": "pass",
+  "final_status": "completed",
+  "execution_match": true,
+  "reason": "Execution match",
+  "quality": {
+    "score": 5,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": true,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": true,
+      "sql_generated": true,
+      "execution_match": true,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table"
+  ],
+  "approval": null,
+  "latency_seconds": 19.86,
+  "gold_rows_count": 1,
+  "agent_rows_count": 1,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "airlines",
+      "airports",
+      "flights"
+    ],
+    "databox_tables": [
+      "airlines",
+      "airports",
+      "flights"
+    ]
+  },
+  "event_count": 17
+}

@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_0f62555d_1_agent_run_started",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_1_agent_run_started",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 1,
-    "created_at_ms": 1780640732409,
+    "created_at_ms": 1780675548058,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-pets-1",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_0f62555d_2_agent_step_started",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_2_agent_step_started",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 2,
-    "created_at_ms": 1780640734294,
+    "created_at_ms": 1780675550140,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,10 +37,10 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_0f62555d_3_agent_step_completed",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_3_agent_step_completed",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 3,
-    "created_at_ms": 1780640734295,
+    "created_at_ms": 1780675550141,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_0f62555d_4_agent_step_started",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_4_agent_step_started",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 4,
-    "created_at_ms": 1780640738917,
+    "created_at_ms": 1780675555240,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_0f62555d_5_agent_step_completed",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_5_agent_step_completed",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 5,
-    "created_at_ms": 1780640738917,
+    "created_at_ms": 1780675555241,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 2447
+      "latency_ms": 2747
     },
     "artifact": null,
     "answer": null,
@@ -97,16 +97,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_0f62555d_6_agent_artifact_created",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_6_agent_artifact_created",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 6,
-    "created_at_ms": 1780640738918,
+    "created_at_ms": 1780675555243,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan",
+      "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
@@ -180,10 +180,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_0f62555d_7_agent_step_started",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_7_agent_step_started",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 7,
-    "created_at_ms": 1780640741340,
+    "created_at_ms": 1780675557266,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -198,17 +198,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_0f62555d_8_agent_step_completed",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_8_agent_step_completed",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 8,
-    "created_at_ms": 1780640741341,
+    "created_at_ms": 1780675557268,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 3
+      "latency_ms": 6
     },
     "artifact": null,
     "answer": null,
@@ -219,10 +219,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_0f62555d_9_agent_step_started",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_9_agent_step_started",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 9,
-    "created_at_ms": 1780640743926,
+    "created_at_ms": 1780675559739,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -237,17 +237,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_0f62555d_10_agent_step_completed",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_10_agent_step_completed",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 10,
-    "created_at_ms": 1780640743927,
+    "created_at_ms": 1780675559741,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 32
+      "latency_ms": 14
     },
     "artifact": null,
     "answer": null,
@@ -258,16 +258,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_0f62555d_11_agent_artifact_created",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_11_agent_artifact_created",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 11,
-    "created_at_ms": 1780640743928,
+    "created_at_ms": 1780675559742,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
+      "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
@@ -290,7 +290,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan"
+        "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -301,16 +301,16 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_0f62555d_12_agent_artifact_created",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_12_agent_artifact_created",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 12,
-    "created_at_ms": 1780640743929,
+    "created_at_ms": 1780675559743,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report",
+      "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
@@ -345,7 +345,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+          "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -375,7 +375,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:25:43.925593Z"
+          "created_at": "2026-06-05T16:05:59.738877Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -393,7 +393,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate"
+        "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -404,10 +404,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_0f62555d_13_agent_step_started",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_13_agent_step_started",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 13,
-    "created_at_ms": 1780640747594,
+    "created_at_ms": 1780675562345,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -422,17 +422,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_0f62555d_14_agent_step_completed",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_14_agent_step_completed",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 14,
-    "created_at_ms": 1780640747596,
+    "created_at_ms": 1780675562347,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
       "tool_name": "sql.execute_readonly",
       "status": "success",
       "error": null,
-      "latency_ms": 41
+      "latency_ms": 16
     },
     "artifact": null,
     "answer": null,
@@ -443,16 +443,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_0f62555d_15_agent_artifact_created",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_15_agent_artifact_created",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 15,
-    "created_at_ms": 1780640747597,
+    "created_at_ms": 1780675562349,
     "type": "agent.artifact.created",
     "step": {
       "name": "execute_sql"
     },
     "artifact": {
-      "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
+      "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/004/result_table",
       "semantic_id": "result_table",
       "type": "table",
       "title": "Result table",
@@ -466,7 +466,7 @@
           }
         ],
         "rowCount": 1,
-        "latencyMs": 31,
+        "latencyMs": 4,
         "safety_state": {
           "available": true,
           "passed": true,
@@ -484,8 +484,8 @@
       "refs": {},
       "produced_by_step": "execute_sql",
       "depends_on": [
-        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
-        "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report"
+        "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate",
+        "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/003/safety_report"
       ]
     },
     "answer": null,
@@ -496,10 +496,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_0f62555d_16_agent_answer_completed",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_16_agent_answer_completed",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 16,
-    "created_at_ms": 1780640750836,
+    "created_at_ms": 1780675565573,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
@@ -518,22 +518,22 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_0f62555d_17_agent_run_completed",
-    "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
+    "event_id": "runtime_85702794_17_agent_run_completed",
+    "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
     "sequence": 17,
-    "created_at_ms": 1780640750837,
+    "created_at_ms": 1780675565574,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "0f62555d-560e-483e-aaad-ce74749f117a",
-      "session_id": "706374f3-addb-446b-86b6-8f7ce2bc7b8b",
+      "run_id": "85702794-e07d-4017-b373-fbfcb48e65ac",
+      "session_id": "676c39d2-f54c-44a6-b329-3557dcb4db4b",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
       "question": "Find the number of pets whose weight is heavier than 10.",
-      "context_summary": "Question: Find the number of pets whose weight is heavier than 10. Answer: There are 2 pets whose weight is heavier than 10. Artifacts: - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count, metrics=[{'name': 'count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'weight', 'operator': '>', 'value': '10'}], time_range=None, candidate_tables=['pets'] - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100 - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table (table, Result table): rowCount=1; columns=count",
+      "context_summary": "Question: Find the number of pets whose weight is heavier than 10. Answer: There are 2 pets whose weight is heavier than 10. Artifacts: - agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count, metrics=[{'name': 'count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'weight', 'operator': '>', 'value': '10'}], time_range=None, candidate_tables=['pets'] - agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100 - agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/004/result_table (table, Result table): rowCount=1; columns=count",
       "referenced_artifact_ids": [],
       "query_plan": {
         "analysis_goal": "count",
@@ -620,7 +620,7 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+          "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -650,7 +650,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:25:43.925593Z"
+          "created_at": "2026-06-05T16:05:59.738877Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -671,11 +671,11 @@
           }
         ],
         "rowCount": 1,
-        "latencyMs": 31,
-        "historyId": "7488a2ff-0b02-4966-8306-0b1569c3526a",
-        "executionId": "exec-0b0a86dd-6ffe-460f-a58c-adb282f873e6",
+        "latencyMs": 4,
+        "historyId": "b068caa8-0127-4064-99e4-04bad0cdbe33",
+        "executionId": "exec-7549ad80-c9ea-4697-9d36-bc948f4b3331",
         "safetyDecision": {
-          "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+          "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
           "datasource_id": "ds-spider-pets-1",
           "policy": "agent_readonly",
           "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -705,17 +705,17 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:25:43.925593Z"
+          "created_at": "2026-06-05T16:05:59.738877Z"
         },
         "truncated": false,
         "warnings": [],
         "timing": {
-          "connectMs": 27,
+          "connectMs": 0,
           "guardrailMs": 0,
-          "executeMs": 0,
+          "executeMs": 1,
           "fetchMs": 0,
           "serializeMs": 0,
-          "totalMs": 31
+          "totalMs": 4
         }
       },
       "explanation": "There are 2 pets whose weight is heavier than 10.",
@@ -732,7 +732,7 @@
       "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan",
+          "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
@@ -799,7 +799,7 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
+          "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
@@ -822,11 +822,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/001/query_plan"
+            "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report",
+          "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
@@ -861,7 +861,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+              "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -891,7 +891,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:43.925593Z"
+              "created_at": "2026-06-05T16:05:59.738877Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -909,11 +909,11 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate"
+            "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
+          "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/004/result_table",
           "semantic_id": "result_table",
           "type": "table",
           "title": "Result table",
@@ -927,7 +927,7 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 31,
+            "latencyMs": 4,
             "safety_state": {
               "available": true,
               "passed": true,
@@ -945,8 +945,8 @@
           "refs": {},
           "produced_by_step": "execute_sql",
           "depends_on": [
-            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
-            "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report"
+            "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate",
+            "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/003/safety_report"
           ]
         }
       ],
@@ -966,7 +966,7 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
+          "artifact_id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/004/result_table",
           "display": "full",
           "answer": null,
           "suggestions": []
@@ -993,7 +993,7 @@
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780640750836,
+          "created_at_ms": 1780675565572,
           "type": "agent.narration.completed",
           "content": "I used the trusted schema context around has_pet, pets, student to answer: Find the number of pets whose weight is heavier than 10.",
           "artifact": null,
@@ -1003,11 +1003,11 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780640750837,
+          "created_at_ms": 1780675565573,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/004/result_table",
+            "id": "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/004/result_table",
             "semantic_id": "result_table",
             "type": "table",
             "title": "Result table",
@@ -1021,7 +1021,7 @@
                 }
               ],
               "rowCount": 1,
-              "latencyMs": 31,
+              "latencyMs": 4,
               "safety_state": {
                 "available": true,
                 "passed": true,
@@ -1039,8 +1039,8 @@
             "refs": {},
             "produced_by_step": "execute_sql",
             "depends_on": [
-              "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/002/sql_candidate",
-              "agent/run/0f62555d-560e-483e-aaad-ce74749f117a/artifact/003/safety_report"
+              "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/002/sql_candidate",
+              "agent/run/85702794-e07d-4017-b373-fbfcb48e65ac/artifact/003/safety_report"
             ]
           },
           "answer": null,
@@ -1049,7 +1049,7 @@
         {
           "event_id": "visible_3_agent_answer_completed",
           "sequence": 3,
-          "created_at_ms": 1780640750838,
+          "created_at_ms": 1780675565574,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
@@ -1068,7 +1068,7 @@
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780640750836,
+          "created_at_ms": 1780675565572,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1086,7 +1086,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780640750837,
+          "created_at_ms": 1780675565573,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1308,7 +1308,7 @@
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780640750838,
+          "created_at_ms": 1780675565574,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1330,7 +1330,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780640750839,
+          "created_at_ms": 1780675565575,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1399,12 +1399,12 @@
             }
           },
           "error": null,
-          "latency_ms": 2447
+          "latency_ms": 2747
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780640750840,
+          "created_at_ms": 1780675565576,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1429,7 +1429,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780640750841,
+          "created_at_ms": 1780675565577,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -1556,16 +1556,17 @@
                 "student.city_code"
               ],
               "schema_context_size": 395,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": null
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 6
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780640750842,
+          "created_at_ms": 1780675565578,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1581,7 +1582,7 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780640750843,
+          "created_at_ms": 1780675565579,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
@@ -1621,7 +1622,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+              "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -1651,7 +1652,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:43.925593Z"
+              "created_at": "2026-06-05T16:05:59.738877Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1662,12 +1663,12 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 32
+          "latency_ms": 14
         },
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780640750844,
+          "created_at_ms": 1780675565580,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -1683,7 +1684,7 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780640750845,
+          "created_at_ms": 1780675565581,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
@@ -1703,11 +1704,11 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 31,
-            "historyId": "7488a2ff-0b02-4966-8306-0b1569c3526a",
-            "executionId": "exec-0b0a86dd-6ffe-460f-a58c-adb282f873e6",
+            "latencyMs": 4,
+            "historyId": "b068caa8-0127-4064-99e4-04bad0cdbe33",
+            "executionId": "exec-7549ad80-c9ea-4697-9d36-bc948f4b3331",
             "safetyDecision": {
-              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+              "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -1737,21 +1738,21 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:43.925593Z"
+              "created_at": "2026-06-05T16:05:59.738877Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
-              "connectMs": 27,
+              "connectMs": 0,
               "guardrailMs": 0,
-              "executeMs": 0,
+              "executeMs": 1,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 31
+              "totalMs": 4
             }
           },
           "error": null,
-          "latency_ms": 41
+          "latency_ms": 16
         }
       ],
       "steps": [
@@ -2039,7 +2040,7 @@
             }
           },
           "error": null,
-          "latency_ms": 2447
+          "latency_ms": 2747
         },
         {
           "name": "generate_sql_candidate",
@@ -2166,11 +2167,12 @@
                 "student.city_code"
               ],
               "schema_context_size": 395,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": null
             }
           },
           "error": null,
-          "latency_ms": 3
+          "latency_ms": 6
         },
         {
           "name": "validate_sql",
@@ -2210,7 +2212,7 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+              "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -2240,7 +2242,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:43.925593Z"
+              "created_at": "2026-06-05T16:05:59.738877Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2251,7 +2253,7 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 32
+          "latency_ms": 14
         },
         {
           "name": "execute_sql",
@@ -2271,11 +2273,11 @@
               }
             ],
             "rowCount": 1,
-            "latencyMs": 31,
-            "historyId": "7488a2ff-0b02-4966-8306-0b1569c3526a",
-            "executionId": "exec-0b0a86dd-6ffe-460f-a58c-adb282f873e6",
+            "latencyMs": 4,
+            "historyId": "b068caa8-0127-4064-99e4-04bad0cdbe33",
+            "executionId": "exec-7549ad80-c9ea-4697-9d36-bc948f4b3331",
             "safetyDecision": {
-              "decision_id": "safety-d5865da5-81db-414f-8aaf-0815173d1602",
+              "decision_id": "safety-e614eab3-1a24-43a0-8553-f4f1cb24db49",
               "datasource_id": "ds-spider-pets-1",
               "policy": "agent_readonly",
               "original_sql": "SELECT COUNT(*) AS count FROM pets WHERE weight > 10 LIMIT 100",
@@ -2305,21 +2307,21 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:43.925593Z"
+              "created_at": "2026-06-05T16:05:59.738877Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
-              "connectMs": 27,
+              "connectMs": 0,
               "guardrailMs": 0,
-              "executeMs": 0,
+              "executeMs": 1,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 31
+              "totalMs": 4
             }
           },
           "error": null,
-          "latency_ms": 41
+          "latency_ms": 16
         }
       ],
       "error": null,

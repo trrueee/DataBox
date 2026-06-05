@@ -1,9 +1,9 @@
 [
   {
-    "event_id": "runtime_8ebab8f2_1_agent_run_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_1_agent_run_started",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 1,
-    "created_at_ms": 1780640703966,
+    "created_at_ms": 1780675524305,
     "type": "agent.run.started",
     "step": {
       "datasource_id": "ds-spider-concert-singer",
@@ -19,10 +19,10 @@
     "_sse_event": "agent.run.started"
   },
   {
-    "event_id": "runtime_8ebab8f2_2_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_2_agent_step_started",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 2,
-    "created_at_ms": 1780640706018,
+    "created_at_ms": 1780675526412,
     "type": "agent.step.started",
     "step": {
       "name": "build_schema_context",
@@ -37,17 +37,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_8ebab8f2_3_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_3_agent_step_completed",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 3,
-    "created_at_ms": 1780640706019,
+    "created_at_ms": 1780675526413,
     "type": "agent.step.completed",
     "step": {
       "name": "build_schema_context",
       "tool_name": "schema.build_context",
       "status": "success",
       "error": null,
-      "latency_ms": 4
+      "latency_ms": 3
     },
     "artifact": null,
     "answer": null,
@@ -58,10 +58,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_8ebab8f2_4_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_4_agent_step_started",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 4,
-    "created_at_ms": 1780640711765,
+    "created_at_ms": 1780675532335,
     "type": "agent.step.started",
     "step": {
       "name": "build_query_plan",
@@ -76,17 +76,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_8ebab8f2_5_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_5_agent_step_completed",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 5,
-    "created_at_ms": 1780640711766,
+    "created_at_ms": 1780675532337,
     "type": "agent.step.completed",
     "step": {
       "name": "build_query_plan",
       "tool_name": "query_plan.build",
       "status": "success",
       "error": null,
-      "latency_ms": 3189
+      "latency_ms": 3589
     },
     "artifact": null,
     "answer": null,
@@ -97,16 +97,16 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_8ebab8f2_6_agent_artifact_created",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_6_agent_artifact_created",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 6,
-    "created_at_ms": 1780640711767,
+    "created_at_ms": 1780675532338,
     "type": "agent.artifact.created",
     "step": {
       "name": "build_query_plan"
     },
     "artifact": {
-      "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/001/query_plan",
+      "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/001/query_plan",
       "semantic_id": "query_plan",
       "type": "query_plan",
       "title": "Query plan",
@@ -180,10 +180,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_8ebab8f2_7_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_7_agent_step_started",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 7,
-    "created_at_ms": 1780640713817,
+    "created_at_ms": 1780675539178,
     "type": "agent.step.started",
     "step": {
       "name": "generate_sql_candidate",
@@ -198,17 +198,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_8ebab8f2_8_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_8_agent_step_completed",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 8,
-    "created_at_ms": 1780640713818,
+    "created_at_ms": 1780675539180,
     "type": "agent.step.completed",
     "step": {
       "name": "generate_sql_candidate",
       "tool_name": "sql.generate",
       "status": "success",
       "error": null,
-      "latency_ms": 5
+      "latency_ms": 4478
     },
     "artifact": null,
     "answer": null,
@@ -219,10 +219,10 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_8ebab8f2_9_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_9_agent_step_started",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 9,
-    "created_at_ms": 1780640716413,
+    "created_at_ms": 1780675541585,
     "type": "agent.step.started",
     "step": {
       "name": "validate_sql",
@@ -237,17 +237,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_8ebab8f2_10_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_10_agent_step_completed",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 10,
-    "created_at_ms": 1780640716415,
+    "created_at_ms": 1780675541587,
     "type": "agent.step.completed",
     "step": {
       "name": "validate_sql",
       "tool_name": "sql.validate",
       "status": "success",
       "error": null,
-      "latency_ms": 24
+      "latency_ms": 17
     },
     "artifact": null,
     "answer": null,
@@ -258,21 +258,21 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_8ebab8f2_11_agent_artifact_created",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_11_agent_artifact_created",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 11,
-    "created_at_ms": 1780640716415,
+    "created_at_ms": 1780675541588,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate",
+      "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate",
       "semantic_id": "sql_candidate",
       "type": "sql",
       "title": "Validated SQL",
       "payload": {
-        "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+        "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
         "safety_state": {
           "available": true,
           "passed": true,
@@ -290,7 +290,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/001/query_plan"
+        "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/001/query_plan"
       ]
     },
     "answer": null,
@@ -301,39 +301,39 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_8ebab8f2_12_agent_artifact_created",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_12_agent_artifact_created",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 12,
-    "created_at_ms": 1780640716416,
+    "created_at_ms": 1780675541589,
     "type": "agent.artifact.created",
     "step": {
       "name": "validate_sql"
     },
     "artifact": {
-      "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/003/safety_report",
+      "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/003/safety_report",
       "semantic_id": "safety_report",
       "type": "safety",
       "title": "Safety report",
       "payload": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-        "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+        "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+        "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-          "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -345,18 +345,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+          "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-          "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -375,7 +375,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:25:16.413422Z"
+          "created_at": "2026-06-05T16:05:41.584931Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -393,7 +393,7 @@
       "refs": {},
       "produced_by_step": "validate_sql",
       "depends_on": [
-        "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate"
+        "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate"
       ]
     },
     "answer": null,
@@ -404,10 +404,10 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_8ebab8f2_13_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_13_agent_step_started",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 13,
-    "created_at_ms": 1780640718977,
+    "created_at_ms": 1780675544083,
     "type": "agent.step.started",
     "step": {
       "name": "execute_sql",
@@ -422,17 +422,17 @@
     "_sse_event": "agent.step.started"
   },
   {
-    "event_id": "runtime_8ebab8f2_14_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_14_agent_step_completed",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 14,
-    "created_at_ms": 1780640718978,
+    "created_at_ms": 1780675544085,
     "type": "agent.step.completed",
     "step": {
       "name": "execute_sql",
       "tool_name": "sql.execute_readonly",
       "status": "success",
       "error": null,
-      "latency_ms": 25
+      "latency_ms": 18
     },
     "artifact": null,
     "answer": null,
@@ -443,36 +443,36 @@
     "_sse_event": "agent.step.completed"
   },
   {
-    "event_id": "runtime_8ebab8f2_15_agent_artifact_created",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_15_agent_artifact_created",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 15,
-    "created_at_ms": 1780640718979,
+    "created_at_ms": 1780675544086,
     "type": "agent.artifact.created",
     "step": {
       "name": "execute_sql"
     },
     "artifact": {
-      "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table",
+      "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/004/result_table",
       "semantic_id": "result_table",
       "type": "table",
       "title": "Result table",
       "payload": {
         "columns": [
-          "song_name"
+          "Song_Name"
         ],
         "rows": [
           {
-            "song_name": "You"
+            "Song_Name": "You"
           },
           {
-            "song_name": "Sun"
+            "Song_Name": "Sun"
           },
           {
-            "song_name": "Gentleman"
+            "Song_Name": "Gentleman"
           }
         ],
         "rowCount": 3,
-        "latencyMs": 3,
+        "latencyMs": 7,
         "safety_state": {
           "available": true,
           "passed": true,
@@ -490,8 +490,8 @@
       "refs": {},
       "produced_by_step": "execute_sql",
       "depends_on": [
-        "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate",
-        "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/003/safety_report"
+        "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate",
+        "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/003/safety_report"
       ]
     },
     "answer": null,
@@ -502,256 +502,15 @@
     "_sse_event": "agent.artifact.created"
   },
   {
-    "event_id": "runtime_8ebab8f2_16_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
+    "event_id": "runtime_9fb0958f_16_agent_answer_completed",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
     "sequence": 16,
-    "created_at_ms": 1780640720981,
-    "type": "agent.step.started",
-    "step": {
-      "name": "profile_result",
-      "tool_name": "result.profile"
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.started"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_17_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 17,
-    "created_at_ms": 1780640720982,
-    "type": "agent.step.completed",
-    "step": {
-      "name": "profile_result",
-      "tool_name": "result.profile",
-      "status": "success",
-      "error": null,
-      "latency_ms": 0
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.completed"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_18_agent_artifact_created",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 18,
-    "created_at_ms": 1780640720983,
-    "type": "agent.artifact.created",
-    "step": {
-      "name": "profile_result"
-    },
-    "artifact": {
-      "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/005/result_profile",
-      "semantic_id": "result_profile",
-      "type": "insight",
-      "title": "Result profile",
-      "payload": {
-        "row_count": 3,
-        "column_profiles": {
-          "song_name": {
-            "kind": "category",
-            "count": 3,
-            "null_count": 0,
-            "distinct_count": 3,
-            "sample_values": [
-              "You",
-              "Sun",
-              "Gentleman"
-            ],
-            "min": null,
-            "max": null,
-            "sum": null,
-            "avg": null,
-            "top_values": [
-              {
-                "value": "You",
-                "count": 1
-              },
-              {
-                "value": "Sun",
-                "count": 1
-              },
-              {
-                "value": "Gentleman",
-                "count": 1
-              }
-            ]
-          }
-        },
-        "detected_patterns": [
-          "table_sample"
-        ],
-        "notable_facts": [
-          "The result contains 3 profiled rows.",
-          "The most frequent song_name value is You (1 rows)."
-        ],
-        "anomalies": [],
-        "limitations": [
-          "The profile is based on the rows returned to the agent, not necessarily the full source table."
-        ],
-        "safety_state": {
-          "available": true,
-          "passed": true,
-          "can_execute": true,
-          "requires_confirmation": false,
-          "guardrail_result": "pass",
-          "schema_warnings_count": 0
-        }
-      },
-      "presentation": {
-        "mode": "both",
-        "priority": 10,
-        "collapsed": false
-      },
-      "refs": {},
-      "produced_by_step": "profile_result",
-      "depends_on": [
-        "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table"
-      ]
-    },
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.artifact.created"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_19_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 19,
-    "created_at_ms": 1780640723545,
-    "type": "agent.step.started",
-    "step": {
-      "name": "suggest_chart",
-      "tool_name": "chart.suggest"
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.started"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_20_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 20,
-    "created_at_ms": 1780640723546,
-    "type": "agent.step.completed",
-    "step": {
-      "name": "suggest_chart",
-      "tool_name": "chart.suggest",
-      "status": "success",
-      "error": null,
-      "latency_ms": 0
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.completed"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_21_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 21,
-    "created_at_ms": 1780640725557,
-    "type": "agent.step.started",
-    "step": {
-      "name": "suggest_followups",
-      "tool_name": "followup.suggest"
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.started"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_22_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 22,
-    "created_at_ms": 1780640725558,
-    "type": "agent.step.completed",
-    "step": {
-      "name": "suggest_followups",
-      "tool_name": "followup.suggest",
-      "status": "success",
-      "error": null,
-      "latency_ms": 0
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.completed"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_23_agent_step_started",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 23,
-    "created_at_ms": 1780640728440,
-    "type": "agent.step.started",
-    "step": {
-      "name": "answer_synthesizer",
-      "tool_name": "answer.synthesize"
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.started"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_24_agent_step_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 24,
-    "created_at_ms": 1780640728441,
-    "type": "agent.step.completed",
-    "step": {
-      "name": "answer_synthesizer",
-      "tool_name": "answer.synthesize",
-      "status": "success",
-      "error": null,
-      "latency_ms": 0
-    },
-    "artifact": null,
-    "answer": null,
-    "response": null,
-    "approval": null,
-    "checkpoint": null,
-    "error": null,
-    "_sse_event": "agent.step.completed"
-  },
-  {
-    "event_id": "runtime_8ebab8f2_25_agent_answer_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 25,
-    "created_at_ms": 1780640731789,
+    "created_at_ms": 1780675547501,
     "type": "agent.answer.completed",
     "step": null,
     "artifact": null,
     "answer": {
-      "answer": "The song names by singers above the average age are: You, Sun, and Gentleman.",
+      "answer": "The song names by singers above the average age are:\n\n- You\n- Sun\n- Gentleman",
       "key_findings": [],
       "evidence": [],
       "caveats": [],
@@ -765,22 +524,22 @@
     "_sse_event": "agent.answer.completed"
   },
   {
-    "event_id": "runtime_8ebab8f2_26_agent_run_completed",
-    "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-    "sequence": 26,
-    "created_at_ms": 1780640731789,
+    "event_id": "runtime_9fb0958f_17_agent_run_completed",
+    "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
+    "sequence": 17,
+    "created_at_ms": 1780675547503,
     "type": "agent.run.completed",
     "step": null,
     "artifact": null,
     "answer": null,
     "response": {
-      "run_id": "8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870",
-      "session_id": "957880ea-ac35-48ad-865a-8f70aafdf0ec",
+      "run_id": "9fb0958f-2e80-4bfd-82f4-042165fde5e8",
+      "session_id": "638312ee-ea65-4d02-942a-42172c9d98f0",
       "parent_run_id": null,
       "success": true,
       "status": "completed",
       "question": "List all song names by singers above the average age.",
-      "context_summary": "Question: List all song names by singers above the average age. Answer: The song names by singers above the average age are: You, Sun, and Gentleman. Artifacts: - agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/001/query_plan (query_plan, Query plan): analysis_goal=list_song_names_by_singers_above_average_age, metrics=[], dimensions=[{'name': 'song_name', 'column': 'Song_Name', 'transform': None}], filters=[{'column': 'Age', 'operator': '>', 'value': '(SELECT AVG(Age) FROM singer)'}], time_range=None, candidate_tables=['singer'] - agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate (sql, Validated SQL): SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100 - agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table (table, Result table): rowCount=3; columns=song_name - agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/005/result_profile (insight, Result profile): The result contains 3 profiled rows.; The most frequent song_name value is You (1 rows).",
+      "context_summary": "Question: List all song names by singers above the average age. Answer: The song names by singers above the average age are: - You - Sun - Gentleman Artifacts: - agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/001/query_plan (query_plan, Query plan): analysis_goal=list_song_names_by_singers_above_average_age, metrics=[], dimensions=[{'name': 'song_name', 'column': 'Song_Name', 'transform': None}], filters=[{'column': 'Age', 'operator': '>', 'value': '(SELECT AVG(Age) FROM singer)'}], time_range=None, candidate_tables=['singer'] - agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate (sql, Validated SQL): SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100 - agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/004/result_table (table, Result table): rowCount=3; columns=Song_Name",
       "referenced_artifact_ids": [],
       "query_plan": {
         "analysis_goal": "list_song_names_by_singers_above_average_age",
@@ -835,27 +594,27 @@
           "mode": "online"
         }
       },
-      "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+      "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
       "safety": {
         "passed": true,
         "can_execute": true,
-        "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-        "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+        "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+        "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
         "schema_warnings": [],
         "guardrail": {
           "result": "pass",
-          "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-          "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
           "checks": [],
           "message": "SQL 安全审核通过！"
         },
         "trust_gate": {
-          "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
           "schemaWarnings": [],
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -867,18 +626,18 @@
           "canExecute": true
         },
         "execution_safety_decision": {
-          "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+          "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-          "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -897,7 +656,7 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:25:16.413422Z"
+          "created_at": "2026-06-05T16:05:41.584931Z"
         },
         "requires_confirmation": false,
         "messages": [
@@ -910,36 +669,36 @@
       "execution": {
         "success": true,
         "columns": [
-          "song_name"
+          "Song_Name"
         ],
         "rows": [
           {
-            "song_name": "You"
+            "Song_Name": "You"
           },
           {
-            "song_name": "Sun"
+            "Song_Name": "Sun"
           },
           {
-            "song_name": "Gentleman"
+            "Song_Name": "Gentleman"
           }
         ],
         "rowCount": 3,
-        "latencyMs": 3,
-        "historyId": "fe9d4009-4fbe-42f9-aaa0-eee664f3e235",
-        "executionId": "exec-546f9936-0511-40e4-9a46-450cd88ba673",
+        "latencyMs": 7,
+        "historyId": "9221b91b-0cae-44e6-8275-1ac88d36ea1e",
+        "executionId": "exec-36ac5adb-1fbf-4dbc-941d-ddbc3aaea8ef",
         "safetyDecision": {
-          "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+          "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
           "datasource_id": "ds-spider-concert-singer",
           "policy": "agent_readonly",
-          "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-          "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+          "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
           "passed": true,
           "can_execute": true,
           "requires_confirmation": false,
           "guardrail": {
             "result": "pass",
-            "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "checks": [],
             "message": "SQL 安全审核通过！"
           },
@@ -958,96 +717,34 @@
             "SQL passed schema validation and guardrail checks.",
             "EXPLAIN dry-run validated safe_sql."
           ],
-          "created_at": "2026-06-05T06:25:16.413422Z"
+          "created_at": "2026-06-05T16:05:41.584931Z"
         },
         "truncated": false,
         "warnings": [],
         "timing": {
           "connectMs": 0,
           "guardrailMs": 0,
-          "executeMs": 1,
+          "executeMs": 3,
           "fetchMs": 0,
           "serializeMs": 0,
-          "totalMs": 3
+          "totalMs": 7
         }
       },
-      "explanation": "The song names by singers above the average age are: You, Sun, and Gentleman.",
-      "chart_suggestion": {
-        "type": "table",
-        "x": "song_name",
-        "y": null,
-        "reason": "No clear category/time plus numeric pairing was found."
-      },
-      "result_profile": {
-        "row_count": 3,
-        "column_profiles": {
-          "song_name": {
-            "kind": "category",
-            "count": 3,
-            "null_count": 0,
-            "distinct_count": 3,
-            "sample_values": [
-              "You",
-              "Sun",
-              "Gentleman"
-            ],
-            "min": null,
-            "max": null,
-            "sum": null,
-            "avg": null,
-            "top_values": [
-              {
-                "value": "You",
-                "count": 1
-              },
-              {
-                "value": "Sun",
-                "count": 1
-              },
-              {
-                "value": "Gentleman",
-                "count": 1
-              }
-            ]
-          }
-        },
-        "detected_patterns": [
-          "table_sample"
-        ],
-        "notable_facts": [
-          "The result contains 3 profiled rows.",
-          "The most frequent song_name value is You (1 rows)."
-        ],
-        "anomalies": [],
-        "limitations": [
-          "The profile is based on the rows returned to the agent, not necessarily the full source table."
-        ]
-      },
+      "explanation": "The song names by singers above the average age are:\n\n- You\n- Sun\n- Gentleman",
+      "chart_suggestion": null,
+      "result_profile": null,
       "answer": {
-        "answer": "The song names by singers above the average age are: You, Sun, and Gentleman.",
+        "answer": "The song names by singers above the average age are:\n\n- You\n- Sun\n- Gentleman",
         "key_findings": [],
         "evidence": [],
         "caveats": [],
         "recommendations": [],
         "follow_up_questions": []
       },
-      "suggestions": [
-        {
-          "label": "Break down",
-          "question": "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-          "reason": "A dimension breakdown is often the next step after a direct query.",
-          "action_type": "ask"
-        },
-        {
-          "label": "Save Golden SQL",
-          "question": "Save this SQL as a Golden SQL case",
-          "reason": "The query passed safety checks and produced data, making it a useful regression case.",
-          "action_type": "save_golden_sql"
-        }
-      ],
+      "suggestions": [],
       "artifacts": [
         {
-          "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/001/query_plan",
+          "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/001/query_plan",
           "semantic_id": "query_plan",
           "type": "query_plan",
           "title": "Query plan",
@@ -1114,12 +811,12 @@
           "depends_on": []
         },
         {
-          "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate",
+          "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate",
           "semantic_id": "sql_candidate",
           "type": "sql",
           "title": "Validated SQL",
           "payload": {
-            "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "safety_state": {
               "available": true,
               "passed": true,
@@ -1137,34 +834,34 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/001/query_plan"
+            "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/001/query_plan"
           ]
         },
         {
-          "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/003/safety_report",
+          "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/003/safety_report",
           "semantic_id": "safety_report",
           "type": "safety",
           "title": "Safety report",
           "payload": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1176,18 +873,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+              "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -1206,7 +903,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:16.413422Z"
+              "created_at": "2026-06-05T16:05:41.584931Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -1224,31 +921,31 @@
           "refs": {},
           "produced_by_step": "validate_sql",
           "depends_on": [
-            "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate"
+            "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate"
           ]
         },
         {
-          "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table",
+          "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/004/result_table",
           "semantic_id": "result_table",
           "type": "table",
           "title": "Result table",
           "payload": {
             "columns": [
-              "song_name"
+              "Song_Name"
             ],
             "rows": [
               {
-                "song_name": "You"
+                "Song_Name": "You"
               },
               {
-                "song_name": "Sun"
+                "Song_Name": "Sun"
               },
               {
-                "song_name": "Gentleman"
+                "Song_Name": "Gentleman"
               }
             ],
             "rowCount": 3,
-            "latencyMs": 3,
+            "latencyMs": 7,
             "safety_state": {
               "available": true,
               "passed": true,
@@ -1266,77 +963,8 @@
           "refs": {},
           "produced_by_step": "execute_sql",
           "depends_on": [
-            "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate",
-            "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/003/safety_report"
-          ]
-        },
-        {
-          "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/005/result_profile",
-          "semantic_id": "result_profile",
-          "type": "insight",
-          "title": "Result profile",
-          "payload": {
-            "row_count": 3,
-            "column_profiles": {
-              "song_name": {
-                "kind": "category",
-                "count": 3,
-                "null_count": 0,
-                "distinct_count": 3,
-                "sample_values": [
-                  "You",
-                  "Sun",
-                  "Gentleman"
-                ],
-                "min": null,
-                "max": null,
-                "sum": null,
-                "avg": null,
-                "top_values": [
-                  {
-                    "value": "You",
-                    "count": 1
-                  },
-                  {
-                    "value": "Sun",
-                    "count": 1
-                  },
-                  {
-                    "value": "Gentleman",
-                    "count": 1
-                  }
-                ]
-              }
-            },
-            "detected_patterns": [
-              "table_sample"
-            ],
-            "notable_facts": [
-              "The result contains 3 profiled rows.",
-              "The most frequent song_name value is You (1 rows)."
-            ],
-            "anomalies": [],
-            "limitations": [
-              "The profile is based on the rows returned to the agent, not necessarily the full source table."
-            ],
-            "safety_state": {
-              "available": true,
-              "passed": true,
-              "can_execute": true,
-              "requires_confirmation": false,
-              "guardrail_result": "pass",
-              "schema_warnings_count": 0
-            }
-          },
-          "presentation": {
-            "mode": "both",
-            "priority": 10,
-            "collapsed": false
-          },
-          "refs": {},
-          "produced_by_step": "profile_result",
-          "depends_on": [
-            "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table"
+            "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate",
+            "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/003/safety_report"
           ]
         }
       ],
@@ -1356,30 +984,20 @@
           "sequence": 2,
           "type": "artifact_ref",
           "content": null,
-          "artifact_id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table",
+          "artifact_id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/004/result_table",
           "display": "full",
           "answer": null,
           "suggestions": []
         },
         {
-          "block_id": "block_3_artifact_ref",
+          "block_id": "block_3_answer",
           "sequence": 3,
-          "type": "artifact_ref",
-          "content": null,
-          "artifact_id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/005/result_profile",
-          "display": "full",
-          "answer": null,
-          "suggestions": []
-        },
-        {
-          "block_id": "block_4_answer",
-          "sequence": 4,
           "type": "answer",
           "content": null,
           "artifact_id": null,
           "display": null,
           "answer": {
-            "answer": "The song names by singers above the average age are: You, Sun, and Gentleman.",
+            "answer": "The song names by singers above the average age are:\n\n- You\n- Sun\n- Gentleman",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1387,36 +1005,13 @@
             "follow_up_questions": []
           },
           "suggestions": []
-        },
-        {
-          "block_id": "block_5_suggestions",
-          "sequence": 5,
-          "type": "suggestions",
-          "content": null,
-          "artifact_id": null,
-          "display": null,
-          "answer": null,
-          "suggestions": [
-            {
-              "label": "Break down",
-              "question": "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-              "reason": "A dimension breakdown is often the next step after a direct query.",
-              "action_type": "ask"
-            },
-            {
-              "label": "Save Golden SQL",
-              "question": "Save this SQL as a Golden SQL case",
-              "reason": "The query passed safety checks and produced data, making it a useful regression case.",
-              "action_type": "save_golden_sql"
-            }
-          ]
         }
       ],
       "events": [
         {
           "event_id": "visible_1_agent_narration_completed",
           "sequence": 1,
-          "created_at_ms": 1780640731787,
+          "created_at_ms": 1780675547498,
           "type": "agent.narration.completed",
           "content": "I used the trusted schema context around concert, singer, singer_in_concert, stadium to answer: List all song names by singers above the average age.",
           "artifact": null,
@@ -1426,31 +1021,31 @@
         {
           "event_id": "visible_2_agent_artifact_created",
           "sequence": 2,
-          "created_at_ms": 1780640731788,
+          "created_at_ms": 1780675547499,
           "type": "agent.artifact.created",
           "content": null,
           "artifact": {
-            "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table",
+            "id": "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/004/result_table",
             "semantic_id": "result_table",
             "type": "table",
             "title": "Result table",
             "payload": {
               "columns": [
-                "song_name"
+                "Song_Name"
               ],
               "rows": [
                 {
-                  "song_name": "You"
+                  "Song_Name": "You"
                 },
                 {
-                  "song_name": "Sun"
+                  "Song_Name": "Sun"
                 },
                 {
-                  "song_name": "Gentleman"
+                  "Song_Name": "Gentleman"
                 }
               ],
               "rowCount": 3,
-              "latencyMs": 3,
+              "latencyMs": 7,
               "safety_state": {
                 "available": true,
                 "passed": true,
@@ -1468,100 +1063,22 @@
             "refs": {},
             "produced_by_step": "execute_sql",
             "depends_on": [
-              "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/002/sql_candidate",
-              "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/003/safety_report"
+              "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/002/sql_candidate",
+              "agent/run/9fb0958f-2e80-4bfd-82f4-042165fde5e8/artifact/003/safety_report"
             ]
           },
           "answer": null,
           "suggestions": []
         },
         {
-          "event_id": "visible_3_agent_artifact_created",
+          "event_id": "visible_3_agent_answer_completed",
           "sequence": 3,
-          "created_at_ms": 1780640731789,
-          "type": "agent.artifact.created",
-          "content": null,
-          "artifact": {
-            "id": "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/005/result_profile",
-            "semantic_id": "result_profile",
-            "type": "insight",
-            "title": "Result profile",
-            "payload": {
-              "row_count": 3,
-              "column_profiles": {
-                "song_name": {
-                  "kind": "category",
-                  "count": 3,
-                  "null_count": 0,
-                  "distinct_count": 3,
-                  "sample_values": [
-                    "You",
-                    "Sun",
-                    "Gentleman"
-                  ],
-                  "min": null,
-                  "max": null,
-                  "sum": null,
-                  "avg": null,
-                  "top_values": [
-                    {
-                      "value": "You",
-                      "count": 1
-                    },
-                    {
-                      "value": "Sun",
-                      "count": 1
-                    },
-                    {
-                      "value": "Gentleman",
-                      "count": 1
-                    }
-                  ]
-                }
-              },
-              "detected_patterns": [
-                "table_sample"
-              ],
-              "notable_facts": [
-                "The result contains 3 profiled rows.",
-                "The most frequent song_name value is You (1 rows)."
-              ],
-              "anomalies": [],
-              "limitations": [
-                "The profile is based on the rows returned to the agent, not necessarily the full source table."
-              ],
-              "safety_state": {
-                "available": true,
-                "passed": true,
-                "can_execute": true,
-                "requires_confirmation": false,
-                "guardrail_result": "pass",
-                "schema_warnings_count": 0
-              }
-            },
-            "presentation": {
-              "mode": "both",
-              "priority": 10,
-              "collapsed": false
-            },
-            "refs": {},
-            "produced_by_step": "profile_result",
-            "depends_on": [
-              "agent/run/8ebab8f2-c28d-44a1-9fd6-58f1ffaa3870/artifact/004/result_table"
-            ]
-          },
-          "answer": null,
-          "suggestions": []
-        },
-        {
-          "event_id": "visible_4_agent_answer_completed",
-          "sequence": 4,
-          "created_at_ms": 1780640731790,
+          "created_at_ms": 1780675547500,
           "type": "agent.answer.completed",
           "content": null,
           "artifact": null,
           "answer": {
-            "answer": "The song names by singers above the average age are: You, Sun, and Gentleman.",
+            "answer": "The song names by singers above the average age are:\n\n- You\n- Sun\n- Gentleman",
             "key_findings": [],
             "evidence": [],
             "caveats": [],
@@ -1569,36 +1086,13 @@
             "follow_up_questions": []
           },
           "suggestions": []
-        },
-        {
-          "event_id": "visible_5_agent_suggestions_created",
-          "sequence": 5,
-          "created_at_ms": 1780640731791,
-          "type": "agent.suggestions.created",
-          "content": null,
-          "artifact": null,
-          "answer": null,
-          "suggestions": [
-            {
-              "label": "Break down",
-              "question": "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-              "reason": "A dimension breakdown is often the next step after a direct query.",
-              "action_type": "ask"
-            },
-            {
-              "label": "Save Golden SQL",
-              "question": "Save this SQL as a Golden SQL case",
-              "reason": "The query passed safety checks and produced data, making it a useful regression case.",
-              "action_type": "save_golden_sql"
-            }
-          ]
         }
       ],
       "trace_events": [
         {
           "event_id": "trace_1_step_1_build_schema_context_started",
           "sequence": 1,
-          "created_at_ms": 1780640731787,
+          "created_at_ms": 1780675547498,
           "type": "agent.trace.step_started",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1616,7 +1110,7 @@
         {
           "event_id": "trace_2_step_1_build_schema_context_completed",
           "sequence": 2,
-          "created_at_ms": 1780640731788,
+          "created_at_ms": 1780675547499,
           "type": "agent.trace.step_completed",
           "step_id": "step_1_build_schema_context",
           "name": "build_schema_context",
@@ -1955,12 +1449,12 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 3
         },
         {
           "event_id": "trace_3_step_2_build_query_plan_started",
           "sequence": 3,
-          "created_at_ms": 1780640731789,
+          "created_at_ms": 1780675547500,
           "type": "agent.trace.step_started",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -1983,7 +1477,7 @@
         {
           "event_id": "trace_4_step_2_build_query_plan_completed",
           "sequence": 4,
-          "created_at_ms": 1780640731790,
+          "created_at_ms": 1780675547501,
           "type": "agent.trace.step_completed",
           "step_id": "step_2_build_query_plan",
           "name": "build_query_plan",
@@ -2053,12 +1547,12 @@
             }
           },
           "error": null,
-          "latency_ms": 3189
+          "latency_ms": 3589
         },
         {
           "event_id": "trace_5_step_3_generate_sql_candidate_started",
           "sequence": 5,
-          "created_at_ms": 1780640731791,
+          "created_at_ms": 1780675547502,
           "type": "agent.trace.step_started",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -2083,7 +1577,7 @@
         {
           "event_id": "trace_6_step_3_generate_sql_candidate_completed",
           "sequence": 6,
-          "created_at_ms": 1780640731792,
+          "created_at_ms": 1780675547503,
           "type": "agent.trace.step_completed",
           "step_id": "step_3_generate_sql_candidate",
           "name": "generate_sql_candidate",
@@ -2102,15 +1596,15 @@
             "schema_context_size": 724
           },
           "output": {
-            "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "raw_sql": null,
-            "model": "databox-query-plan-renderer",
-            "mode": "plan_guided",
-            "latency_ms": 0,
+            "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "raw_sql": "SELECT Song_Name\nFROM singer\nWHERE Age > (SELECT AVG(Age) FROM singer)\nLIMIT 100",
+            "model": "qwen-plus",
+            "mode": "online",
+            "latency_ms": 4460,
             "schema_validation_warnings": [],
             "rewrite_notes": [],
             "metadata": {
-              "generation_source": "query_plan_rendered",
+              "generation_source": "generate_sql_fallback",
               "agent_query_plan": {
                 "analysis_goal": "list_song_names_by_singers_above_average_age",
                 "metrics": [],
@@ -2191,7 +1685,10 @@
                 "mode": "online"
               },
               "selected_tables": [
-                "singer"
+                "concert",
+                "singer",
+                "singer_in_concert",
+                "stadium"
               ],
               "selected_columns": [
                 "concert.concert_ID",
@@ -2219,23 +1716,24 @@
                 }
               ],
               "schema_context_size": 724,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": "complex_intent: nested_query"
             }
           },
           "error": null,
-          "latency_ms": 5
+          "latency_ms": 4478
         },
         {
           "event_id": "trace_7_step_4_validate_sql_started",
           "sequence": 7,
-          "created_at_ms": 1780640731793,
+          "created_at_ms": 1780675547504,
           "type": "agent.trace.step_started",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
+            "sql_preview": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -2244,35 +1742,35 @@
         {
           "event_id": "trace_8_step_4_validate_sql_completed",
           "sequence": 8,
-          "created_at_ms": 1780640731794,
+          "created_at_ms": 1780675547505,
           "type": "agent.trace.step_completed",
           "step_id": "step_4_validate_sql",
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
+            "sql_preview": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2284,18 +1782,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+              "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2314,7 +1812,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:16.413422Z"
+              "created_at": "2026-06-05T16:05:41.584931Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -2325,19 +1823,19 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 24
+          "latency_ms": 17
         },
         {
           "event_id": "trace_9_step_5_execute_sql_started",
           "sequence": 9,
-          "created_at_ms": 1780640731795,
+          "created_at_ms": 1780675547506,
           "type": "agent.trace.step_started",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
           "status": null,
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
+            "sql_preview": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
           },
           "output": null,
           "error": null,
@@ -2346,48 +1844,48 @@
         {
           "event_id": "trace_10_step_5_execute_sql_completed",
           "sequence": 10,
-          "created_at_ms": 1780640731796,
+          "created_at_ms": 1780675547507,
           "type": "agent.trace.step_completed",
           "step_id": "step_5_execute_sql",
           "name": "execute_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
+            "sql_preview": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
           },
           "output": {
             "success": true,
             "columns": [
-              "song_name"
+              "Song_Name"
             ],
             "rows": [
               {
-                "song_name": "You"
+                "Song_Name": "You"
               },
               {
-                "song_name": "Sun"
+                "Song_Name": "Sun"
               },
               {
-                "song_name": "Gentleman"
+                "Song_Name": "Gentleman"
               }
             ],
             "rowCount": 3,
-            "latencyMs": 3,
-            "historyId": "fe9d4009-4fbe-42f9-aaa0-eee664f3e235",
-            "executionId": "exec-546f9936-0511-40e4-9a46-450cd88ba673",
+            "latencyMs": 7,
+            "historyId": "9221b91b-0cae-44e6-8275-1ac88d36ea1e",
+            "executionId": "exec-36ac5adb-1fbf-4dbc-941d-ddbc3aaea8ef",
             "safetyDecision": {
-              "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+              "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -2406,260 +1904,21 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:16.413422Z"
+              "created_at": "2026-06-05T16:05:41.584931Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
               "connectMs": 0,
               "guardrailMs": 0,
-              "executeMs": 1,
+              "executeMs": 3,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 3
+              "totalMs": 7
             }
           },
           "error": null,
-          "latency_ms": 25
-        },
-        {
-          "event_id": "trace_11_step_6_profile_result_started",
-          "sequence": 11,
-          "created_at_ms": 1780640731797,
-          "type": "agent.trace.step_started",
-          "step_id": "step_6_profile_result",
-          "name": "profile_result",
-          "status": null,
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_execution": true,
-            "execution_success": true
-          },
-          "output": null,
-          "error": null,
-          "latency_ms": null
-        },
-        {
-          "event_id": "trace_12_step_6_profile_result_completed",
-          "sequence": 12,
-          "created_at_ms": 1780640731798,
-          "type": "agent.trace.step_completed",
-          "step_id": "step_6_profile_result",
-          "name": "profile_result",
-          "status": "success",
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_execution": true,
-            "execution_success": true
-          },
-          "output": {
-            "row_count": 3,
-            "column_profiles": {
-              "song_name": {
-                "kind": "category",
-                "count": 3,
-                "null_count": 0,
-                "distinct_count": 3,
-                "sample_values": [
-                  "You",
-                  "Sun",
-                  "Gentleman"
-                ],
-                "min": null,
-                "max": null,
-                "sum": null,
-                "avg": null,
-                "top_values": [
-                  {
-                    "value": "You",
-                    "count": 1
-                  },
-                  {
-                    "value": "Sun",
-                    "count": 1
-                  },
-                  {
-                    "value": "Gentleman",
-                    "count": 1
-                  }
-                ]
-              }
-            },
-            "detected_patterns": [
-              "table_sample"
-            ],
-            "notable_facts": [
-              "The result contains 3 profiled rows.",
-              "The most frequent song_name value is You (1 rows)."
-            ],
-            "anomalies": [],
-            "limitations": [
-              "The profile is based on the rows returned to the agent, not necessarily the full source table."
-            ]
-          },
-          "error": null,
-          "latency_ms": 0
-        },
-        {
-          "event_id": "trace_13_step_7_suggest_chart_started",
-          "sequence": 13,
-          "created_at_ms": 1780640731799,
-          "type": "agent.trace.step_started",
-          "step_id": "step_7_suggest_chart",
-          "name": "suggest_chart",
-          "status": null,
-          "input": {
-            "has_execution": true
-          },
-          "output": null,
-          "error": null,
-          "latency_ms": null
-        },
-        {
-          "event_id": "trace_14_step_7_suggest_chart_completed",
-          "sequence": 14,
-          "created_at_ms": 1780640731800,
-          "type": "agent.trace.step_completed",
-          "step_id": "step_7_suggest_chart",
-          "name": "suggest_chart",
-          "status": "success",
-          "input": {
-            "has_execution": true
-          },
-          "output": {
-            "type": "table",
-            "x": "song_name",
-            "y": null,
-            "reason": "No clear category/time plus numeric pairing was found."
-          },
-          "error": null,
-          "latency_ms": 0
-        },
-        {
-          "event_id": "trace_15_step_8_suggest_followups_started",
-          "sequence": 15,
-          "created_at_ms": 1780640731801,
-          "type": "agent.trace.step_started",
-          "step_id": "step_8_suggest_followups",
-          "name": "suggest_followups",
-          "status": null,
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_profile": true,
-            "has_chart": true
-          },
-          "output": null,
-          "error": null,
-          "latency_ms": null
-        },
-        {
-          "event_id": "trace_16_step_8_suggest_followups_completed",
-          "sequence": 16,
-          "created_at_ms": 1780640731802,
-          "type": "agent.trace.step_completed",
-          "step_id": "step_8_suggest_followups",
-          "name": "suggest_followups",
-          "status": "success",
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_profile": true,
-            "has_chart": true
-          },
-          "output": {
-            "suggestions": [
-              {
-                "label": "Break down",
-                "question": "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-                "reason": "A dimension breakdown is often the next step after a direct query.",
-                "action_type": "ask"
-              },
-              {
-                "label": "Save Golden SQL",
-                "question": "Save this SQL as a Golden SQL case",
-                "reason": "The query passed safety checks and produced data, making it a useful regression case.",
-                "action_type": "save_golden_sql"
-              }
-            ]
-          },
-          "error": null,
-          "latency_ms": 0
-        },
-        {
-          "event_id": "trace_17_step_9_answer_synthesizer_started",
-          "sequence": 17,
-          "created_at_ms": 1780640731803,
-          "type": "agent.trace.step_started",
-          "step_id": "step_9_answer_synthesizer",
-          "name": "answer_synthesizer",
-          "status": null,
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_sql": true,
-            "has_profile": true,
-            "has_error": false
-          },
-          "output": null,
-          "error": null,
-          "latency_ms": null
-        },
-        {
-          "event_id": "trace_18_step_9_answer_synthesizer_completed",
-          "sequence": 18,
-          "created_at_ms": 1780640731804,
-          "type": "agent.trace.step_completed",
-          "step_id": "step_9_answer_synthesizer",
-          "name": "answer_synthesizer",
-          "status": "success",
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_sql": true,
-            "has_profile": true,
-            "has_error": false
-          },
-          "output": {
-            "answer": "The result contains 3 profiled rows. I treated the returned rows as evidence for the question: List all song names by singers above the average age.",
-            "key_findings": [
-              "The result contains 3 profiled rows.",
-              "The most frequent song_name value is You (1 rows)."
-            ],
-            "evidence": [
-              {
-                "artifact_id": "result_table",
-                "label": "Rows returned",
-                "value": 3
-              },
-              {
-                "artifact_id": "result_profile",
-                "label": "Result profile",
-                "value": "3 rows profiled"
-              },
-              {
-                "artifact_id": "sql_candidate",
-                "label": "SQL",
-                "value": "validated candidate"
-              },
-              {
-                "artifact_id": "safety_report",
-                "label": "Safety",
-                "value": "passed"
-              }
-            ],
-            "caveats": [
-              "The profile is based on the rows returned to the agent, not necessarily the full source table.",
-              "SQL passed schema validation and guardrail checks.",
-              "EXPLAIN dry-run validated safe_sql."
-            ],
-            "recommendations": [
-              "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-              "Save this SQL as a Golden SQL case"
-            ],
-            "follow_up_questions": [
-              "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-              "Save this SQL as a Golden SQL case"
-            ]
-          },
-          "error": null,
-          "latency_ms": 0
+          "latency_ms": 18
         }
       ],
       "steps": [
@@ -2998,7 +2257,7 @@
             "mode": "rag"
           },
           "error": null,
-          "latency_ms": 4
+          "latency_ms": 3
         },
         {
           "name": "build_query_plan",
@@ -3068,7 +2327,7 @@
             }
           },
           "error": null,
-          "latency_ms": 3189
+          "latency_ms": 3589
         },
         {
           "name": "generate_sql_candidate",
@@ -3087,15 +2346,15 @@
             "schema_context_size": 724
           },
           "output": {
-            "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "raw_sql": null,
-            "model": "databox-query-plan-renderer",
-            "mode": "plan_guided",
-            "latency_ms": 0,
+            "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "raw_sql": "SELECT Song_Name\nFROM singer\nWHERE Age > (SELECT AVG(Age) FROM singer)\nLIMIT 100",
+            "model": "qwen-plus",
+            "mode": "online",
+            "latency_ms": 4460,
             "schema_validation_warnings": [],
             "rewrite_notes": [],
             "metadata": {
-              "generation_source": "query_plan_rendered",
+              "generation_source": "generate_sql_fallback",
               "agent_query_plan": {
                 "analysis_goal": "list_song_names_by_singers_above_average_age",
                 "metrics": [],
@@ -3176,7 +2435,10 @@
                 "mode": "online"
               },
               "selected_tables": [
-                "singer"
+                "concert",
+                "singer",
+                "singer_in_concert",
+                "stadium"
               ],
               "selected_columns": [
                 "concert.concert_ID",
@@ -3202,39 +2464,40 @@
                 "stadium.Average"
               ],
               "schema_context_size": 724,
-              "rewrite": {}
+              "rewrite": {},
+              "fallback_reason": "complex_intent: nested_query"
             }
           },
           "error": null,
-          "latency_ms": 5
+          "latency_ms": 4478
         },
         {
           "name": "validate_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
+            "sql_preview": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
           },
           "output": {
             "passed": true,
             "can_execute": true,
-            "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-            "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+            "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
             "schema_warnings": [],
             "guardrail": {
               "result": "pass",
-              "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "checks": [],
               "message": "SQL 安全审核通过！"
             },
             "trust_gate": {
-              "sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "schemaWarnings": [],
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -3246,18 +2509,18 @@
               "canExecute": true
             },
             "execution_safety_decision": {
-              "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+              "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -3276,7 +2539,7 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:16.413422Z"
+              "created_at": "2026-06-05T16:05:41.584931Z"
             },
             "requires_confirmation": false,
             "messages": [
@@ -3287,48 +2550,48 @@
             "revise_suggestion": null
           },
           "error": null,
-          "latency_ms": 24
+          "latency_ms": 17
         },
         {
           "name": "execute_sql",
           "status": "success",
           "input": {
             "datasource_id": "ds-spider-concert-singer",
-            "sql_preview": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
+            "sql_preview": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100"
           },
           "output": {
             "success": true,
             "columns": [
-              "song_name"
+              "Song_Name"
             ],
             "rows": [
               {
-                "song_name": "You"
+                "Song_Name": "You"
               },
               {
-                "song_name": "Sun"
+                "Song_Name": "Sun"
               },
               {
-                "song_name": "Gentleman"
+                "Song_Name": "Gentleman"
               }
             ],
             "rowCount": 3,
-            "latencyMs": 3,
-            "historyId": "fe9d4009-4fbe-42f9-aaa0-eee664f3e235",
-            "executionId": "exec-546f9936-0511-40e4-9a46-450cd88ba673",
+            "latencyMs": 7,
+            "historyId": "9221b91b-0cae-44e6-8275-1ac88d36ea1e",
+            "executionId": "exec-36ac5adb-1fbf-4dbc-941d-ddbc3aaea8ef",
             "safetyDecision": {
-              "decision_id": "safety-0c1a84c3-a167-4279-82e2-9a372aaca9bd",
+              "decision_id": "safety-79c54ea8-5a12-4540-870a-82584a295b0f",
               "datasource_id": "ds-spider-concert-singer",
               "policy": "agent_readonly",
-              "original_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-              "safe_sql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "original_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+              "safe_sql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
               "passed": true,
               "can_execute": true,
               "requires_confirmation": false,
               "guardrail": {
                 "result": "pass",
-                "originalSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
-                "safeSql": "SELECT Song_Name AS song_name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "originalSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
+                "safeSql": "SELECT Song_Name FROM singer WHERE Age > (SELECT AVG(Age) FROM singer) LIMIT 100",
                 "checks": [],
                 "message": "SQL 安全审核通过！"
               },
@@ -3347,173 +2610,21 @@
                 "SQL passed schema validation and guardrail checks.",
                 "EXPLAIN dry-run validated safe_sql."
               ],
-              "created_at": "2026-06-05T06:25:16.413422Z"
+              "created_at": "2026-06-05T16:05:41.584931Z"
             },
             "truncated": false,
             "warnings": [],
             "timing": {
               "connectMs": 0,
               "guardrailMs": 0,
-              "executeMs": 1,
+              "executeMs": 3,
               "fetchMs": 0,
               "serializeMs": 0,
-              "totalMs": 3
+              "totalMs": 7
             }
           },
           "error": null,
-          "latency_ms": 25
-        },
-        {
-          "name": "profile_result",
-          "status": "success",
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_execution": true,
-            "execution_success": true
-          },
-          "output": {
-            "row_count": 3,
-            "column_profiles": {
-              "song_name": {
-                "kind": "category",
-                "count": 3,
-                "null_count": 0,
-                "distinct_count": 3,
-                "sample_values": [
-                  "You",
-                  "Sun",
-                  "Gentleman"
-                ],
-                "min": null,
-                "max": null,
-                "sum": null,
-                "avg": null,
-                "top_values": [
-                  {
-                    "value": "You",
-                    "count": 1
-                  },
-                  {
-                    "value": "Sun",
-                    "count": 1
-                  },
-                  {
-                    "value": "Gentleman",
-                    "count": 1
-                  }
-                ]
-              }
-            },
-            "detected_patterns": [
-              "table_sample"
-            ],
-            "notable_facts": [
-              "The result contains 3 profiled rows.",
-              "The most frequent song_name value is You (1 rows)."
-            ],
-            "anomalies": [],
-            "limitations": [
-              "The profile is based on the rows returned to the agent, not necessarily the full source table."
-            ]
-          },
-          "error": null,
-          "latency_ms": 0
-        },
-        {
-          "name": "suggest_chart",
-          "status": "success",
-          "input": {
-            "has_execution": true
-          },
-          "output": {
-            "type": "table",
-            "x": "song_name",
-            "y": null,
-            "reason": "No clear category/time plus numeric pairing was found."
-          },
-          "error": null,
-          "latency_ms": 0
-        },
-        {
-          "name": "suggest_followups",
-          "status": "success",
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_profile": true,
-            "has_chart": true
-          },
-          "output": {
-            "suggestions": [
-              {
-                "label": "Break down",
-                "question": "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-                "reason": "A dimension breakdown is often the next step after a direct query.",
-                "action_type": "ask"
-              },
-              {
-                "label": "Save Golden SQL",
-                "question": "Save this SQL as a Golden SQL case",
-                "reason": "The query passed safety checks and produced data, making it a useful regression case.",
-                "action_type": "save_golden_sql"
-              }
-            ]
-          },
-          "error": null,
-          "latency_ms": 0
-        },
-        {
-          "name": "answer_synthesizer",
-          "status": "success",
-          "input": {
-            "question": "List all song names by singers above the average age.",
-            "has_sql": true,
-            "has_profile": true,
-            "has_error": false
-          },
-          "output": {
-            "answer": "The result contains 3 profiled rows. I treated the returned rows as evidence for the question: List all song names by singers above the average age.",
-            "key_findings": [
-              "The result contains 3 profiled rows.",
-              "The most frequent song_name value is You (1 rows)."
-            ],
-            "evidence": [
-              {
-                "artifact_id": "result_table",
-                "label": "Rows returned",
-                "value": 3
-              },
-              {
-                "artifact_id": "result_profile",
-                "label": "Result profile",
-                "value": "3 rows profiled"
-              },
-              {
-                "artifact_id": "sql_candidate",
-                "label": "SQL",
-                "value": "validated candidate"
-              },
-              {
-                "artifact_id": "safety_report",
-                "label": "Safety",
-                "value": "passed"
-              }
-            ],
-            "caveats": [
-              "The profile is based on the rows returned to the agent, not necessarily the full source table.",
-              "SQL passed schema validation and guardrail checks.",
-              "EXPLAIN dry-run validated safe_sql."
-            ],
-            "recommendations": [
-              "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-              "Save this SQL as a Golden SQL case"
-            ],
-            "follow_up_questions": [
-              "Break this result down by a useful business dimension: List all song names by singers above the average age.",
-              "Save this SQL as a Golden SQL case"
-            ]
-          },
-          "error": null,
-          "latency_ms": 0
+          "latency_ms": 18
         }
       ],
       "error": null,

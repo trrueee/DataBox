@@ -1,0 +1,79 @@
+{
+  "case_id": "spider-dev-025",
+  "db_id": "car_1",
+  "question": "How many models does each car maker produce? List maker full name, id and the number.",
+  "difficulty": "medium",
+  "gold_sql": "SELECT T1.FullName ,  T1.Id ,  count(*) FROM CAR_MAKERS AS T1 JOIN MODEL_LIST AS T2 ON T1.Id  =  T2.Maker GROUP BY T1.Id;",
+  "gold_sql_original": "SELECT T1.FullName ,  T1.Id ,  count(*) FROM CAR_MAKERS AS T1 JOIN MODEL_LIST AS T2 ON T1.Id  =  T2.Maker GROUP BY T1.Id;",
+  "gold_sql_canonical": "SELECT T1.FullName ,  T1.Id ,  count(*) FROM car_makers AS T1 JOIN model_list AS T2 ON T1.Id  =  T2.Maker GROUP BY T1.Id;",
+  "gold_sql_was_canonicalized": true,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT car_makers.FullName AS maker_full_name, car_makers.Id AS maker_id, COUNT(*) AS model_count FROM car_makers JOIN model_list ON car_makers.Id = model_list.Maker GROUP BY car_makers.FullName, car_makers.Id LIMIT 100",
+  "safe_sql": "SELECT car_makers.FullName AS maker_full_name, car_makers.Id AS maker_id, COUNT(*) AS model_count FROM car_makers JOIN model_list ON car_makers.Id = model_list.Maker GROUP BY car_makers.FullName, car_makers.Id LIMIT 100",
+  "agent_answer": "The query executed successfully but returned no rows. This means that, based on the current data and join logic (car_makers joined to model_list on car_makers.Id = model_list.Maker), there are no matching records — i.e., no car makers in the car_makers table have associated models in the model_list table. The SQL is valid, safe, and passed all guardrails. Possible explanations include missing foreign key relationships, data gaps, or schema assumptions needing verification.",
+  "status": "pass",
+  "final_status": "completed",
+  "execution_match": true,
+  "reason": "Execution match",
+  "quality": {
+    "score": 5,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": true,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": true,
+      "sql_generated": true,
+      "execution_match": true,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql",
+    "profile_result",
+    "suggest_chart",
+    "suggest_followups",
+    "answer_synthesizer"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table",
+    "insight"
+  ],
+  "approval": null,
+  "latency_seconds": 36.45,
+  "gold_rows_count": 0,
+  "agent_rows_count": 0,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "car_makers",
+      "continents",
+      "countries",
+      "model_list"
+    ],
+    "databox_tables": [
+      "car_makers",
+      "continents",
+      "countries",
+      "model_list"
+    ]
+  },
+  "event_count": 26
+}

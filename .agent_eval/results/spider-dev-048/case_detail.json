@@ -1,0 +1,77 @@
+{
+  "case_id": "spider-dev-048",
+  "db_id": "network_1",
+  "question": "What are the names of students who have no friends?",
+  "difficulty": "extra",
+  "gold_sql": "SELECT name FROM Highschooler EXCEPT SELECT T2.name FROM Friend AS T1 JOIN Highschooler AS T2 ON T1.student_id  =  T2.id",
+  "gold_sql_original": "SELECT name FROM Highschooler EXCEPT SELECT T2.name FROM Friend AS T1 JOIN Highschooler AS T2 ON T1.student_id  =  T2.id",
+  "gold_sql_canonical": "SELECT name FROM highschooler EXCEPT SELECT T2.name FROM friend AS T1 JOIN highschooler AS T2 ON T1.student_id  =  T2.id",
+  "gold_sql_was_canonicalized": true,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT highschooler.name AS student_name FROM highschooler JOIN friend ON highschooler.ID = friend.student_id LIMIT 100",
+  "safe_sql": "SELECT highschooler.name AS student_name FROM highschooler JOIN friend ON highschooler.ID = friend.student_id LIMIT 100",
+  "agent_answer": "The names of students who have no friends are: Haley, Alexis (appears twice), Jordan (appears three times), Austin, and 15 other students — totaling 20 rows returned. Note that this result reflects only the first 100 matching rows due to the LIMIT clause; the full set may be larger.",
+  "status": "execution_mismatch",
+  "final_status": "completed",
+  "execution_match": false,
+  "reason": "Result mismatch: Row count mismatch: gold=2, agent=20",
+  "quality": {
+    "score": 3,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": false,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": false,
+      "sql_generated": true,
+      "execution_match": false,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql",
+    "profile_result",
+    "suggest_chart",
+    "suggest_followups",
+    "answer_synthesizer"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table",
+    "insight"
+  ],
+  "approval": null,
+  "latency_seconds": 40.63,
+  "gold_rows_count": 2,
+  "agent_rows_count": 20,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ],
+    "databox_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ]
+  },
+  "event_count": 26
+}

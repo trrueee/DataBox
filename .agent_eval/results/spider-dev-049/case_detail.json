@@ -1,0 +1,74 @@
+{
+  "case_id": "spider-dev-049",
+  "db_id": "network_1",
+  "question": "Show the ids of high schoolers who have friends and are also liked by someone else.",
+  "difficulty": "extra",
+  "gold_sql": "SELECT student_id FROM Friend INTERSECT SELECT liked_id FROM Likes",
+  "gold_sql_original": "SELECT student_id FROM Friend INTERSECT SELECT liked_id FROM Likes",
+  "gold_sql_canonical": "SELECT student_id FROM friend INTERSECT SELECT liked_id FROM likes",
+  "gold_sql_was_canonicalized": true,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT highschooler.ID AS student_id FROM highschooler JOIN friend ON highschooler.ID = friend.student_id JOIN likes ON highschooler.ID = likes.liked_id LIMIT 100",
+  "safe_sql": "SELECT highschooler.ID AS student_id FROM highschooler JOIN friend ON highschooler.ID = friend.student_id JOIN likes ON highschooler.ID = likes.liked_id LIMIT 100",
+  "agent_answer": "The query returned 14 high schooler IDs who both have friends and are liked by someone else. The IDs range from 1101 to 1934. A sample of the results includes: 1101, 1247 (appears twice), 1304, and 1468.",
+  "status": "execution_mismatch",
+  "final_status": "completed",
+  "execution_match": false,
+  "reason": "Result mismatch: Row count mismatch: gold=8, agent=14",
+  "quality": {
+    "score": 3,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": false,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": false,
+      "sql_generated": true,
+      "execution_match": false,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql",
+    "profile_result"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table",
+    "insight"
+  ],
+  "approval": null,
+  "latency_seconds": 25.82,
+  "gold_rows_count": 8,
+  "agent_rows_count": 14,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ],
+    "databox_tables": [
+      "friend",
+      "highschooler",
+      "likes"
+    ]
+  },
+  "event_count": 20
+}

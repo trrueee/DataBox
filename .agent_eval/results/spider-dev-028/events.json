@@ -1,0 +1,2561 @@
+[
+  {
+    "event_id": "runtime_4eddcd17_1_agent_run_started",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 1,
+    "created_at_ms": 1780683854988,
+    "type": "agent.run.started",
+    "step": {
+      "datasource_id": "ds-spider-flight-2",
+      "question": "How many United Airlines flights go to City 'Aberdeen'?",
+      "execute": true
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.run.started"
+  },
+  {
+    "event_id": "runtime_4eddcd17_2_agent_step_started",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 2,
+    "created_at_ms": 1780683857261,
+    "type": "agent.step.started",
+    "step": {
+      "name": "build_schema_context",
+      "tool_name": "schema.build_context"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_4eddcd17_3_agent_step_completed",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 3,
+    "created_at_ms": 1780683857261,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "build_schema_context",
+      "tool_name": "schema.build_context",
+      "status": "success",
+      "error": null,
+      "latency_ms": 4
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_4eddcd17_4_agent_step_started",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 4,
+    "created_at_ms": 1780683863611,
+    "type": "agent.step.started",
+    "step": {
+      "name": "build_query_plan",
+      "tool_name": "query_plan.build"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_4eddcd17_5_agent_step_completed",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 5,
+    "created_at_ms": 1780683863614,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "build_query_plan",
+      "tool_name": "query_plan.build",
+      "status": "success",
+      "error": null,
+      "latency_ms": 4990
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_4eddcd17_6_agent_artifact_created",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 6,
+    "created_at_ms": 1780683863614,
+    "type": "agent.artifact.created",
+    "step": {
+      "name": "build_query_plan"
+    },
+    "artifact": {
+      "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/001/query_plan",
+      "semantic_id": "query_plan",
+      "type": "query_plan",
+      "title": "Query plan",
+      "payload": {
+        "analysis_goal": "count",
+        "metrics": [
+          {
+            "name": "flight_count",
+            "expression": "COUNT(*)",
+            "source_column": "*"
+          }
+        ],
+        "dimensions": [],
+        "filters": [
+          {
+            "column": "airlines.Airline",
+            "operator": "=",
+            "value": "United Airlines"
+          },
+          {
+            "column": "airports.City",
+            "operator": "=",
+            "value": "Aberdeen"
+          }
+        ],
+        "time_range": null,
+        "candidate_tables": [
+          "flights",
+          "airlines",
+          "airports"
+        ],
+        "assumptions": [
+          "Plan mode: online",
+          "Only synced local schema metadata is trusted."
+        ],
+        "risk_notes": [],
+        "raw_plan": {
+          "intent": "count",
+          "tables": [
+            "flights",
+            "airlines",
+            "airports"
+          ],
+          "metrics": [
+            {
+              "name": "flight_count",
+              "expression": "COUNT(*)",
+              "source_column": "*"
+            }
+          ],
+          "dimensions": [],
+          "filters": [
+            {
+              "column": "airlines.Airline",
+              "operator": "=",
+              "value": "United Airlines"
+            },
+            {
+              "column": "airports.City",
+              "operator": "=",
+              "value": "Aberdeen"
+            }
+          ],
+          "joins": [
+            {
+              "left_table": "flights",
+              "right_table": "airlines",
+              "condition": "flights.Airline = airlines.uid"
+            },
+            {
+              "left_table": "flights",
+              "right_table": "airports",
+              "condition": "flights.DestAirport = airports.AirportCode"
+            }
+          ],
+          "order_by": "[]",
+          "limit": 100,
+          "warnings": [],
+          "mode": "online"
+        }
+      },
+      "presentation": {
+        "mode": "dock",
+        "priority": 80,
+        "collapsed": true
+      },
+      "refs": {},
+      "produced_by_step": "build_query_plan",
+      "depends_on": []
+    },
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.artifact.created"
+  },
+  {
+    "event_id": "runtime_4eddcd17_7_agent_step_started",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 7,
+    "created_at_ms": 1780683865959,
+    "type": "agent.step.started",
+    "step": {
+      "name": "generate_sql_candidate",
+      "tool_name": "sql.generate"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_4eddcd17_8_agent_step_completed",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 8,
+    "created_at_ms": 1780683865959,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "generate_sql_candidate",
+      "tool_name": "sql.generate",
+      "status": "success",
+      "error": null,
+      "latency_ms": 12
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_4eddcd17_9_agent_step_started",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 9,
+    "created_at_ms": 1780683868270,
+    "type": "agent.step.started",
+    "step": {
+      "name": "validate_sql",
+      "tool_name": "sql.validate"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_4eddcd17_10_agent_step_completed",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 10,
+    "created_at_ms": 1780683868270,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "validate_sql",
+      "tool_name": "sql.validate",
+      "status": "success",
+      "error": null,
+      "latency_ms": 34
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_4eddcd17_11_agent_artifact_created",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 11,
+    "created_at_ms": 1780683868273,
+    "type": "agent.artifact.created",
+    "step": {
+      "name": "validate_sql"
+    },
+    "artifact": {
+      "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate",
+      "semantic_id": "sql_candidate",
+      "type": "sql",
+      "title": "Validated SQL",
+      "payload": {
+        "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+        "safety_state": {
+          "available": true,
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail_result": "pass",
+          "schema_warnings_count": 0
+        }
+      },
+      "presentation": {
+        "mode": "dock",
+        "priority": 70,
+        "collapsed": true
+      },
+      "refs": {},
+      "produced_by_step": "validate_sql",
+      "depends_on": [
+        "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/001/query_plan"
+      ]
+    },
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.artifact.created"
+  },
+  {
+    "event_id": "runtime_4eddcd17_12_agent_artifact_created",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 12,
+    "created_at_ms": 1780683868275,
+    "type": "agent.artifact.created",
+    "step": {
+      "name": "validate_sql"
+    },
+    "artifact": {
+      "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/003/safety_report",
+      "semantic_id": "safety_report",
+      "type": "safety",
+      "title": "Safety report",
+      "payload": {
+        "passed": true,
+        "can_execute": true,
+        "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+        "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+        "schema_warnings": [],
+        "guardrail": {
+          "result": "pass",
+          "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "checks": [],
+          "message": "SQL 安全审核通过！"
+        },
+        "trust_gate": {
+          "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "schemaWarnings": [],
+          "guardrail": {
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
+          },
+          "riskLevel": "safe",
+          "requiresConfirmation": false,
+          "messages": [
+            "SQL passed schema validation and guardrail checks."
+          ],
+          "canExecute": true
+        },
+        "execution_safety_decision": {
+          "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+          "datasource_id": "ds-spider-flight-2",
+          "policy": "agent_readonly",
+          "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail": {
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
+          },
+          "schema_warnings": [],
+          "scope_state": {
+            "datasource_exists": true,
+            "datasource_id": "ds-spider-flight-2",
+            "db_type": "mysql",
+            "env": "dev",
+            "is_read_only": false,
+            "project_id": null,
+            "environment_id": null
+          },
+          "blocked_reasons": [],
+          "messages": [
+            "SQL passed schema validation and guardrail checks.",
+            "EXPLAIN dry-run validated safe_sql."
+          ],
+          "created_at": "2026-06-05T18:24:28.262748Z"
+        },
+        "requires_confirmation": false,
+        "messages": [
+          "SQL passed schema validation and guardrail checks.",
+          "EXPLAIN dry-run validated safe_sql."
+        ],
+        "blocked_reasons": [],
+        "revise_suggestion": null
+      },
+      "presentation": {
+        "mode": "dock",
+        "priority": 75,
+        "collapsed": true
+      },
+      "refs": {},
+      "produced_by_step": "validate_sql",
+      "depends_on": [
+        "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate"
+      ]
+    },
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.artifact.created"
+  },
+  {
+    "event_id": "runtime_4eddcd17_13_agent_step_started",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 13,
+    "created_at_ms": 1780683870956,
+    "type": "agent.step.started",
+    "step": {
+      "name": "execute_sql",
+      "tool_name": "sql.execute_readonly"
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.started"
+  },
+  {
+    "event_id": "runtime_4eddcd17_14_agent_step_completed",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 14,
+    "created_at_ms": 1780683870958,
+    "type": "agent.step.completed",
+    "step": {
+      "name": "execute_sql",
+      "tool_name": "sql.execute_readonly",
+      "status": "success",
+      "error": null,
+      "latency_ms": 25
+    },
+    "artifact": null,
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.step.completed"
+  },
+  {
+    "event_id": "runtime_4eddcd17_15_agent_artifact_created",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 15,
+    "created_at_ms": 1780683870960,
+    "type": "agent.artifact.created",
+    "step": {
+      "name": "execute_sql"
+    },
+    "artifact": {
+      "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/004/result_table",
+      "semantic_id": "result_table",
+      "type": "table",
+      "title": "Result table",
+      "payload": {
+        "columns": [
+          "flight_count"
+        ],
+        "rows": [
+          {
+            "flight_count": "0"
+          }
+        ],
+        "rowCount": 1,
+        "latencyMs": 10,
+        "safety_state": {
+          "available": true,
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail_result": "pass",
+          "schema_warnings_count": 0
+        }
+      },
+      "presentation": {
+        "mode": "both",
+        "priority": 20,
+        "collapsed": false
+      },
+      "refs": {},
+      "produced_by_step": "execute_sql",
+      "depends_on": [
+        "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate",
+        "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/003/safety_report"
+      ]
+    },
+    "answer": null,
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.artifact.created"
+  },
+  {
+    "event_id": "runtime_4eddcd17_16_agent_answer_completed",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 16,
+    "created_at_ms": 1780683873518,
+    "type": "agent.answer.completed",
+    "step": null,
+    "artifact": null,
+    "answer": {
+      "answer": "There are 0 United Airlines flights that go to the city of Aberdeen.",
+      "key_findings": [],
+      "evidence": [],
+      "caveats": [],
+      "recommendations": [],
+      "follow_up_questions": []
+    },
+    "response": null,
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.answer.completed"
+  },
+  {
+    "event_id": "runtime_4eddcd17_17_agent_run_completed",
+    "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+    "sequence": 17,
+    "created_at_ms": 1780683873520,
+    "type": "agent.run.completed",
+    "step": null,
+    "artifact": null,
+    "answer": null,
+    "response": {
+      "run_id": "4eddcd17-4970-4455-a48b-170a25af66e2",
+      "session_id": "ec063303-446e-4fc1-894c-48348e496bce",
+      "parent_run_id": null,
+      "success": true,
+      "status": "completed",
+      "question": "How many United Airlines flights go to City 'Aberdeen'?",
+      "context_summary": "Question: How many United Airlines flights go to City 'Aberdeen'? Answer: There are 0 United Airlines flights that go to the city of Aberdeen. Artifacts: - agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/001/query_plan (query_plan, Query plan): analysis_goal=count, metrics=[{'name': 'flight_count', 'expression': 'COUNT(*)', 'source_column': '*'}], dimensions=[], filters=[{'column': 'airlines.Airline', 'operator': '=', 'value': 'United Airlines'}, {'column': 'airports.City', 'operator': '=', 'value': 'Aberdeen'}], time_range=None, candidate_tables=['flights', 'airlines', 'airports'] - agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate (sql, Validated SQL): SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100 - agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/003/safety_report (safety, Safety report): can_execute=True; messages=['SQL passed schema validation and guardrail checks.', 'EXPLAIN dry-run validated safe_sql.'] - agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/004/result_table (table, Result table): rowCount=1; columns=flight_count",
+      "referenced_artifact_ids": [],
+      "query_plan": {
+        "analysis_goal": "count",
+        "metrics": [
+          {
+            "name": "flight_count",
+            "expression": "COUNT(*)",
+            "source_column": "*"
+          }
+        ],
+        "dimensions": [],
+        "filters": [
+          {
+            "column": "airlines.Airline",
+            "operator": "=",
+            "value": "United Airlines"
+          },
+          {
+            "column": "airports.City",
+            "operator": "=",
+            "value": "Aberdeen"
+          }
+        ],
+        "time_range": null,
+        "candidate_tables": [
+          "flights",
+          "airlines",
+          "airports"
+        ],
+        "assumptions": [
+          "Plan mode: online",
+          "Only synced local schema metadata is trusted."
+        ],
+        "risk_notes": [],
+        "raw_plan": {
+          "intent": "count",
+          "tables": [
+            "flights",
+            "airlines",
+            "airports"
+          ],
+          "metrics": [
+            {
+              "name": "flight_count",
+              "expression": "COUNT(*)",
+              "source_column": "*"
+            }
+          ],
+          "dimensions": [],
+          "filters": [
+            {
+              "column": "airlines.Airline",
+              "operator": "=",
+              "value": "United Airlines"
+            },
+            {
+              "column": "airports.City",
+              "operator": "=",
+              "value": "Aberdeen"
+            }
+          ],
+          "joins": [
+            {
+              "left_table": "flights",
+              "right_table": "airlines",
+              "condition": "flights.Airline = airlines.uid"
+            },
+            {
+              "left_table": "flights",
+              "right_table": "airports",
+              "condition": "flights.DestAirport = airports.AirportCode"
+            }
+          ],
+          "order_by": "[]",
+          "limit": 100,
+          "warnings": [],
+          "mode": "online"
+        }
+      },
+      "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+      "safety": {
+        "passed": true,
+        "can_execute": true,
+        "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+        "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+        "schema_warnings": [],
+        "guardrail": {
+          "result": "pass",
+          "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "checks": [],
+          "message": "SQL 安全审核通过！"
+        },
+        "trust_gate": {
+          "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "schemaWarnings": [],
+          "guardrail": {
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
+          },
+          "riskLevel": "safe",
+          "requiresConfirmation": false,
+          "messages": [
+            "SQL passed schema validation and guardrail checks."
+          ],
+          "canExecute": true
+        },
+        "execution_safety_decision": {
+          "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+          "datasource_id": "ds-spider-flight-2",
+          "policy": "agent_readonly",
+          "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail": {
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
+          },
+          "schema_warnings": [],
+          "scope_state": {
+            "datasource_exists": true,
+            "datasource_id": "ds-spider-flight-2",
+            "db_type": "mysql",
+            "env": "dev",
+            "is_read_only": false,
+            "project_id": null,
+            "environment_id": null
+          },
+          "blocked_reasons": [],
+          "messages": [
+            "SQL passed schema validation and guardrail checks.",
+            "EXPLAIN dry-run validated safe_sql."
+          ],
+          "created_at": "2026-06-05T18:24:28.262748Z"
+        },
+        "requires_confirmation": false,
+        "messages": [
+          "SQL passed schema validation and guardrail checks.",
+          "EXPLAIN dry-run validated safe_sql."
+        ],
+        "blocked_reasons": [],
+        "revise_suggestion": null
+      },
+      "execution": {
+        "success": true,
+        "columns": [
+          "flight_count"
+        ],
+        "rows": [
+          {
+            "flight_count": "0"
+          }
+        ],
+        "rowCount": 1,
+        "latencyMs": 10,
+        "historyId": "8124bd8f-9b7a-40b9-b18c-0fcdd08e77d6",
+        "executionId": "exec-d9e5e75a-194e-487d-bc70-acbc63a24faf",
+        "safetyDecision": {
+          "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+          "datasource_id": "ds-spider-flight-2",
+          "policy": "agent_readonly",
+          "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+          "passed": true,
+          "can_execute": true,
+          "requires_confirmation": false,
+          "guardrail": {
+            "result": "pass",
+            "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "checks": [],
+            "message": "SQL 安全审核通过！"
+          },
+          "schema_warnings": [],
+          "scope_state": {
+            "datasource_exists": true,
+            "datasource_id": "ds-spider-flight-2",
+            "db_type": "mysql",
+            "env": "dev",
+            "is_read_only": false,
+            "project_id": null,
+            "environment_id": null
+          },
+          "blocked_reasons": [],
+          "messages": [
+            "SQL passed schema validation and guardrail checks.",
+            "EXPLAIN dry-run validated safe_sql."
+          ],
+          "created_at": "2026-06-05T18:24:28.262748Z"
+        },
+        "truncated": false,
+        "warnings": [],
+        "timing": {
+          "connectMs": 0,
+          "guardrailMs": 0,
+          "executeMs": 3,
+          "fetchMs": 0,
+          "serializeMs": 0,
+          "totalMs": 10
+        }
+      },
+      "explanation": "There are 0 United Airlines flights that go to the city of Aberdeen.",
+      "chart_suggestion": null,
+      "result_profile": null,
+      "answer": {
+        "answer": "There are 0 United Airlines flights that go to the city of Aberdeen.",
+        "key_findings": [],
+        "evidence": [],
+        "caveats": [],
+        "recommendations": [],
+        "follow_up_questions": []
+      },
+      "suggestions": [],
+      "artifacts": [
+        {
+          "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/001/query_plan",
+          "semantic_id": "query_plan",
+          "type": "query_plan",
+          "title": "Query plan",
+          "payload": {
+            "analysis_goal": "count",
+            "metrics": [
+              {
+                "name": "flight_count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
+              }
+            ],
+            "dimensions": [],
+            "filters": [
+              {
+                "column": "airlines.Airline",
+                "operator": "=",
+                "value": "United Airlines"
+              },
+              {
+                "column": "airports.City",
+                "operator": "=",
+                "value": "Aberdeen"
+              }
+            ],
+            "time_range": null,
+            "candidate_tables": [
+              "flights",
+              "airlines",
+              "airports"
+            ],
+            "assumptions": [
+              "Plan mode: online",
+              "Only synced local schema metadata is trusted."
+            ],
+            "risk_notes": [],
+            "raw_plan": {
+              "intent": "count",
+              "tables": [
+                "flights",
+                "airlines",
+                "airports"
+              ],
+              "metrics": [
+                {
+                  "name": "flight_count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
+                }
+              ],
+              "dimensions": [],
+              "filters": [
+                {
+                  "column": "airlines.Airline",
+                  "operator": "=",
+                  "value": "United Airlines"
+                },
+                {
+                  "column": "airports.City",
+                  "operator": "=",
+                  "value": "Aberdeen"
+                }
+              ],
+              "joins": [
+                {
+                  "left_table": "flights",
+                  "right_table": "airlines",
+                  "condition": "flights.Airline = airlines.uid"
+                },
+                {
+                  "left_table": "flights",
+                  "right_table": "airports",
+                  "condition": "flights.DestAirport = airports.AirportCode"
+                }
+              ],
+              "order_by": "[]",
+              "limit": 100,
+              "warnings": [],
+              "mode": "online"
+            }
+          },
+          "presentation": {
+            "mode": "dock",
+            "priority": 80,
+            "collapsed": true
+          },
+          "refs": {},
+          "produced_by_step": "build_query_plan",
+          "depends_on": []
+        },
+        {
+          "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate",
+          "semantic_id": "sql_candidate",
+          "type": "sql",
+          "title": "Validated SQL",
+          "payload": {
+            "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "safety_state": {
+              "available": true,
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail_result": "pass",
+              "schema_warnings_count": 0
+            }
+          },
+          "presentation": {
+            "mode": "dock",
+            "priority": 70,
+            "collapsed": true
+          },
+          "refs": {},
+          "produced_by_step": "validate_sql",
+          "depends_on": [
+            "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/001/query_plan"
+          ]
+        },
+        {
+          "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/003/safety_report",
+          "semantic_id": "safety_report",
+          "type": "safety",
+          "title": "Safety report",
+          "payload": {
+            "passed": true,
+            "can_execute": true,
+            "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "schema_warnings": [],
+            "guardrail": {
+              "result": "pass",
+              "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "checks": [],
+              "message": "SQL 安全审核通过！"
+            },
+            "trust_gate": {
+              "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "schemaWarnings": [],
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "riskLevel": "safe",
+              "requiresConfirmation": false,
+              "messages": [
+                "SQL passed schema validation and guardrail checks."
+              ],
+              "canExecute": true
+            },
+            "execution_safety_decision": {
+              "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+              "datasource_id": "ds-spider-flight-2",
+              "policy": "agent_readonly",
+              "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "schema_warnings": [],
+              "scope_state": {
+                "datasource_exists": true,
+                "datasource_id": "ds-spider-flight-2",
+                "db_type": "mysql",
+                "env": "dev",
+                "is_read_only": false,
+                "project_id": null,
+                "environment_id": null
+              },
+              "blocked_reasons": [],
+              "messages": [
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
+              ],
+              "created_at": "2026-06-05T18:24:28.262748Z"
+            },
+            "requires_confirmation": false,
+            "messages": [
+              "SQL passed schema validation and guardrail checks.",
+              "EXPLAIN dry-run validated safe_sql."
+            ],
+            "blocked_reasons": [],
+            "revise_suggestion": null
+          },
+          "presentation": {
+            "mode": "dock",
+            "priority": 75,
+            "collapsed": true
+          },
+          "refs": {},
+          "produced_by_step": "validate_sql",
+          "depends_on": [
+            "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate"
+          ]
+        },
+        {
+          "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/004/result_table",
+          "semantic_id": "result_table",
+          "type": "table",
+          "title": "Result table",
+          "payload": {
+            "columns": [
+              "flight_count"
+            ],
+            "rows": [
+              {
+                "flight_count": "0"
+              }
+            ],
+            "rowCount": 1,
+            "latencyMs": 10,
+            "safety_state": {
+              "available": true,
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail_result": "pass",
+              "schema_warnings_count": 0
+            }
+          },
+          "presentation": {
+            "mode": "both",
+            "priority": 20,
+            "collapsed": false
+          },
+          "refs": {},
+          "produced_by_step": "execute_sql",
+          "depends_on": [
+            "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate",
+            "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/003/safety_report"
+          ]
+        }
+      ],
+      "message_blocks": [
+        {
+          "block_id": "block_1_text",
+          "sequence": 1,
+          "type": "text",
+          "content": "I used the trusted schema context around airlines, airports, flights to answer: How many United Airlines flights go to City 'Aberdeen'?",
+          "artifact_id": null,
+          "display": null,
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "block_id": "block_2_artifact_ref",
+          "sequence": 2,
+          "type": "artifact_ref",
+          "content": null,
+          "artifact_id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/004/result_table",
+          "display": "full",
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "block_id": "block_3_answer",
+          "sequence": 3,
+          "type": "answer",
+          "content": null,
+          "artifact_id": null,
+          "display": null,
+          "answer": {
+            "answer": "There are 0 United Airlines flights that go to the city of Aberdeen.",
+            "key_findings": [],
+            "evidence": [],
+            "caveats": [],
+            "recommendations": [],
+            "follow_up_questions": []
+          },
+          "suggestions": []
+        }
+      ],
+      "events": [
+        {
+          "event_id": "visible_1_agent_narration_completed",
+          "sequence": 1,
+          "created_at_ms": 1780683873509,
+          "type": "agent.narration.completed",
+          "content": "I used the trusted schema context around airlines, airports, flights to answer: How many United Airlines flights go to City 'Aberdeen'?",
+          "artifact": null,
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "event_id": "visible_2_agent_artifact_created",
+          "sequence": 2,
+          "created_at_ms": 1780683873510,
+          "type": "agent.artifact.created",
+          "content": null,
+          "artifact": {
+            "id": "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/004/result_table",
+            "semantic_id": "result_table",
+            "type": "table",
+            "title": "Result table",
+            "payload": {
+              "columns": [
+                "flight_count"
+              ],
+              "rows": [
+                {
+                  "flight_count": "0"
+                }
+              ],
+              "rowCount": 1,
+              "latencyMs": 10,
+              "safety_state": {
+                "available": true,
+                "passed": true,
+                "can_execute": true,
+                "requires_confirmation": false,
+                "guardrail_result": "pass",
+                "schema_warnings_count": 0
+              }
+            },
+            "presentation": {
+              "mode": "both",
+              "priority": 20,
+              "collapsed": false
+            },
+            "refs": {},
+            "produced_by_step": "execute_sql",
+            "depends_on": [
+              "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/002/sql_candidate",
+              "agent/run/4eddcd17-4970-4455-a48b-170a25af66e2/artifact/003/safety_report"
+            ]
+          },
+          "answer": null,
+          "suggestions": []
+        },
+        {
+          "event_id": "visible_3_agent_answer_completed",
+          "sequence": 3,
+          "created_at_ms": 1780683873511,
+          "type": "agent.answer.completed",
+          "content": null,
+          "artifact": null,
+          "answer": {
+            "answer": "There are 0 United Airlines flights that go to the city of Aberdeen.",
+            "key_findings": [],
+            "evidence": [],
+            "caveats": [],
+            "recommendations": [],
+            "follow_up_questions": []
+          },
+          "suggestions": []
+        }
+      ],
+      "trace_events": [
+        {
+          "event_id": "trace_1_step_1_build_schema_context_started",
+          "sequence": 1,
+          "created_at_ms": 1780683873509,
+          "type": "agent.trace.step_started",
+          "step_id": "step_1_build_schema_context",
+          "name": "build_schema_context",
+          "status": null,
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "optimize_rag": true
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_2_step_1_build_schema_context_completed",
+          "sequence": 2,
+          "created_at_ms": 1780683873510,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_1_build_schema_context",
+          "name": "build_schema_context",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "optimize_rag": true
+          },
+          "output": {
+            "schema_context": "CREATE TABLE airlines (\n  uid int PRIMARY KEY NOT NULL,\n  Airline varchar(255),\n  Abbreviation varchar(255),\n  Country varchar(255)\n);\n\nCREATE TABLE airports (\n  City varchar(255),\n  AirportCode varchar(255) PRIMARY KEY NOT NULL,\n  AirportName varchar(255),\n  Country varchar(255),\n  CountryAbbrev varchar(255)\n);\n\nCREATE TABLE flights (\n  Airline int PRIMARY KEY NOT NULL,\n  FlightNo int PRIMARY KEY NOT NULL,\n  SourceAirport varchar(255) REFERENCES airports(AirportCode),\n  DestAirport varchar(255) REFERENCES airports(AirportCode)\n);\n",
+            "candidate_tables": [
+              {
+                "table": "airlines",
+                "comment": "",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:airlines"
+                ],
+                "columns": [
+                  {
+                    "name": "uid",
+                    "type": "int",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Airline",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Abbreviation",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Country",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  }
+                ]
+              },
+              {
+                "table": "airports",
+                "comment": "",
+                "score": 6.0,
+                "reasons": [
+                  "small_schema_full_context"
+                ],
+                "columns": [
+                  {
+                    "name": "City",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "AirportCode",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "AirportName",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Country",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "CountryAbbrev",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  }
+                ]
+              },
+              {
+                "table": "flights",
+                "comment": "",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:flights"
+                ],
+                "columns": [
+                  {
+                    "name": "Airline",
+                    "type": "int",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "FlightNo",
+                    "type": "int",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "SourceAirport",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": true
+                  },
+                  {
+                    "name": "DestAirport",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": true
+                  }
+                ]
+              }
+            ],
+            "candidate_columns": [
+              "airlines.uid",
+              "airlines.Airline",
+              "airlines.Abbreviation",
+              "airlines.Country",
+              "airports.City",
+              "airports.AirportCode",
+              "airports.AirportName",
+              "airports.Country",
+              "airports.CountryAbbrev",
+              "flights.Airline",
+              "flights.FlightNo",
+              "flights.SourceAirport",
+              "flights.DestAirport"
+            ],
+            "selected_tables": [
+              "airlines",
+              "airports",
+              "flights"
+            ],
+            "schema_linking_reasons": [
+              {
+                "targetType": "table",
+                "table": "airlines",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:airlines"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "airlines",
+                "column": "Airline",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_exact_match"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "airports",
+                "score": 6.0,
+                "reasons": [
+                  "small_schema_full_context"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "airports",
+                "column": "City",
+                "score": 6.0,
+                "reasons": [
+                  "column_name_exact_match",
+                  "column_name_token_match:city"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "flights",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:flights"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "flights",
+                "column": "Airline",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_exact_match"
+                ]
+              }
+            ],
+            "schema_context_size": 537,
+            "original_schema_table_count": 3,
+            "selected_schema_table_count": 3,
+            "mode": "rag"
+          },
+          "error": null,
+          "latency_ms": 4
+        },
+        {
+          "event_id": "trace_3_step_2_build_query_plan_started",
+          "sequence": 3,
+          "created_at_ms": 1780683873511,
+          "type": "agent.trace.step_started",
+          "step_id": "step_2_build_query_plan",
+          "name": "build_query_plan",
+          "status": null,
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "selected_tables": [
+              "airlines",
+              "airports",
+              "flights"
+            ]
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_4_step_2_build_query_plan_completed",
+          "sequence": 4,
+          "created_at_ms": 1780683873512,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_2_build_query_plan",
+          "name": "build_query_plan",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "selected_tables": [
+              "airlines",
+              "airports",
+              "flights"
+            ]
+          },
+          "output": {
+            "analysis_goal": "count",
+            "metrics": [
+              {
+                "name": "flight_count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
+              }
+            ],
+            "dimensions": [],
+            "filters": [
+              {
+                "column": "airlines.Airline",
+                "operator": "=",
+                "value": "United Airlines"
+              },
+              {
+                "column": "airports.City",
+                "operator": "=",
+                "value": "Aberdeen"
+              }
+            ],
+            "time_range": null,
+            "candidate_tables": [
+              "flights",
+              "airlines",
+              "airports"
+            ],
+            "assumptions": [
+              "Plan mode: online",
+              "Only synced local schema metadata is trusted."
+            ],
+            "risk_notes": [],
+            "raw_plan": {
+              "intent": "count",
+              "tables": [
+                "flights",
+                "airlines",
+                "airports"
+              ],
+              "metrics": [
+                {
+                  "name": "flight_count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
+                }
+              ],
+              "dimensions": [],
+              "filters": [
+                {
+                  "column": "airlines.Airline",
+                  "operator": "=",
+                  "value": "United Airlines"
+                },
+                {
+                  "column": "airports.City",
+                  "operator": "=",
+                  "value": "Aberdeen"
+                }
+              ],
+              "joins": [
+                {
+                  "left_table": "flights",
+                  "right_table": "airlines",
+                  "condition": "flights.Airline = airlines.uid"
+                },
+                {
+                  "left_table": "flights",
+                  "right_table": "airports",
+                  "condition": "flights.DestAirport = airports.AirportCode"
+                }
+              ],
+              "order_by": "[]",
+              "limit": 100,
+              "warnings": [],
+              "mode": "online"
+            }
+          },
+          "error": null,
+          "latency_ms": 4990
+        },
+        {
+          "event_id": "trace_5_step_3_generate_sql_candidate_started",
+          "sequence": 5,
+          "created_at_ms": 1780683873513,
+          "type": "agent.trace.step_started",
+          "step_id": "step_3_generate_sql_candidate",
+          "name": "generate_sql_candidate",
+          "status": null,
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "optimize_rag": true,
+            "model_name": "qwen-plus",
+            "has_api_key": "[REDACTED]",
+            "plan_goal": "count",
+            "plan_candidate_tables": [
+              "flights",
+              "airlines",
+              "airports"
+            ],
+            "schema_context_size": 537
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_6_step_3_generate_sql_candidate_completed",
+          "sequence": 6,
+          "created_at_ms": 1780683873514,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_3_generate_sql_candidate",
+          "name": "generate_sql_candidate",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "optimize_rag": true,
+            "model_name": "qwen-plus",
+            "has_api_key": "[REDACTED]",
+            "plan_goal": "count",
+            "plan_candidate_tables": [
+              "flights",
+              "airlines",
+              "airports"
+            ],
+            "schema_context_size": 537
+          },
+          "output": {
+            "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+            "raw_sql": null,
+            "model": "databox-query-plan-renderer",
+            "mode": "plan_guided",
+            "latency_ms": 0,
+            "schema_validation_warnings": [],
+            "rewrite_notes": [],
+            "metadata": {
+              "generation_source": "query_plan_rendered",
+              "agent_query_plan": {
+                "analysis_goal": "count",
+                "metrics": [
+                  {
+                    "name": "flight_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
+                "dimensions": [],
+                "filters": [
+                  {
+                    "column": "airlines.Airline",
+                    "operator": "=",
+                    "value": "United Airlines"
+                  },
+                  {
+                    "column": "airports.City",
+                    "operator": "=",
+                    "value": "Aberdeen"
+                  }
+                ],
+                "time_range": null,
+                "candidate_tables": [
+                  "flights",
+                  "airlines",
+                  "airports"
+                ],
+                "assumptions": [
+                  "Plan mode: online",
+                  "Only synced local schema metadata is trusted."
+                ],
+                "risk_notes": [],
+                "raw_plan": {
+                  "intent": "count",
+                  "tables": [
+                    "flights",
+                    "airlines",
+                    "airports"
+                  ],
+                  "metrics": [
+                    {
+                      "name": "flight_count",
+                      "expression": "COUNT(*)",
+                      "source_column": "*"
+                    }
+                  ],
+                  "dimensions": [],
+                  "filters": [
+                    {
+                      "column": "airlines.Airline",
+                      "operator": "=",
+                      "value": "United Airlines"
+                    },
+                    {
+                      "column": "airports.City",
+                      "operator": "=",
+                      "value": "Aberdeen"
+                    }
+                  ],
+                  "joins": [
+                    {
+                      "left_table": "flights",
+                      "right_table": "airlines",
+                      "condition": "flights.Airline = airlines.uid"
+                    },
+                    {
+                      "left_table": "flights",
+                      "right_table": "airports",
+                      "condition": "flights.DestAirport = airports.AirportCode"
+                    }
+                  ],
+                  "order_by": "[]",
+                  "limit": 100,
+                  "warnings": [],
+                  "mode": "online"
+                }
+              },
+              "query_plan": {
+                "intent": "count",
+                "tables": [
+                  "flights",
+                  "airlines",
+                  "airports"
+                ],
+                "metrics": [
+                  {
+                    "name": "flight_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
+                "dimensions": [],
+                "filters": [
+                  {
+                    "column": "airlines.Airline",
+                    "operator": "=",
+                    "value": "United Airlines"
+                  },
+                  {
+                    "column": "airports.City",
+                    "operator": "=",
+                    "value": "Aberdeen"
+                  }
+                ],
+                "joins": [
+                  {
+                    "left_table": "flights",
+                    "right_table": "airlines",
+                    "condition": "flights.Airline = airlines.uid"
+                  },
+                  {
+                    "left_table": "flights",
+                    "right_table": "airports",
+                    "condition": "flights.DestAirport = airports.AirportCode"
+                  }
+                ],
+                "order_by": "[]",
+                "limit": 100,
+                "warnings": [],
+                "mode": "online"
+              },
+              "selected_tables": [
+                "flights",
+                "airlines",
+                "airports"
+              ],
+              "selected_columns": [
+                "airlines.uid",
+                "airlines.Airline",
+                "airlines.Abbreviation",
+                "airlines.Country",
+                "airports.City",
+                "airports.AirportCode",
+                "airports.AirportName",
+                "airports.Country",
+                "airports.CountryAbbrev",
+                "flights.Airline",
+                "flights.FlightNo",
+                "flights.SourceAirport",
+                "flights.DestAirport"
+              ],
+              "schema_context_size": 537,
+              "rewrite": {},
+              "fallback_reason": null
+            }
+          },
+          "error": null,
+          "latency_ms": 12
+        },
+        {
+          "event_id": "trace_7_step_4_validate_sql_started",
+          "sequence": 7,
+          "created_at_ms": 1780683873515,
+          "type": "agent.trace.step_started",
+          "step_id": "step_4_validate_sql",
+          "name": "validate_sql",
+          "status": null,
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "sql_preview": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100"
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_8_step_4_validate_sql_completed",
+          "sequence": 8,
+          "created_at_ms": 1780683873516,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_4_validate_sql",
+          "name": "validate_sql",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "sql_preview": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100"
+          },
+          "output": {
+            "passed": true,
+            "can_execute": true,
+            "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+            "schema_warnings": [],
+            "guardrail": {
+              "result": "pass",
+              "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+              "checks": [],
+              "message": "SQL 安全审核通过！"
+            },
+            "trust_gate": {
+              "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+              "schemaWarnings": [],
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "riskLevel": "safe",
+              "requiresConfirmation": false,
+              "messages": [
+                "SQL passed schema validation and guardrail checks."
+              ],
+              "canExecute": true
+            },
+            "execution_safety_decision": {
+              "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+              "datasource_id": "ds-spider-flight-2",
+              "policy": "agent_readonly",
+              "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "schema_warnings": [],
+              "scope_state": {
+                "datasource_exists": true,
+                "datasource_id": "ds-spider-flight-2",
+                "db_type": "mysql",
+                "env": "dev",
+                "is_read_only": false,
+                "project_id": null,
+                "environment_id": null
+              },
+              "blocked_reasons": [],
+              "messages": [
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
+              ],
+              "created_at": "2026-06-05T18:24:28.262748Z"
+            },
+            "requires_confirmation": false,
+            "messages": [
+              "SQL passed schema validation and guardrail checks.",
+              "EXPLAIN dry-run validated safe_sql."
+            ],
+            "blocked_reasons": [],
+            "revise_suggestion": null
+          },
+          "error": null,
+          "latency_ms": 34
+        },
+        {
+          "event_id": "trace_9_step_5_execute_sql_started",
+          "sequence": 9,
+          "created_at_ms": 1780683873517,
+          "type": "agent.trace.step_started",
+          "step_id": "step_5_execute_sql",
+          "name": "execute_sql",
+          "status": null,
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "sql_preview": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100"
+          },
+          "output": null,
+          "error": null,
+          "latency_ms": null
+        },
+        {
+          "event_id": "trace_10_step_5_execute_sql_completed",
+          "sequence": 10,
+          "created_at_ms": 1780683873518,
+          "type": "agent.trace.step_completed",
+          "step_id": "step_5_execute_sql",
+          "name": "execute_sql",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "sql_preview": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100"
+          },
+          "output": {
+            "success": true,
+            "columns": [
+              "flight_count"
+            ],
+            "rows": [
+              {
+                "flight_count": "0"
+              }
+            ],
+            "rowCount": 1,
+            "latencyMs": 10,
+            "historyId": "8124bd8f-9b7a-40b9-b18c-0fcdd08e77d6",
+            "executionId": "exec-d9e5e75a-194e-487d-bc70-acbc63a24faf",
+            "safetyDecision": {
+              "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+              "datasource_id": "ds-spider-flight-2",
+              "policy": "agent_readonly",
+              "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = '[REDACTED_LITERAL]' AND airports.City = '[REDACTED_LITERAL]' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "schema_warnings": [],
+              "scope_state": {
+                "datasource_exists": true,
+                "datasource_id": "ds-spider-flight-2",
+                "db_type": "mysql",
+                "env": "dev",
+                "is_read_only": false,
+                "project_id": null,
+                "environment_id": null
+              },
+              "blocked_reasons": [],
+              "messages": [
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
+              ],
+              "created_at": "2026-06-05T18:24:28.262748Z"
+            },
+            "truncated": false,
+            "warnings": [],
+            "timing": {
+              "connectMs": 0,
+              "guardrailMs": 0,
+              "executeMs": 3,
+              "fetchMs": 0,
+              "serializeMs": 0,
+              "totalMs": 10
+            }
+          },
+          "error": null,
+          "latency_ms": 25
+        }
+      ],
+      "steps": [
+        {
+          "name": "build_schema_context",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "optimize_rag": true
+          },
+          "output": {
+            "schema_context": "CREATE TABLE airlines (\n  uid int PRIMARY KEY NOT NULL,\n  Airline varchar(255),\n  Abbreviation varchar(255),\n  Country varchar(255)\n);\n\nCREATE TABLE airports (\n  City varchar(255),\n  AirportCode varchar(255) PRIMARY KEY NOT NULL,\n  AirportName varchar(255),\n  Country varchar(255),\n  CountryAbbrev varchar(255)\n);\n\nCREATE TABLE flights (\n  Airline int PRIMARY KEY NOT NULL,\n  FlightNo int PRIMARY KEY NOT NULL,\n  SourceAirport varchar(255) REFERENCES airports(AirportCode),\n  DestAirport varchar(255) REFERENCES airports(AirportCode)\n);\n",
+            "candidate_tables": [
+              {
+                "table": "airlines",
+                "comment": "",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:airlines"
+                ],
+                "columns": [
+                  {
+                    "name": "uid",
+                    "type": "int",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Airline",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Abbreviation",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Country",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  }
+                ]
+              },
+              {
+                "table": "airports",
+                "comment": "",
+                "score": 6.0,
+                "reasons": [
+                  "small_schema_full_context"
+                ],
+                "columns": [
+                  {
+                    "name": "City",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "AirportCode",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "AirportName",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "Country",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "CountryAbbrev",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": false
+                  }
+                ]
+              },
+              {
+                "table": "flights",
+                "comment": "",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:flights"
+                ],
+                "columns": [
+                  {
+                    "name": "Airline",
+                    "type": "int",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "FlightNo",
+                    "type": "int",
+                    "comment": "",
+                    "primary_key": true,
+                    "foreign_key": false
+                  },
+                  {
+                    "name": "SourceAirport",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": true
+                  },
+                  {
+                    "name": "DestAirport",
+                    "type": "varchar(255)",
+                    "comment": "",
+                    "primary_key": false,
+                    "foreign_key": true
+                  }
+                ]
+              }
+            ],
+            "candidate_columns": [
+              "airlines.uid",
+              "airlines.Airline",
+              "airlines.Abbreviation",
+              "airlines.Country",
+              "airports.City",
+              "airports.AirportCode",
+              "airports.AirportName",
+              "airports.Country",
+              "airports.CountryAbbrev",
+              "flights.Airline",
+              "flights.FlightNo",
+              "flights.SourceAirport",
+              "flights.DestAirport"
+            ],
+            "selected_tables": [
+              "airlines",
+              "airports",
+              "flights"
+            ],
+            "schema_linking_reasons": [
+              {
+                "targetType": "table",
+                "table": "airlines",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:airlines"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "airlines",
+                "column": "Airline",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_exact_match"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "airports",
+                "score": 6.0,
+                "reasons": [
+                  "small_schema_full_context"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "airports",
+                "column": "City",
+                "score": 6.0,
+                "reasons": [
+                  "column_name_exact_match",
+                  "column_name_token_match:city"
+                ]
+              },
+              {
+                "targetType": "table",
+                "table": "flights",
+                "score": 26.0,
+                "reasons": [
+                  "table_name_exact_match",
+                  "table_name_token_match:flights"
+                ]
+              },
+              {
+                "targetType": "column",
+                "table": "flights",
+                "column": "Airline",
+                "score": 3.0,
+                "reasons": [
+                  "column_name_exact_match"
+                ]
+              }
+            ],
+            "schema_context_size": 537,
+            "original_schema_table_count": 3,
+            "selected_schema_table_count": 3,
+            "mode": "rag"
+          },
+          "error": null,
+          "latency_ms": 4
+        },
+        {
+          "name": "build_query_plan",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "selected_tables": [
+              "airlines",
+              "airports",
+              "flights"
+            ]
+          },
+          "output": {
+            "analysis_goal": "count",
+            "metrics": [
+              {
+                "name": "flight_count",
+                "expression": "COUNT(*)",
+                "source_column": "*"
+              }
+            ],
+            "dimensions": [],
+            "filters": [
+              {
+                "column": "airlines.Airline",
+                "operator": "=",
+                "value": "United Airlines"
+              },
+              {
+                "column": "airports.City",
+                "operator": "=",
+                "value": "Aberdeen"
+              }
+            ],
+            "time_range": null,
+            "candidate_tables": [
+              "flights",
+              "airlines",
+              "airports"
+            ],
+            "assumptions": [
+              "Plan mode: online",
+              "Only synced local schema metadata is trusted."
+            ],
+            "risk_notes": [],
+            "raw_plan": {
+              "intent": "count",
+              "tables": [
+                "flights",
+                "airlines",
+                "airports"
+              ],
+              "metrics": [
+                {
+                  "name": "flight_count",
+                  "expression": "COUNT(*)",
+                  "source_column": "*"
+                }
+              ],
+              "dimensions": [],
+              "filters": [
+                {
+                  "column": "airlines.Airline",
+                  "operator": "=",
+                  "value": "United Airlines"
+                },
+                {
+                  "column": "airports.City",
+                  "operator": "=",
+                  "value": "Aberdeen"
+                }
+              ],
+              "joins": [
+                {
+                  "left_table": "flights",
+                  "right_table": "airlines",
+                  "condition": "flights.Airline = airlines.uid"
+                },
+                {
+                  "left_table": "flights",
+                  "right_table": "airports",
+                  "condition": "flights.DestAirport = airports.AirportCode"
+                }
+              ],
+              "order_by": "[]",
+              "limit": 100,
+              "warnings": [],
+              "mode": "online"
+            }
+          },
+          "error": null,
+          "latency_ms": 4990
+        },
+        {
+          "name": "generate_sql_candidate",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "question": "How many United Airlines flights go to City 'Aberdeen'?",
+            "has_follow_up_context": false,
+            "optimize_rag": true,
+            "model_name": "qwen-plus",
+            "has_api_key": true,
+            "plan_goal": "count",
+            "plan_candidate_tables": [
+              "flights",
+              "airlines",
+              "airports"
+            ],
+            "schema_context_size": 537
+          },
+          "output": {
+            "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "raw_sql": null,
+            "model": "databox-query-plan-renderer",
+            "mode": "plan_guided",
+            "latency_ms": 0,
+            "schema_validation_warnings": [],
+            "rewrite_notes": [],
+            "metadata": {
+              "generation_source": "query_plan_rendered",
+              "agent_query_plan": {
+                "analysis_goal": "count",
+                "metrics": [
+                  {
+                    "name": "flight_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
+                "dimensions": [],
+                "filters": [
+                  {
+                    "column": "airlines.Airline",
+                    "operator": "=",
+                    "value": "United Airlines"
+                  },
+                  {
+                    "column": "airports.City",
+                    "operator": "=",
+                    "value": "Aberdeen"
+                  }
+                ],
+                "time_range": null,
+                "candidate_tables": [
+                  "flights",
+                  "airlines",
+                  "airports"
+                ],
+                "assumptions": [
+                  "Plan mode: online",
+                  "Only synced local schema metadata is trusted."
+                ],
+                "risk_notes": [],
+                "raw_plan": {
+                  "intent": "count",
+                  "tables": [
+                    "flights",
+                    "airlines",
+                    "airports"
+                  ],
+                  "metrics": [
+                    {
+                      "name": "flight_count",
+                      "expression": "COUNT(*)",
+                      "source_column": "*"
+                    }
+                  ],
+                  "dimensions": [],
+                  "filters": [
+                    {
+                      "column": "airlines.Airline",
+                      "operator": "=",
+                      "value": "United Airlines"
+                    },
+                    {
+                      "column": "airports.City",
+                      "operator": "=",
+                      "value": "Aberdeen"
+                    }
+                  ],
+                  "joins": [
+                    {
+                      "left_table": "flights",
+                      "right_table": "airlines",
+                      "condition": "flights.Airline = airlines.uid"
+                    },
+                    {
+                      "left_table": "flights",
+                      "right_table": "airports",
+                      "condition": "flights.DestAirport = airports.AirportCode"
+                    }
+                  ],
+                  "order_by": "[]",
+                  "limit": 100,
+                  "warnings": [],
+                  "mode": "online"
+                }
+              },
+              "query_plan": {
+                "intent": "count",
+                "tables": [
+                  "flights",
+                  "airlines",
+                  "airports"
+                ],
+                "metrics": [
+                  {
+                    "name": "flight_count",
+                    "expression": "COUNT(*)",
+                    "source_column": "*"
+                  }
+                ],
+                "dimensions": [],
+                "filters": [
+                  {
+                    "column": "airlines.Airline",
+                    "operator": "=",
+                    "value": "United Airlines"
+                  },
+                  {
+                    "column": "airports.City",
+                    "operator": "=",
+                    "value": "Aberdeen"
+                  }
+                ],
+                "joins": [
+                  {
+                    "left_table": "flights",
+                    "right_table": "airlines",
+                    "condition": "flights.Airline = airlines.uid"
+                  },
+                  {
+                    "left_table": "flights",
+                    "right_table": "airports",
+                    "condition": "flights.DestAirport = airports.AirportCode"
+                  }
+                ],
+                "order_by": "[]",
+                "limit": 100,
+                "warnings": [],
+                "mode": "online"
+              },
+              "selected_tables": [
+                "flights",
+                "airlines",
+                "airports"
+              ],
+              "selected_columns": [
+                "airlines.uid",
+                "airlines.Airline",
+                "airlines.Abbreviation",
+                "airlines.Country",
+                "airports.City",
+                "airports.AirportCode",
+                "airports.AirportName",
+                "airports.Country",
+                "airports.CountryAbbrev",
+                "flights.Airline",
+                "flights.FlightNo",
+                "flights.SourceAirport",
+                "flights.DestAirport"
+              ],
+              "schema_context_size": 537,
+              "rewrite": {},
+              "fallback_reason": null
+            }
+          },
+          "error": null,
+          "latency_ms": 12
+        },
+        {
+          "name": "validate_sql",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "sql_preview": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100"
+          },
+          "output": {
+            "passed": true,
+            "can_execute": true,
+            "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+            "schema_warnings": [],
+            "guardrail": {
+              "result": "pass",
+              "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "checks": [],
+              "message": "SQL 安全审核通过！"
+            },
+            "trust_gate": {
+              "sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "schemaWarnings": [],
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "riskLevel": "safe",
+              "requiresConfirmation": false,
+              "messages": [
+                "SQL passed schema validation and guardrail checks."
+              ],
+              "canExecute": true
+            },
+            "execution_safety_decision": {
+              "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+              "datasource_id": "ds-spider-flight-2",
+              "policy": "agent_readonly",
+              "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "schema_warnings": [],
+              "scope_state": {
+                "datasource_exists": true,
+                "datasource_id": "ds-spider-flight-2",
+                "db_type": "mysql",
+                "env": "dev",
+                "is_read_only": false,
+                "project_id": null,
+                "environment_id": null
+              },
+              "blocked_reasons": [],
+              "messages": [
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
+              ],
+              "created_at": "2026-06-05T18:24:28.262748Z"
+            },
+            "requires_confirmation": false,
+            "messages": [
+              "SQL passed schema validation and guardrail checks.",
+              "EXPLAIN dry-run validated safe_sql."
+            ],
+            "blocked_reasons": [],
+            "revise_suggestion": null
+          },
+          "error": null,
+          "latency_ms": 34
+        },
+        {
+          "name": "execute_sql",
+          "status": "success",
+          "input": {
+            "datasource_id": "ds-spider-flight-2",
+            "sql_preview": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100"
+          },
+          "output": {
+            "success": true,
+            "columns": [
+              "flight_count"
+            ],
+            "rows": [
+              {
+                "flight_count": "0"
+              }
+            ],
+            "rowCount": 1,
+            "latencyMs": 10,
+            "historyId": "8124bd8f-9b7a-40b9-b18c-0fcdd08e77d6",
+            "executionId": "exec-d9e5e75a-194e-487d-bc70-acbc63a24faf",
+            "safetyDecision": {
+              "decision_id": "safety-ad7eb16c-2c79-4580-92a6-24b10ded440f",
+              "datasource_id": "ds-spider-flight-2",
+              "policy": "agent_readonly",
+              "original_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "safe_sql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+              "passed": true,
+              "can_execute": true,
+              "requires_confirmation": false,
+              "guardrail": {
+                "result": "pass",
+                "originalSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "safeSql": "SELECT COUNT(*) AS flight_count FROM flights JOIN airlines ON flights.Airline = airlines.uid JOIN airports ON flights.DestAirport = airports.AirportCode WHERE airlines.Airline = 'United Airlines' AND airports.City = 'Aberdeen' LIMIT 100",
+                "checks": [],
+                "message": "SQL 安全审核通过！"
+              },
+              "schema_warnings": [],
+              "scope_state": {
+                "datasource_exists": true,
+                "datasource_id": "ds-spider-flight-2",
+                "db_type": "mysql",
+                "env": "dev",
+                "is_read_only": false,
+                "project_id": null,
+                "environment_id": null
+              },
+              "blocked_reasons": [],
+              "messages": [
+                "SQL passed schema validation and guardrail checks.",
+                "EXPLAIN dry-run validated safe_sql."
+              ],
+              "created_at": "2026-06-05T18:24:28.262748Z"
+            },
+            "truncated": false,
+            "warnings": [],
+            "timing": {
+              "connectMs": 0,
+              "guardrailMs": 0,
+              "executeMs": 3,
+              "fetchMs": 0,
+              "serializeMs": 0,
+              "totalMs": 10
+            }
+          },
+          "error": null,
+          "latency_ms": 25
+        }
+      ],
+      "error": null,
+      "approval": null,
+      "checkpoint": null
+    },
+    "approval": null,
+    "checkpoint": null,
+    "error": null,
+    "_sse_event": "agent.run.completed"
+  }
+]

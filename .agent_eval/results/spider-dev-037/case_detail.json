@@ -1,0 +1,80 @@
+{
+  "case_id": "spider-dev-037",
+  "db_id": "employee_hire_evaluation",
+  "question": "Find the cities that have more than one employee under age 30.",
+  "difficulty": "hard",
+  "gold_sql": "SELECT city FROM employee WHERE age  <  30 GROUP BY city HAVING count(*)  >  1",
+  "gold_sql_original": "SELECT city FROM employee WHERE age  <  30 GROUP BY city HAVING count(*)  >  1",
+  "gold_sql_canonical": "SELECT city FROM employee WHERE age  <  30 GROUP BY city HAVING count(*)  >  1",
+  "gold_sql_was_canonicalized": false,
+  "gold_sql_canonicalization_warnings": [],
+  "agent_sql": "SELECT City AS city, COUNT(*) AS employee_count FROM employee WHERE Age < 30 GROUP BY City LIMIT 100",
+  "safe_sql": "SELECT City AS city, COUNT(*) AS employee_count FROM employee WHERE Age < 30 GROUP BY City LIMIT 100",
+  "agent_answer": "The cities that have more than one employee under age 30 are: Bath (2 employees). All other cities in the result — Bristol, Wasps, and Sale — each have only one employee under age 30.",
+  "status": "execution_mismatch",
+  "final_status": "completed",
+  "execution_match": false,
+  "reason": "Result mismatch: Row count mismatch: gold=1, agent=4",
+  "quality": {
+    "score": 3,
+    "max_score": 5,
+    "sql_valid": true,
+    "execution_match": false,
+    "has_safety_artifact": true,
+    "has_answer": true,
+    "flow_complete": true,
+    "checks": {
+      "completed": false,
+      "sql_generated": true,
+      "execution_match": false,
+      "has_safety": true,
+      "has_answer": true,
+      "has_query_plan": true,
+      "has_table": true,
+      "has_error": false,
+      "flow_complete": true
+    }
+  },
+  "steps": [
+    "build_schema_context",
+    "build_query_plan",
+    "generate_sql_candidate",
+    "validate_sql",
+    "execute_sql",
+    "profile_result",
+    "suggest_chart",
+    "suggest_followups",
+    "answer_synthesizer"
+  ],
+  "artifacts": [
+    "query_plan",
+    "sql",
+    "safety",
+    "table",
+    "insight",
+    "chart"
+  ],
+  "approval": null,
+  "latency_seconds": 33.16,
+  "gold_rows_count": 1,
+  "agent_rows_count": 4,
+  "gold_error": null,
+  "agent_error": null,
+  "schema_preflight": {
+    "ok": true,
+    "reason": "",
+    "mysql_tables": [
+      "employee",
+      "evaluation",
+      "hiring",
+      "shop"
+    ],
+    "databox_tables": [
+      "employee",
+      "evaluation",
+      "hiring",
+      "shop"
+    ]
+  },
+  "event_count": 27
+}
