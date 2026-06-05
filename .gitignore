@@ -22,6 +22,10 @@ desktop/src-tauri/binaries/
 .agent_eval/config.local.json
 .agent_eval/outputs/
 .agent_eval/agent_only_events/
+.agent_eval/results/
+.agent_eval/backend_eval.pid
+.agent_eval/backend_eval_stdout.log
+.agent_eval/backend_eval_stderr.log
 
 # IDE / Assistant / Tool states
 .claude/
