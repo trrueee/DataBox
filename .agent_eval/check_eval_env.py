@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Check overall eval environment: docker, spider mysql, mysql tables, backend health and token.
+
+Outputs JSON and human readable summary. Exits non-zero if any check fails.
+"""
+import json
+import socket
+import subprocess
+from pathlib import Path
+
+import httpx
+
+ROOT = Path(__file__).resolve().parent
+
+
+def docker_available():
+    try:
+        subprocess.check_call(["docker", "ps"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except Exception:
+        return False
+
+
+def mysql_port_open(host, port=3307):
+    try:
+        with socket.create_connection((host, port), timeout=2.0):
+            return True
+    except Exception:
+        return False
+
+
+def mysql_show_tables_ok(host="127.0.0.1", port=3307, user="root", password="root"):
+    # Try simple mysql client invocation if available
+    try:
+        out = subprocess.check_output(["mysql", f"-h{host}", f"-P{port}", f"-u{user}", f"-p{password}", "-e", "SHOW TABLES;"], stderr=subprocess.STDOUT)
+        txt = out.decode(errors="ignore")
+        return "Tables_in_" in txt or txt.strip() != ""
+    except Exception:
+        return False
+
+
+def backend_health_ok(base_url="http://127.0.0.1:18625"):
+    try:
+        r = httpx.get(f"{base_url.rstrip('/')}/api/v1/health", timeout=2.0)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def token_exists():
+    # check known locations
+    try:
+        from engine.runtime_paths import private_runtime_file
+        p = Path(private_runtime_file("auth", ".local_token"))
+        if p.exists():
+            return True
+    except Exception:
+        pass
+    p = Path.home() / "AppData" / "Roaming" / "DataBox" / "auth" / ".local_token"
+    return p.exists()
+
+
+def main():
+    out = {
+        "docker": docker_available(),
+        "mysql_port_3307": mysql_port_open("127.0.0.1", 3307),
+        "mysql_show_tables": mysql_show_tables_ok(),
+        "backend_health": backend_health_ok(),
+        "token_exists": token_exists(),
+    }
+    ok = all(out.values())
+    print(json.dumps(out, ensure_ascii=False))
+    print("\nSummary:")
+    for k, v in out.items():
+        print(f" - {k}: {v}")
+    if not ok:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

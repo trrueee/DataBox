@@ -1,3 +1,36 @@
+import subprocess
+import sys
+from pathlib import Path
+
+
+def test_quick_agent_run_health_failure():
+    # run quick_agent_run with unreachable base-url and assert it exits non-zero
+    cmd = [sys.executable, "-m", ".agent_eval.quick_agent_run", "--base-url", "http://127.0.0.1:59999", "--cases", ".agent_eval/cases.smoke_subset.json"]
+    # We expect exit code 2 per script when health check fails
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    assert p.returncode != 0
+    assert "Health check" in p.stdout or "Please run: python .agent_eval/start_eval_backend.py" in p.stdout
+
+
+def test_quick_agent_run_no_token(tmp_path):
+    # Temporarily rename token if exists to simulate missing token
+    from . import conftest  # silent import to ensure test package
+    token_paths = [Path.home() / "AppData" / "Roaming" / "DataBox" / "auth" / ".local_token", Path(".local_token")]
+    moved = []
+    for p in token_paths:
+        if p.exists():
+            dest = p.with_suffix('.bak_test')
+            p.rename(dest)
+            moved.append((p, dest))
+    try:
+        cmd = [sys.executable, "-m", ".agent_eval.quick_agent_run", "--cases", ".agent_eval/cases.smoke_subset.json"]
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
+        assert p.returncode != 0
+        assert "Local token not found" in p.stdout or "Local token" in p.stdout
+    finally:
+        for orig, dest in moved:
+            if dest.exists():
+                dest.rename(orig)
 from __future__ import annotations
 
 import importlib.util
