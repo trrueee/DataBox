@@ -26,8 +26,10 @@ import argparse
 import json
 import os
 import sys
+import threading
 import time
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1064,6 +1066,57 @@ def main() -> None:
     total_cases = len(cases)
     eval_start = time.time()
 
+    # --- Resume, case-filter, max-cases ---
+    completed_ids: set[str] = set()
+    if args.resume and out_path and Path(out_path).exists():
+        try:
+            with open(out_path, encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        r = json.loads(line)
+                        if r.get("case_id"): completed_ids.add(r["case_id"])
+        except Exception: pass
+    if completed_ids:
+        print(f"Resume: skipping {len(completed_ids)} already-completed cases")
+    if args.case_filter:
+        fids = set(f.strip() for f in args.case_filter.split(","))
+        cases = [c for c in cases if (c.get("case_id","") in fids)]
+    if args.max_cases > 0:
+        cases = cases[:args.max_cases]
+
+    # --- Concurrent pre-fetch (IO-bound agent calls) ---
+    _prefetched: dict[str, Any] = {}
+    concurrency = max(1, min(args.concurrency, 16))
+    if concurrency > 1:
+        print(f"Concurrent: {concurrency} workers, timeout={args.timeout_per_case}s")
+        _print_lock = threading.Lock()
+
+        def _fetch(idx: int, case: dict):
+            cid = case.get("case_id") or case.get("id", f"case_{idx}")
+            if cid in completed_ids:
+                return (cid, None)
+            ds_id = datasource_map.get(case["db_id"], {}).get(
+                "dev_datasource_id", f"ds-spider-{case['db_id'].replace('_', '-')}")
+            t0 = time.time()
+            try:
+                evts, err, st, appr = run_agent_case(
+                    base_url=base_url, datasource_id=ds_id, question=case["question"],
+                    token=token, model=model, api_key=api_key, api_base=api_base,
+                    execute=case.get("execute", global_execute), max_steps=max_steps,
+                    semantic_mode=semantic_mode,
+                )
+            except Exception as exc:
+                evts, err, st, appr = [], str(exc), "agent_execution_failed", None
+            return (cid, (evts, err, st, appr, time.time() - t0))
+
+        with ThreadPoolExecutor(max_workers=concurrency) as ex:
+            futs = {ex.submit(_fetch, i, c): i for i, c in enumerate(cases)
+                     if (c.get("case_id") or c.get("id", f"case_{i}")) not in completed_ids}
+            for fut in as_completed(futs):
+                cid, result = fut.result()
+                if result is not None:
+                    _prefetched[cid] = result
+
     for idx, case in enumerate(cases):
         case_id = case.get("case_id") or case.get("id", f"case_{idx}")
         db_id = case["db_id"]
@@ -1190,20 +1243,26 @@ def main() -> None:
             write_case_outputs(case_id, record)
             continue
 
-        # --- Run agent ---
-        events, agent_error, final_status, approval_info = run_agent_case(
-            base_url=base_url,
-            datasource_id=datasource_id,
-            question=question,
-            token=token,
-            model=model,
-            api_key=api_key,
-            api_base=api_base,
-            execute=case_execute,
-            max_steps=max_steps,
-            semantic_mode=semantic_mode,
-        )
-        case_latency = time.time() - case_start
+        # --- Run agent (use pre-fetched when concurrent) ---
+        if case_id in _prefetched:
+            events, agent_error, final_status, approval_info, case_latency = _prefetched[case_id]
+        elif case_id in completed_ids:
+            continue  # resume: skip already-completed case
+        else:
+            case_start = time.time()
+            events, agent_error, final_status, approval_info = run_agent_case(
+                base_url=base_url,
+                datasource_id=datasource_id,
+                question=question,
+                token=token,
+                model=model,
+                api_key=api_key,
+                api_base=api_base,
+                execute=case_execute,
+                max_steps=max_steps,
+                semantic_mode=semantic_mode,
+            )
+            case_latency = time.time() - case_start
 
         # --- Extract from events ---
         agent_sql = extract_agent_sql(events)
