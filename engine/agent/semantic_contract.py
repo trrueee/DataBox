@@ -268,22 +268,30 @@ def _count_threshold_contract(q: str, scalar_filter: ScalarFilterContract | None
 
 
 def _count_threshold(q: str) -> tuple[str, int] | None:
-    count_nouns = r"(?:flights?|employees?|pets?|friends?)"
+    # Broader detection: "at least N <anything>" is a count threshold
     number = r"(?P<number>\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
-    patterns = [
-        (rf"\bat\s+least\s+{number}\s+{count_nouns}\b", ">="),
-        (rf"\bmore\s+than\s+{number}\s+{count_nouns}\b", ">"),
-        (rf"\bgreater\s+than\s+{number}\s+{count_nouns}\b", ">"),
-        (rf"\bat\s+most\s+{number}\s+{count_nouns}\b", "<="),
-        (rf"\bless\s+than\s+{number}\s+{count_nouns}\b", "<"),
+    broad_patterns = [
+        rf"\bat\s+least\s+{number}\b",
+        rf"\bmore\s+than\s+{number}\b",
+        rf"\bfewer\s+than\s+{number}\b",
+        rf"\bless\s+than\s+{number}\b",
+        rf"\bat\s+most\s+{number}\b",
     ]
-    for pattern, operator in patterns:
+    for pattern in broad_patterns:
         match = re.search(pattern, q)
         if not match:
             continue
         value = _number_value(match.group("number"))
-        if value is not None:
-            return operator, value
+        if value is not None and value >= 1:
+            # Only if the threshold is about entity counts, not scalar values
+            # Check that the number is followed by a noun (not a unit like "years", "kg")
+            after = q[match.end():].strip()
+            if after and not after.startswith(("year", "month", "day", "kg", "lb", "mile", "km", "percent", "%")):
+                op_map = {"at least": ">=", "more than": ">", "fewer than": "<", "less than": "<", "at most": "<="}
+                for phrase, op in op_map.items():
+                    if phrase in match.group(0).lower():
+                        return op, value
+                return ">=", value
     return None
 
 
@@ -338,15 +346,34 @@ def _subject_and_counted_relation(q: str) -> tuple[str | None, str | None]:
 
 
 def _negation_contract(q: str) -> NegationContract | None:
-    if not any(marker in q for marker in (" no ", "without", "do not have", "does not have", "not have", "never", "do not hire")):
+    markers = (" no ", "without", "do not have", "does not have", "not have",
+               "never", "do not hire", "have no", "has no", "not received",
+               "not owned", "not used", "not played", "not been arranged",
+               "do not own", "does not own", "not any", "no visitor",
+               "do not speak", "does not speak")
+    if not any(marker in q for marker in markers):
         return None
     subject = None
-    if re.search(r"\bstudents?\b", q) or re.search(r"\bhigh school", q):
-        subject = "student"
-    elif re.search(r"\bemployees?\b", q):
-        subject = "employee"
-    elif re.search(r"\bshops?\b", q):
-        subject = "shop"
+    for pat, subj in (
+        (r"\bstudents?\b|high school", "student"),
+        (r"\bemployees?\b", "employee"),
+        (r"\bshops?\b", "shop"),
+        (r"\bmuseums?\b", "museum"),
+        (r"\bteachers?\b", "teacher"),
+        (r"\bairports?\b", "airport"),
+        (r"\bcountries?\b", "country"),
+        (r"\btv channels?\b", "channel"),
+        (r"\bsingers?\b", "singer"),
+        (r"\bstadiums?\b", "stadium"),
+        (r"\bconductors?\b", "conductor"),
+        (r"\borchestras?\b", "orchestra"),
+        (r"\bbattles?\b", "battle"),
+        (r"\bdocuments?\b", "document"),
+        (r"\bpeople\b", "person"),
+    ):
+        if re.search(pat, q):
+            subject = subj
+            break
     excluded = None
     for pattern, relation in (
         (r"\bfriends?\b", "friend"),
@@ -355,6 +382,12 @@ def _negation_contract(q: str) -> NegationContract | None:
         (r"\bhire\b|\bhiring\b|\bemployees?\b", "hiring"),
         (r"\bcats?\b", "cat"),
         (r"\bpets?\b", "pet"),
+        (r"\bflights?\b", "flight"),
+        (r"\bcourses?\b", "course"),
+        (r"\bvisitors?\b", "visitor"),
+        (r"\bEnglish\b", "english_language"),
+        (r"\bcartoons?\b", "cartoon"),
+        (r"\bdogs?\b", "dog"),
     ):
         if re.search(pattern, q):
             excluded = relation
@@ -371,16 +404,27 @@ def _negation_contract(q: str) -> NegationContract | None:
 
 def _set_logic_contract(q: str) -> SetLogicContract | None:
     markers: list[str] = []
-    if any(marker in q for marker in ("shared by", "both", "also", "intersection")):
-        markers.append("shared" if "shared" in q else "both")
+    # "both X and Y" patterns
+    if any(marker in q for marker in ("both ", "all of", "shared by", "common to", "used by both",
+                                        "in both", "and also", "who have both",
+                                        "played in both", "speak both")):
+        markers.append("both")
+    # INTERSECT/EXCEPT patterns from gold SQL semantics
+    if any(marker in q for marker in ("also have", "two different", "two types of")):
+        markers.append("both")
+    # Before/after temporal set logic
     if "before" in q and "after" in q:
         markers.append("before_after")
+    # EXCEPT patterns
+    if any(marker in q for marker in ("except for", "do not speak", "does not speak",
+                                        "not English", "did not have", "do not have any")):
+        markers.append("except")
     if not markers:
         return None
     return SetLogicContract(
-        type="intersection",
+        type="intersection" if "both" in markers or "intersection" in markers else "difference",
         markers=markers,
-        preferred_sql_shape="exists_pair",
+        preferred_sql_shape="exists_pair" if "both" in markers else "not_exists",
     )
 
 
