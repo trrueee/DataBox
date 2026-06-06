@@ -135,13 +135,16 @@ def generate_sql_tool(
     }
 
     def body() -> dict[str, Any]:
-        contract = build_query_contract(question, schema_context, query_plan)
+        semantic_mode = getattr(req, "semantic_mode", "shadow") or "shadow"
+        contract = build_query_contract(question, schema_context, query_plan) if semantic_mode != "off" else None
         # Decide whether plan requires LLM fallback first
         require_llm, fallback_reason = _plan_requires_llm_sql(query_plan, question=question)
-        contract_requires_llm, contract_reason = _contract_requires_llm(contract)
-        if contract_requires_llm:
-            require_llm = True
-            fallback_reason = fallback_reason or contract_reason
+        # Contract routing decisions ONLY in retry mode
+        if semantic_mode == "retry" and contract is not None:
+            contract_requires_llm, contract_reason = _contract_requires_llm(contract)
+            if contract_requires_llm:
+                require_llm = True
+                fallback_reason = fallback_reason or contract_reason
         # Check low-confidence BEFORE attempting deterministic renderer (P1 guard)
         if not require_llm:
             low_conf, low_reason = _plan_is_low_confidence_for_render(query_plan, question=question)
@@ -202,7 +205,7 @@ def generate_sql_tool(
                 result = generate_sql(
                     db,
                     req.datasource_id,
-                    _question_with_contract(question, schema_context, query_plan, contract) if req.api_key else question,
+                    _question_with_contract(question, schema_context, query_plan, contract) if (req.api_key and semantic_mode == "retry") else (_question_with_plan(question, query_plan) if req.api_key else question),
                     llm_config=_llm_config(req),
                     optimize_rag=req.optimize_rag,
                 )
