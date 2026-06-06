@@ -1098,15 +1098,22 @@ def main() -> None:
             ds_id = datasource_map.get(case["db_id"], {}).get(
                 "dev_datasource_id", f"ds-spider-{case['db_id'].replace('_', '-')}")
             t0 = time.time()
-            try:
-                evts, err, st, appr = run_agent_case(
-                    base_url=base_url, datasource_id=ds_id, question=case["question"],
-                    token=token, model=model, api_key=api_key, api_base=api_base,
-                    execute=case.get("execute", global_execute), max_steps=max_steps,
-                    semantic_mode=semantic_mode,
-                )
-            except Exception as exc:
-                evts, err, st, appr = [], str(exc), "agent_execution_failed", None
+            for attempt in range(3):
+                try:
+                    evts, err, st, appr = run_agent_case(
+                        base_url=base_url, datasource_id=ds_id, question=case["question"],
+                        token=token, model=model, api_key=api_key, api_base=api_base,
+                        execute=case.get("execute", global_execute), max_steps=max_steps,
+                        semantic_mode=semantic_mode,
+                    )
+                    break
+                except Exception as exc:
+                    msg = str(exc).lower()
+                    if "database is locked" in msg or "operationalerror" in msg:
+                        if attempt < 2:
+                            time.sleep(0.5 * (attempt + 1))
+                            continue
+                    evts, err, st, appr = [], str(exc), "agent_execution_failed", None
             return (cid, (evts, err, st, appr, time.time() - t0))
 
         with ThreadPoolExecutor(max_workers=concurrency) as ex:
@@ -1116,6 +1123,26 @@ def main() -> None:
                 cid, result = fut.result()
                 if result is not None:
                     _prefetched[cid] = result
+
+        # Retry failed cases serially (handles intermittent DB lock errors)
+        _retry_ids = [cid for cid, (evts, err, st, _appr, _lat) in _prefetched.items()
+                       if err and "database is locked" in str(err).lower()]
+        if _retry_ids:
+            print(f"Retrying {len(_retry_ids)} failed cases serially...")
+            for cid in _retry_ids:
+                for case in cases:
+                    if (case.get("case_id") or case.get("id", "")) == cid:
+                        ds_id = datasource_map.get(case["db_id"], {}).get(
+                            "dev_datasource_id", f"ds-spider-{case['db_id'].replace('_', '-')}")
+                        t0 = time.time()
+                        evts, err, st, appr = run_agent_case(
+                            base_url=base_url, datasource_id=ds_id, question=case["question"],
+                            token=token, model=model, api_key=api_key, api_base=api_base,
+                            execute=case.get("execute", global_execute), max_steps=max_steps,
+                            semantic_mode=semantic_mode,
+                        )
+                        _prefetched[cid] = (evts, err, st, appr, time.time() - t0)
+                        break
 
     for idx, case in enumerate(cases):
         case_id = case.get("case_id") or case.get("id", f"case_{idx}")

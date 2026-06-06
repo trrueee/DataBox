@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -155,11 +156,19 @@ class AgentKernelService:
         emitted_artifact_ids: set[str] = set()
 
         def _save_event(event: AgentRuntimeEvent) -> None:
-            try:
-                agent_persistence.record_runtime_event(self.db, session_id, event)
-            except Exception:
-                logger.warning("Agent kernel persistence: failed to save event %s", event.event_id)
-                self._rollback_quietly()
+            for attempt in range(3):
+                try:
+                    agent_persistence.record_runtime_event(self.db, session_id, event)
+                    return
+                except Exception as exc:
+                    msg = str(exc).lower()
+                    if attempt < 2 and ("database is locked" in msg or "operationalerror" in msg):
+                        self._rollback_quietly()
+                        time.sleep(0.3 * (attempt + 1))
+                        continue
+                    logger.warning("Agent kernel persistence: failed to save event %s: %s", event.event_id, exc)
+                    self._rollback_quietly()
+                    return
 
         emitter = EventEmitter(run_id, _save_event)
 

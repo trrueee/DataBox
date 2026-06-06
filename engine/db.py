@@ -36,9 +36,30 @@ DATABASE_URL = f"sqlite:///{DB_PATH}"
 #   - `create_engine`：创建物理连接引擎，它是所有数据库操作的核心通道。
 #   - `check_same_thread: False`：SQLite 默认只允许创建连接的线程访问数据库。
 #     但在 Web 开发（如 FastAPI）中，请求是由多线程/多协程并发处理的，因此必须关闭此安全锁。
+# Pre-configure SQLite for WAL mode (must run before engine creation)
+import sqlite3
+_sqlite_db = Path(DATABASE_URL.replace("sqlite:///", ""))
+if not _sqlite_db.exists():
+    _sqlite_db.parent.mkdir(parents=True, exist_ok=True)
+# Set WAL mode via sqlite3 directly (applies globally to the file)
+_conn = sqlite3.connect(str(_sqlite_db))
+_conn.execute("PRAGMA journal_mode=WAL")
+_conn.execute("PRAGMA busy_timeout=30000")
+_conn.execute("PRAGMA synchronous=NORMAL")
+_conn.close()
+
 engine: Engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args={
+        "check_same_thread": False,
+        "timeout": 30,
+    },
+    pool_size=5,
+    max_overflow=5,
+    pool_pre_ping=True,
+    # SQLite isolation: use IMMEDIATE transactions to fail fast rather than wait
+    # With WAL mode, concurrent reads are allowed; writes serialize via busy_timeout
+    isolation_level="IMMEDIATE",
 )
 
 # 创建本地数据库会话工厂 (Session Factory)
