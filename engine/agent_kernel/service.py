@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 import uuid
 from collections.abc import Iterator
@@ -53,6 +54,8 @@ class AgentKernelService:
         self.policy_gate = PolicyGate(self.registry)
         self.artifact_emitter = ArtifactEmitter()
         self.response_assembler = AgentKernelResponseAssembler()
+        # Toggle runtime event persistence (disable for eval concurrency)
+        self._persist_events = os.environ.get("AGENT_PERSIST_RUNTIME_EVENTS", "true").lower() != "false"
 
     def run(self, req: AgentRunRequest) -> AgentRunResponse:
         final_response: AgentRunResponse | None = None
@@ -156,6 +159,8 @@ class AgentKernelService:
         emitted_artifact_ids: set[str] = set()
 
         def _save_event(event: AgentRuntimeEvent) -> None:
+            if not self._persist_events:
+                return
             for attempt in range(3):
                 try:
                     agent_persistence.record_runtime_event(self.db, session_id, event)
@@ -294,6 +299,8 @@ class AgentKernelService:
             state = dict(self._initial_state(req, run_id, session_id))
 
         def _save_event(event: AgentRuntimeEvent) -> None:
+            if not self._persist_events:
+                return
             try:
                 agent_persistence.record_runtime_event(self.db, session_id, event)
             except Exception:

@@ -982,6 +982,9 @@ def main() -> None:
                         help="Semantic verification mode (default: shadow)")
     parser.add_argument("--concurrency", type=int, default=1,
                         help="Number of concurrent cases (default: 1)")
+    parser.add_argument("--concurrency-failure-policy", default="serial-retry",
+                        choices=["fail", "serial-retry"],
+                        help="Policy for concurrent failures: 'fail' (record as failure) or 'serial-retry' (retry serially)")
     parser.add_argument("--timeout-per-case", type=int, default=300,
                         help="Timeout seconds per case (default: 300)")
     parser.add_argument("--resume", action="store_true",
@@ -1086,9 +1089,18 @@ def main() -> None:
 
     # --- Concurrent pre-fetch (IO-bound agent calls) ---
     _prefetched: dict[str, Any] = {}
+    concurrent_stats = {
+        "concurrency": 0, "attempted": 0, "success": 0, "failed": 0,
+        "serial_retry_count": 0, "serial_retry_success": 0, "serial_retry_failed": 0,
+        "db_locked_error_count": 0, "retry_reason_counts": {},
+    }
+    _case_concurrency_meta: dict[str, dict] = {}
     concurrency = max(1, min(args.concurrency, 16))
+    failure_policy = args.concurrency_failure_policy
+
     if concurrency > 1:
-        print(f"Concurrent: {concurrency} workers, timeout={args.timeout_per_case}s")
+        concurrent_stats["concurrency"] = concurrency
+        print(f"Concurrent: {concurrency} workers, policy={failure_policy}")
         _print_lock = threading.Lock()
 
         def _fetch(idx: int, case: dict):
@@ -1097,24 +1109,16 @@ def main() -> None:
                 return (cid, None)
             ds_id = datasource_map.get(case["db_id"], {}).get(
                 "dev_datasource_id", f"ds-spider-{case['db_id'].replace('_', '-')}")
+            _case_concurrency_meta[cid] = {"ran_concurrently": True, "serial_retry_attempted": False,
+                                            "serial_retry_success": False, "original_concurrent_error": None}
             t0 = time.time()
-            for attempt in range(3):
-                try:
-                    evts, err, st, appr = run_agent_case(
-                        base_url=base_url, datasource_id=ds_id, question=case["question"],
-                        token=token, model=model, api_key=api_key, api_base=api_base,
-                        execute=case.get("execute", global_execute), max_steps=max_steps,
-                        semantic_mode=semantic_mode,
-                    )
-                    break
-                except Exception as exc:
-                    msg = str(exc).lower()
-                    if "database is locked" in msg or "operationalerror" in msg:
-                        if attempt < 2:
-                            time.sleep(0.5 * (attempt + 1))
-                            continue
-                    evts, err, st, appr = [], str(exc), "agent_execution_failed", None
-            return (cid, (evts, err, st, appr, time.time() - t0))
+            evts, err, st, appr = run_agent_case(
+                base_url=base_url, datasource_id=ds_id, question=case["question"],
+                token=token, model=model, api_key=api_key, api_base=api_base,
+                execute=case.get("execute", global_execute), max_steps=max_steps,
+                semantic_mode=semantic_mode,
+            )
+            return (cid, (evts, err, st, appr, time.time() - t0, "concurrent"))
 
         with ThreadPoolExecutor(max_workers=concurrency) as ex:
             futs = {ex.submit(_fetch, i, c): i for i, c in enumerate(cases)
@@ -1123,26 +1127,45 @@ def main() -> None:
                 cid, result = fut.result()
                 if result is not None:
                     _prefetched[cid] = result
+                    evts, err, st, appr, lat, _source = result
+                    concurrent_stats["attempted"] += 1
+                    if err and "database is locked" in str(err).lower():
+                        concurrent_stats["db_locked_error_count"] += 1
+                    if err:
+                        concurrent_stats["failed"] += 1
+                        _case_concurrency_meta.setdefault(cid, {})["original_concurrent_error"] = str(err)[:200]
+                    else:
+                        concurrent_stats["success"] += 1
 
-        # Retry failed cases serially (handles intermittent DB lock errors)
-        _retry_ids = [cid for cid, (evts, err, st, _appr, _lat) in _prefetched.items()
-                       if err and "database is locked" in str(err).lower()]
-        if _retry_ids:
-            print(f"Retrying {len(_retry_ids)} failed cases serially...")
-            for cid in _retry_ids:
-                for case in cases:
-                    if (case.get("case_id") or case.get("id", "")) == cid:
-                        ds_id = datasource_map.get(case["db_id"], {}).get(
-                            "dev_datasource_id", f"ds-spider-{case['db_id'].replace('_', '-')}")
-                        t0 = time.time()
-                        evts, err, st, appr = run_agent_case(
-                            base_url=base_url, datasource_id=ds_id, question=case["question"],
-                            token=token, model=model, api_key=api_key, api_base=api_base,
-                            execute=case.get("execute", global_execute), max_steps=max_steps,
-                            semantic_mode=semantic_mode,
-                        )
-                        _prefetched[cid] = (evts, err, st, appr, time.time() - t0)
-                        break
+        # Serial retry for DB-locked failures
+        if failure_policy == "serial-retry":
+            _retry_ids = [cid for cid, (evts, err, st, _appr, _lat, _src) in _prefetched.items()
+                           if err]
+            if _retry_ids:
+                print(f"Serial retry: {len(_retry_ids)} cases...")
+                for cid in _retry_ids:
+                    concurrent_stats["serial_retry_count"] += 1
+                    _case_concurrency_meta.setdefault(cid, {})["serial_retry_attempted"] = True
+                    cause = str(_prefetched[cid][1])[:100] if _prefetched[cid][1] else "unknown"
+                    concurrent_stats["retry_reason_counts"][cause] = concurrent_stats["retry_reason_counts"].get(cause, 0) + 1
+                    for case in cases:
+                        if (case.get("case_id") or case.get("id", "")) == cid:
+                            ds_id = datasource_map.get(case["db_id"], {}).get(
+                                "dev_datasource_id", f"ds-spider-{case['db_id'].replace('_', '-')}")
+                            t0 = time.time()
+                            evts, err, st, appr = run_agent_case(
+                                base_url=base_url, datasource_id=ds_id, question=case["question"],
+                                token=token, model=model, api_key=api_key, api_base=api_base,
+                                execute=case.get("execute", global_execute), max_steps=max_steps,
+                                semantic_mode=semantic_mode,
+                            )
+                            _prefetched[cid] = (evts, err, st, appr, time.time() - t0, "serial_retry")
+                            if err:
+                                concurrent_stats["serial_retry_failed"] += 1
+                            else:
+                                concurrent_stats["serial_retry_success"] += 1
+                                _case_concurrency_meta.setdefault(cid, {})["serial_retry_success"] = True
+                            break
 
     for idx, case in enumerate(cases):
         case_id = case.get("case_id") or case.get("id", f"case_{idx}")
@@ -1272,7 +1295,7 @@ def main() -> None:
 
         # --- Run agent (use pre-fetched when concurrent) ---
         if case_id in _prefetched:
-            events, agent_error, final_status, approval_info, case_latency = _prefetched[case_id]
+            events, agent_error, final_status, approval_info, case_latency, _ = _prefetched[case_id]
         elif case_id in completed_ids:
             continue  # resume: skip already-completed case
         else:
@@ -1416,6 +1439,10 @@ def main() -> None:
             "agent_error": stream_error or agent_exec_err,
             "schema_preflight": schema_preflight,
             "events_log": events,
+            "ran_concurrently": _case_concurrency_meta.get(case_id, {}).get("ran_concurrently", False),
+            "serial_retry_attempted": _case_concurrency_meta.get(case_id, {}).get("serial_retry_attempted", False),
+            "serial_retry_success": _case_concurrency_meta.get(case_id, {}).get("serial_retry_success", False),
+            "original_concurrent_error": _case_concurrency_meta.get(case_id, {}).get("original_concurrent_error"),
         }
         results.append(record)
 
@@ -1446,6 +1473,7 @@ def main() -> None:
         "average_latency_seconds": round(avg_latency, 2),
         "total_duration_seconds": round(eval_latency, 2),
         "status_counts": build_status_summary(results),
+        "concurrency": concurrent_stats,
         "semantic_violation_counts": dict(sorted(semantic_violation_counts.items())),
         "semantic_retry_attempted_count": sum(1 for r in results if r.get("semantic_retry_attempted")),
         "gold_sql_canonicalized_count": sum(
