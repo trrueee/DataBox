@@ -1071,9 +1071,9 @@ def main() -> None:
 
     # --- Resume, case-filter, max-cases ---
     completed_ids: set[str] = set()
-    if args.resume and out_path and Path(out_path).exists():
+    if args.resume and jsonl_path and jsonl_path.exists():
         try:
-            with open(out_path, encoding="utf-8") as f:
+            with open(jsonl_path, encoding="utf-8") as f:
                 for line in f:
                     if line.strip():
                         r = json.loads(line)
