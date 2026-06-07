@@ -46,14 +46,14 @@ logger = logging.getLogger("databox.agent_kernel.service")
 
 
 class AgentKernelService:
-    _checkpointer = build_agent_kernel_checkpointer()
-
+    # Per-instance checkpointer to prevent state accumulation across farm worker requests
     def __init__(self, db: Session, registry: ToolRegistry | None = None):
         self.db = db
         self.registry = registry or register_databox_tools()
         self.policy_gate = PolicyGate(self.registry)
         self.artifact_emitter = ArtifactEmitter()
         self.response_assembler = AgentKernelResponseAssembler()
+        self._checkpointer = build_agent_kernel_checkpointer()
         from engine.agent_kernel.persistence_sink import create_persistence_sink
         self.persistence_sink = create_persistence_sink(db)
         # Combine both env vars: either can disable persistence
