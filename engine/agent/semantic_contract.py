@@ -175,7 +175,10 @@ def build_query_contract(
 
 
 def _projection_contract(q: str, query_plan: dict[str, Any] | None) -> ProjectionContract:
-    requested = _requested_columns_from_question(q)
+    surface_hints = _requested_columns_from_question(q)
+
+    # Collect canonical column identities from query plan dimensions
+    plan_columns: list[str] = []
     if query_plan:
         raw = query_plan.get("raw_plan") if isinstance(query_plan.get("raw_plan"), dict) else query_plan
         dimensions = raw.get("dimensions") or query_plan.get("dimensions") or []
@@ -183,8 +186,28 @@ def _projection_contract(q: str, query_plan: dict[str, Any] | None) -> Projectio
             if isinstance(item, dict):
                 column = str(item.get("column") or item.get("name") or "").strip()
                 if column:
-                    requested.append(_normalize_hint(column))
-    requested = _dedupe(requested)
+                    plan_columns.append(column)
+
+    # Resolve surface hints against plan columns to eliminate duplicates.
+    #   "name" + plan has "student.Fname" → use "student.Fname"
+    #   "id"   + plan has "has_pet.PetID"   → use "has_pet.PetID"
+    # Surface hints without a plan match are kept as-is.
+    resolved: list[str] = []
+    for hint in surface_hints:
+        matched = _resolve_hint_to_plan(hint, plan_columns)
+        if matched:
+            resolved.append(matched)
+        elif hint not in resolved:
+            resolved.append(hint)
+
+    # Add plan columns not already covered by resolved hints
+    resolved_norm = {_extract_column_name(c).lower() for c in resolved}
+    for pc in plan_columns:
+        if _extract_column_name(pc).lower() not in resolved_norm:
+            resolved.append(pc)
+            resolved_norm.add(_extract_column_name(pc).lower())
+
+    requested = _dedupe(resolved)
     if requested:
         return ProjectionContract(
             mode="entity_only",
@@ -195,8 +218,80 @@ def _projection_contract(q: str, query_plan: dict[str, Any] | None) -> Projectio
     return ProjectionContract()
 
 
+def _resolve_hint_to_plan(hint: str, plan_columns: list[str]) -> str | None:
+    """Resolve a surface hint like 'name' or 'id' to a canonical plan column.
+
+    Returns the plan column string (e.g. 'student.Fname') if a match is found,
+    or None if the hint should stand alone.
+    """
+    hint_lower = hint.lower().strip()
+    # Direct match: hint "Fname" matches plan "student.Fname"
+    for pc in plan_columns:
+        col_name = _extract_column_name(pc).lower()
+        if col_name == hint_lower:
+            return pc
+    # Semantic match: hint "name" matches plan columns named Fname, Name, Lname, AirportName
+    _NAME_HINTS = {"name", "first_name", "fname", "lname", "fullname", "student_name",
+                   "airport_name", "city_name", "visitor_name", "employee_name"}
+    if hint_lower in _NAME_HINTS:
+        for pc in plan_columns:
+            col_name = _extract_column_name(pc).lower()
+            if col_name in ("fname", "name", "lname", "fullname", "firstname", "lastname",
+                            "airportname", "cityname", "visitorname", "employeename"):
+                return pc
+    # ID hint: matches plan columns named PetID, StuID, ID, student_id, etc.
+    _ID_HINTS = {"id", "pet_id", "petid", "student_id", "stuid"}
+    if hint_lower in _ID_HINTS:
+        for pc in plan_columns:
+            col_name = _extract_column_name(pc).lower()
+            if col_name.endswith("id") or col_name == "id":
+                return pc
+    # Age hint
+    if hint_lower == "age":
+        for pc in plan_columns:
+            if _extract_column_name(pc).lower() == "age":
+                return pc
+    # City hint
+    if hint_lower == "city":
+        for pc in plan_columns:
+            if _extract_column_name(pc).lower() == "city":
+                return pc
+    # Major hint
+    if hint_lower == "major":
+        for pc in plan_columns:
+            if _extract_column_name(pc).lower() == "major":
+                return pc
+    return None
+
+
+def _extract_column_name(column_ref: str) -> str:
+    """Extract the bare column name from a table.column reference.
+
+    'student.Fname' → 'Fname'
+    'Fname' → 'Fname'
+    """
+    return column_ref.rsplit(".", 1)[-1] if "." in column_ref else column_ref
+
+
 def _requested_columns_from_question(q: str) -> list[str]:
     requested: list[str] = []
+
+    # Check if an attribute mention is in filter context (e.g. "above age 20")
+    def _is_filter_context(pattern: str) -> bool:
+        # Direct: "above age 20", "older than 20"
+        if re.search(
+            rf"\b(?:above|below|over|under|older|younger|more|less|greater|at\s+least|at\s+most)\s+(?:the\s+)?(?:average\s+)?{pattern}\b",
+            q,
+        ):
+            return True
+        # Pattern: "above the average age", "older than average age"
+        if re.search(
+            rf"\b(?:above|below|older|younger)\s+the\s+.*?\b{pattern}\b",
+            q,
+        ):
+            return True
+        return False
+
     if re.search(r"\bsong names?\b", q):
         requested.append("song_name")
     mappings = [
@@ -204,10 +299,21 @@ def _requested_columns_from_question(q: str) -> list[str]:
         (r"\bairlines?\b", "airline"),
         (r"\bcities?\b", "city"),
         (r"\bids?\b", "id"),
+        (r"\bmajor\b", "major"),
     ]
     requested.extend(column for pattern, column in mappings if re.search(pattern, q))
+
+    # "age" — only requested, not filter-context ("above age 20")
+    if re.search(r"\bages?\b", q) and not _is_filter_context("ages?"):
+        requested.append("age")
+    # "country" — only requested, not filter-context ("from France")
+    if re.search(r"\bcountries?\b", q) and not re.search(r"\bfrom\b.*\bcountries?\b", q):
+        requested.append("country")
+
+    # "name" as a requested column — only when not in a filter context
     if re.search(r"\bnames?\b", q) and not re.search(r"\bsong names?\b", q):
-        requested.append("name")
+        if not re.search(r"\blast\s+name\b|\bfirst\s+name\b|\bwhose\s+name\b|\bname\s+is\b", q):
+            requested.append("name")
     return requested
 
 
