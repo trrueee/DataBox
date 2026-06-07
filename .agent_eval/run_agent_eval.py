@@ -339,16 +339,38 @@ def preflight_schema_metadata(
 
 
 def clean_val(v: Any) -> Any:
-    """Standardize scalar values for robust comparison."""
+    """Standardize scalar values for robust comparison.
+
+    Numeric values are normalized to canonical decimal strings so that
+    int(2), float(2.0), and decimal "2" all compare equal.
+    """
     if v is None:
         return None
-    if isinstance(v, float):
-        return round(v, 4)
+    if isinstance(v, (int, float)):
+        # Normalize to a canonical decimal string:
+        #   2, 2.0, 2.0000 → "2"
+        #   1.5, 1.50 → "1.5"
+        #   3.1416 → "3.1416"
+        rounded = round(float(v), 4)
+        s = f"{rounded:.4f}"
+        # Strip trailing zeros and trailing decimal point
+        s = s.rstrip("0").rstrip(".")
+        if s == "-0":  # -0.0 → "0"
+            s = "0"
+        return s
     if isinstance(v, bytes):
         return v.decode("utf-8", errors="ignore")
-    if isinstance(v, (int, str)):
+    if isinstance(v, str):
         return v
     return str(v)
+
+
+def _sorted_row_key(row: list) -> tuple:
+    """Sortable key for a row (sorted column values)."""
+    normalized = sorted(
+        [str(x) if x is not None else "\x00NULL\x00" for x in row]
+    )
+    return tuple(normalized)
 
 
 def compare_results(
@@ -356,7 +378,13 @@ def compare_results(
     agent_rows: list[tuple],
     has_order_by: bool = False,
 ) -> tuple[bool, str]:
-    """Compare two result sets allowing for float rounding and column reordering."""
+    """Compare two result sets with multi-level normalization.
+
+    Level 1 (strict): exact row-by-row, column-by-column match.
+    Level 2 (normalized): allows row reordering (no ORDER BY), column reordering
+        (multiset of values matches), numeric representation equivalence.
+    Level 3 (semantic): rejects extra/missing columns, different values.
+    """
     if len(gold_rows) != len(agent_rows):
         return False, f"Row count mismatch: gold={len(gold_rows)}, agent={len(agent_rows)}"
 
@@ -366,34 +394,65 @@ def compare_results(
     if not gold_cleaned and not agent_cleaned:
         return True, "Both returned empty sets"
 
-    if len(gold_cleaned[0]) != len(agent_cleaned[0]):
+    gold_ncols = len(gold_cleaned[0])
+    agent_ncols = len(agent_cleaned[0])
+
+    # ---- Strict match (same column order, same row order) ----
+    if gold_ncols == agent_ncols and gold_cleaned == agent_cleaned:
+        return True, "Strict match"
+
+    # ---- Column count check ----
+    if gold_ncols != agent_ncols:
         return False, (
-            f"Column count mismatch: gold={len(gold_cleaned[0])}, "
-            f"agent={len(agent_cleaned[0])}"
+            f"Column count mismatch: gold={gold_ncols}, agent={agent_ncols}"
         )
 
+    # ---- Multi-set row matching (handles row-order + column-order differences) ----
+    # Build multiset of sorted-row signatures for each side
+    gold_sigs = [_sorted_row_key(row) for row in gold_cleaned]
+    agent_sigs = [_sorted_row_key(row) for row in agent_cleaned]
+
     if has_order_by:
-        for idx, (g_row, a_row) in enumerate(zip(gold_cleaned, agent_cleaned)):
-            if g_row != a_row:
-                g_sorted = sorted(g_row, key=lambda x: str(x) if x is not None else "")
-                a_sorted = sorted(a_row, key=lambda x: str(x) if x is not None else "")
-                if g_sorted != a_sorted:
-                    return False, f"Row mismatch at index {idx}: gold={g_row}, agent={a_row}"
+        # ORDER BY requires rows in the same order AND columns consistent
+        for idx, (g_row, a_row, g_sig, a_sig) in enumerate(
+            zip(gold_cleaned, agent_cleaned, gold_sigs, agent_sigs)
+        ):
+            if g_sig != a_sig:
+                # Within-row column sort didn't help — different values
+                return False, (
+                    f"Row mismatch at index {idx}: "
+                    f"gold(sorted)={list(g_sig)}, agent(sorted)={list(a_sig)}"
+                )
+        return True, "Normalized match (ORDER BY preserved, columns reordered)"
+
+    # No ORDER BY: match rows as multisets
+    gold_sorted_sigs = sorted(gold_sigs)
+    agent_sorted_sigs = sorted(agent_sigs)
+
+    for idx, (g_sig, a_sig) in enumerate(zip(gold_sorted_sigs, agent_sorted_sigs)):
+        if g_sig != a_sig:
+            return False, (
+                f"Row value mismatch at sorted index {idx}: "
+                f"gold(sorted values)={list(g_sig)}, agent(sorted values)={list(a_sig)}"
+            )
+
+    # Determine which normalization was applied
+    reasons: list[str] = []
+    if gold_cleaned != agent_cleaned:
+        # Check if only column order differs
+        row_sets_match = gold_sorted_sigs == agent_sorted_sigs
+        col_order_differs = any(
+            sorted(g_row) == sorted(a_row) and g_row != a_row
+            for g_row, a_row in zip(gold_cleaned, agent_cleaned)
+        )
+        if col_order_differs:
+            reasons.append("column order normalized")
+        reasons.append("row order normalized")
+        reason_str = "; ".join(reasons)
     else:
-        def _key(row: list) -> tuple:
-            return tuple(str(x) for x in row)
+        reason_str = "Normalized match"
 
-        gold_sorted = sorted(gold_cleaned, key=_key)
-        agent_sorted = sorted(agent_cleaned, key=_key)
-
-        for idx, (g_row, a_row) in enumerate(zip(gold_sorted, agent_sorted)):
-            if g_row != a_row:
-                g_sorted_row = sorted(g_row, key=lambda x: str(x) if x is not None else "")
-                a_sorted_row = sorted(a_row, key=lambda x: str(x) if x is not None else "")
-                if g_sorted_row != a_sorted_row:
-                    return False, f"Row mismatch: gold={g_row}, agent={a_row}"
-
-    return True, "Success"
+    return True, reason_str
 
 
 # ---------------------------------------------------------------------------
